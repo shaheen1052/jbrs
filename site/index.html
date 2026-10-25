@@ -131,11 +131,11 @@ table.gt{border-collapse:collapse;width:100%}
 .leaves .nav.on .pend{color:#fff;border-color:rgba(255,255,255,.6)}
 .grp{color:var(--pc);font-weight:700;font-size:13px;padding:8px 10px 2px}
 .subleaves{margin-left:22px;border-left:2px dotted var(--pc);padding-left:4px;opacity:1}
-.r3t th,.r3t td{font-size:12.5px;padding:3px 5px;color:#000}.r3t th{font-weight:700}.r3t td.gn{text-align:center;white-space:nowrap}.r3t .gi{min-width:56px;padding:3px 5px;text-align:center}.r3t td.glab{min-width:180px}.r3t tr.r3no td{text-align:center;font-size:11px;color:#333;background:#fafbfa}.r3t tr.r3sec td{background:#f6f8f7}.r3t tr.r3miss td{color:#555}
-.r3hd{position:relative;min-height:46px;margin-bottom:4px}.r3c{display:flex;justify-content:center;align-items:center;gap:10px;text-align:center}.r3c img{width:44px}.r3c .b{font-size:18px;font-weight:700}.r3c .o{font-size:14px}.r3r{position:absolute;right:0;top:0;text-align:right;font-size:12.5px}
+.r3t th,.r3t td{font-size:12.5px;padding:3px 5px;color:#000}.r3t th{font-weight:700}.r3t td.gn{text-align:right;white-space:nowrap}.r3t td.gn.cn{text-align:center}.r3t .gi{min-width:56px;padding:3px 5px;text-align:right}.r3t .gi.cn{text-align:center}.r3t td.glab{min-width:180px}.r3t tr.r3no td{text-align:center;font-size:11px;color:#333;background:#fafbfa}.r3t tr.r3sec td{background:#f6f8f7}.r3t tr.r3miss td{color:#555}
+.r3hd{margin-bottom:2px}.r3codes{text-align:right;font-size:12.5px;margin-bottom:2px}.r3t tr.r3caprow th{font-size:14px;text-align:center;background:#fff}.r3c{display:flex;justify-content:center;align-items:center;gap:10px;text-align:center}.r3c img{width:44px}.r3c .b{font-size:18px;font-weight:700}.r3c .o{font-size:14px}.r3r{position:absolute;right:0;top:0;text-align:right;font-size:12.5px}
 .r3title{text-align:center;font-weight:700;margin:8px 0 2px;font-size:14.5px}.r3unit{text-align:right;font-size:12.5px;margin-bottom:3px}.r3cap{font-weight:700;margin:14px 0 4px;font-size:14px}
 .r3p{color:#000}.r3p .r3pg{break-after:page;page-break-after:always}.r3p .r3pg:last-child{break-after:auto;page-break-after:auto}
-.r3p .r3t{width:100%;border-collapse:collapse}.r3p .r3t th,.r3p .r3t td{border:1px solid #444;font-size:12px;padding:2px 4px;line-height:1.3}.r3p{line-height:1.35}.r3p .r3t td.glab{min-width:0}.r3p .r3t td.gn{min-width:0}.r3p .r3t th{min-width:0}.r3p .r3t tr.r3sec td,.r3p .r3t tr.r3no td{background:#fff}.r3p .r3cap{margin-top:8px}.r3p .p-sign{margin-top:46px}
+.r3p .r3t{width:100%;border-collapse:collapse}.r3p .r3t th,.r3p .r3t td{border:1px solid #444;font-size:12px;padding:1px 2px;line-height:1.12}.r3p{line-height:1.35}.r3p .r3t td.glab{min-width:0;max-width:235px}.r3p .r3t td.gn{min-width:0}.r3p .r3t th{min-width:0}.r3p .r3t tr.r3sec td,.r3p .r3t tr.r3no td{background:#fff}.r3p .r3cap{margin-top:8px}.r3p .p-sign{margin-top:46px}
 .iwcbar{font-size:13px;padding:7px 12px;border-radius:8px;margin:8px 0}.iwcbar.ok{background:var(--ok-l);color:var(--ok)}.iwcbar.busy{background:var(--info-l);color:var(--info)}.iwcbar.bad{background:var(--danger-l);color:var(--danger)}
 </style>
 </head>
@@ -345,10 +345,10 @@ const R3CNT=new Set(['D','I','O']);    // counts, the rest are lakh Taka
 const R3DATA=RCD3_ROWS.filter(x=>x.t==='row').map(x=>x.r);
 const R3LEAF='ln_rcd3';
 const r3n=v=>{const n=parseFloat(v);return isNaN(n)?0:n};
-const r3f=(v,c)=>{if(v===null||v===undefined||v===''||!isFinite(v))return'';const n=+v;const cnt=R3CNT.has(c);return toBn(n.toLocaleString('en-IN',cnt?{maximumFractionDigits:0}:{minimumFractionDigits:2,maximumFractionDigits:2}))};
+const r3f=(v,c)=>{if(v===null||v===undefined||v===''||!isFinite(v))return'';const n=+v;return toBn(R3CNT.has(c)?String(Math.round(n)):n.toFixed(2))};
 function r3fy(p){const [y,m]=p.split('-').map(Number);const a=m>=7?y:y-1;return toBn(a+'-'+String(a+1).slice(2))}
-function r3sum(v,rows){const o={};R3E.split('').forEach(c=>o[c]=rows.reduce((s,r)=>s+r3n(v[r]&&v[r][c]),0));o.M=o.J?o.L/o.J*100:null;return o}
-function r3line(v,r){const x=v[r]||{};const o={};R3E.split('').forEach(c=>o[c]=x[c]);const J=r3n(x.J),L=r3n(x.L);o.M=J?L/J*100:null;return o}
+function r3sum(v,rows){const o={};R3E.split('').forEach(c=>{let any=false,t=0;rows.forEach(r=>{const x=v[r]&&v[r][c];if(x!==undefined&&x!==null&&x!==''&&!isNaN(parseFloat(x))){any=true;t+=parseFloat(x)}});o[c]=any?t:undefined});o.M=o.J&&o.L!==undefined?o.L/o.J*100:null;return o}
+function r3line(v,r){const x=v[r]||{};const o={};R3E.split('').forEach(c=>o[c]=x[c]);const J=r3n(x.J);o.M=J&&x.L!==undefined&&x.L!==''?r3n(x.L)/J*100:null;return o}
 function r3add(list){const v={};list.forEach(d=>R3DATA.forEach(r=>{const x=d&&d[r];if(!x)return;R3E.split('').forEach(c=>{const n=parseFloat(x[c]);if(!isNaN(n)){v[r]=v[r]||{};v[r][c]=+((v[r][c]||0)+n).toFixed(4)}})}));return v}
 
 /* ---------- statement table (sheet 1 format; branch sheets also have the written-off columns) ---------- */
@@ -356,9 +356,10 @@ function r3table(v,opt){
   const cols=opt.wo?'CDEFGHIJKLMNOPQ':'CDEFGHIJKLMN';
   const ed=opt.edit||{};
   const cell=(c,val,r)=>{
-    if(r&&(ed.all&&c!=='M'||ed.cols&&ed.cols.includes(c)))return`<td class="gn"><input class="gi" type="text" inputmode="decimal" data-num="1" data-r="${r}" data-c="${c}" value="${esc(toBn(val??''))}" oninput="A.r3set(this)"></td>`;
+    const al=R3CNT.has(c)?' cn':'';
+    if(r&&(ed.all&&c!=='M'&&!(ed.lock&&ed.lock.has(c))||ed.cols&&ed.cols.includes(c)))return`<td class="gn${al}"><input class="gi${al}" type="text" inputmode="decimal" data-num="1" data-r="${r}" data-c="${c}" value="${esc(toBn(val??''))}" oninput="A.r3set(this)"></td>`;
     if(c==='M')return`<td class="gn gc">${val===null||val===undefined?'':toBn(val.toFixed(2))}</td>`;
-    return`<td class="gn${r?'':' gc'}">${r3f(val,c)}</td>`;
+    return`<td class="gn${al}${r&&!(ed.lock&&ed.lock.has(c))?'':' gc'}">${r3f(val,c)}</td>`;
   };
   let h=`<table class="gt r3t"><tr><th rowspan="3">ক্রমিক নং</th><th rowspan="3">কর্মসূচির নাম</th><th rowspan="3">চলতি ${r3fy(opt.period)} অর্থ বছরে বরাদ্দ</th><th colspan="3">বিতরণকৃত ঋণ</th><th colspan="2">আদায়</th><th colspan="2">বর্তমান অনাদায়ী</th><th rowspan="3">মেয়াদোত্তীর্ণ ঋণের পরিমান</th><th colspan="3">শ্রেণীকৃত ঋণ</th>${opt.wo?'<th colspan="3">অবলোপনকৃত ঋণ</th>':''}</tr>
   <tr><th colspan="2">চলতি অর্থ বছরে</th><th rowspan="2">ক্রমপুঞ্জিভুত</th><th rowspan="2">চলতি অর্থ বছরে</th><th rowspan="2">ক্রমপুঞ্জিভুত আদায়</th><th rowspan="2">সংখ্যা</th><th rowspan="2">পরিমান</th><th rowspan="2">শ্রেণীকৃত ঋণের পরিমান</th><th rowspan="2">শতকরা হার</th><th rowspan="2">শ্রেণীকৃত ঋণ হতে আদায়</th>${opt.wo?'<th rowspan="2">সংখ্যা</th><th rowspan="2">পরিমান</th><th rowspan="2">আদায়</th>':''}</tr>
@@ -374,11 +375,12 @@ function r3table(v,opt){
   return h+'</table>';
 }
 function r3office(o){return o?(o.level==='AREA'?'এরিয়া অফিস, সিরাজগঞ্জ।':(o.nameBn||o.name).replace(/\s*$/,'')+'।'):''}
-function r3bank(o,right){return`<div class="r3hd"><div class="r3c"><img src="${LOGO}" alt=""><div><div class="b">জনতা ব্যাংক পিএলসি</div><div class="o">${esc(r3office(o))}</div></div></div>${right?`<div class="r3r">${right}</div>`:''}</div>`}
+function r3bank(o){return`<div class="r3hd"><div class="r3c"><img src="${LOGO}" alt=""><div><div class="b">জনতা ব্যাংক পিএলসি</div><div class="o">${esc(r3office(o))}</div></div></div></div>`}
 function r3head(p,o,sub,unit){
-  return r3bank(o,'<div>এসএসিপি-১(ক)</div><div>রিটেইল কাস্টমার ডিপার্টমেন্ট-৩</div>')+
-  `<div class="r3title">রিটেইল কাস্টমার ডিপার্টমেন্ট-৩ সম্পৃক্ত কৃষি/পল্লী ঋণ হিসাবের ${gctx(p).asOn} তারিখের ${sub||''}একত্রীভুত মাসিক বিবরণী।</div><div class="r3unit">${unit||'(লক্ষ টাকা)'}</div>`;
+  return r3bank(o)+`<div class="r3codes">এসএসিপি-১(ক) &nbsp; রিটেইল কাস্টমার ডিপার্টমেন্ট-৩</div>
+  <div class="r3title">রিটেইল কাস্টমার ডিপার্টমেন্ট-৩ সম্পৃক্ত কৃষি/পল্লী ঋণ হিসাবের ${gctx(p).asOn} তারিখের ${sub||''}একত্রীভুত মাসিক বিবরণী।</div><div class="r3unit">${unit||'(লক্ষ টাকা)'}</div>`;
 }
+function r3head2(p,o){return r3bank(o)+`<div class="r3title">বিষয়ঃ রিটেইল কাস্টমার ডিপার্টমেন্ট-৩ সম্পৃক্ত কৃষি/পল্লী ঋণ হিসাবের ${gctx(p).asOn} তারিখের প্রোডাক্ট ভিত্তিক একত্রীভুত মাসিক বিবরণী।</div><div class="r3unit">(লক্ষ টাকায়)</div>`}
 const r3sign=o=>`<div class="p-end"><div class="p-sign"><div>কর্মকর্তা</div><div>${o&&o.level==='BR'?'ব্যবস্থাপক':'অফিস প্রধান'}</div></div></div>`;
 function r3print(pages){
   if(!Array.isArray(pages))pages=[pages];
@@ -387,9 +389,9 @@ function r3print(pages){
   const meas=(h,w)=>{m.innerHTML='<div class="r3pg" style="width:'+w+'px">'+h+'</div>';const el=m.firstChild;return[el.scrollWidth,el.scrollHeight]};
   const out=pages.map(h=>{
     // find the largest zoom at which the page, laid out at width W/zoom, fits one A4 page
-    let lo=0.3,hi=1;
+    let lo=0.3,hi=1.6;
     for(let i=0;i<14;i++){const z=(lo+hi)/2,[sw,sh]=meas(h,Math.floor(W/z));if(sh*z<=H&&sw<=Math.floor(W/z)+1)lo=z;else hi=z}
-    const [sw1,sh1]=meas(h,W);const z=(sh1<=H&&sw1<=W+1)?1:lo;
+    const z=lo;
     return '<div class="r3pg" style="zoom:'+z.toFixed(4)+';width:'+Math.floor(W/z)+'px">'+h+'</div>'});
   m.remove();
   $('#printArea').innerHTML='<div class="bn r3p">'+out.join('')+'</div>';
@@ -469,15 +471,15 @@ async function r3s2(p){
   const by={};d.list.forEach(x=>by[x.office]=x.v);
   const o=isBranch()?myOffice():office('5038');
   const cols='CDEFGHIJK';
-  const head2=r3head(p,o,'প্রোডাক্ট ভিত্তিক ','(লক্ষ টাকা) &nbsp; রিপোর্টের তারিখঃ '+gctx(p).asOn);let body='';const pages=[];
+  const head2=r3head2(p,o);let body='';const pages=[];
   for(const r of prods){
     const x=RCD3_ROWS.find(z=>z.r===r);const sl=toBn(String(toEn(x.sl)).padStart(2,'0'));
     const cap=`${sl}. ${x.label}`;
-    let t=`<div class="r3cap">${esc(cap)}</div><table class="gt r3t" data-cap="${esc(cap)}"><tr><th rowspan="3">ক্রমিক নং</th><th rowspan="3">শাখার নাম</th><th rowspan="3">চলতি অর্থ বছরে বরাদ্দ</th><th colspan="3">বিতরণকৃত ঋণ</th><th colspan="2">আদায়</th><th colspan="2">বর্তমান অনাদায়ী</th><th rowspan="3">মেয়াদোত্তীর্ণ ঋণের পরিমান</th></tr>
+    let t=`<table class="gt r3t" data-cap="${esc(cap)}"><tr class="r3caprow"><th colspan="11">${esc(cap)}</th></tr><tr><th rowspan="3">ক্রমিক নং</th><th rowspan="3">শাখার নাম</th><th rowspan="3">চলতি অর্থ বছরে বরাদ্দ</th><th colspan="3">বিতরণকৃত ঋণ</th><th colspan="2">আদায়</th><th colspan="2">বর্তমান অনাদায়ী</th><th rowspan="3">মেয়াদোত্তীর্ণ ঋণের পরিমান</th></tr>
     <tr><th colspan="2">চলতি অর্থ বছরে</th><th rowspan="2">ক্রমপুঞ্জিভুত</th><th rowspan="2">চলতি অর্থ বছরে</th><th rowspan="2">ক্রমপুঞ্জিভুত আদায়</th><th rowspan="2">সংখ্যা</th><th rowspan="2">পরিমান</th></tr><tr><th>সংখ্যা</th><th>পরিমান</th></tr>`;
     const tot={};
-    codes.forEach((c,i)=>{const line=(by[c]&&by[c][r])||{};t+=`<tr${by[c]?'':' class="r3miss"'}><td class="gc0">${toBn(i+1)}</td><td class="glab">${esc(RCD3_SHORT[c]||officeName(c))}</td>${cols.split('').map(k=>{const n=line[k];if(n!=null&&n!=='')tot[k]=(tot[k]||0)+r3n(n);return`<td class="gn">${by[c]?r3f(n===undefined?'':n,k):''}</td>`}).join('')}</tr>`});
-    t+=`<tr class="gsum"><td></td><td class="glab">মোট</td>${cols.split('').map(k=>`<td class="gn">${r3f(tot[k]||0,k)}</td>`).join('')}</tr></table>`;
+    codes.forEach((c,i)=>{const line=(by[c]&&by[c][r])||{};t+=`<tr${by[c]?'':' class="r3miss"'}><td class="gc0">${toBn(i+1)}</td><td class="glab">${esc(RCD3_SHORT[c]||officeName(c))}</td>${cols.split('').map(k=>{const n=line[k];if(n!=null&&n!=='')tot[k]=(tot[k]||0)+r3n(n);return`<td class="gn${R3CNT.has(k)?' cn':''}">${by[c]?r3f(n===undefined?'':n,k):''}</td>`}).join('')}</tr>`});
+    t+=`<tr class="gsum"><td></td><td class="glab">মোট</td>${cols.split('').map(k=>`<td class="gn${R3CNT.has(k)?' cn':''}">${r3f(tot[k],k)}</td>`).join('')}</tr></table>`;
     body+=t;pages.push(head2+t+r3sign(o));
   }
   const miss=codes.filter(c=>!by[c]);
@@ -494,38 +496,56 @@ async function r3grid(p){
   kids.forEach(c=>{const r=by[c];const st=r?r.status:'NONE';h+=`<tr><td>${c}</td><td class="bn">${esc(RCD3_SHORT[c]||officeName(c))}</td><td><span class="badge b-${st}">${STATUS_TXT[st]}</span>${r&&st==='RETURNED'&&r.note?`<div class="muted small">${esc(r.note)}</div>`:''}</td><td class="small">${r?fmtDT(r.updated):''}</td><td style="white-space:nowrap">${st==='SUBMITTED'?`<button class="sm" onclick="go({page:'leaf',leaf:'ln_rcd3s1',period:'${p}',r3of:'${c}'})">View</button> <button class="sm dan" onclick="A.returnPrompt('${c}','${R3LEAF}','${p}')">Return</button>`:''}</td></tr>`});
   $('#r3out').outerHTML=`<div id="r3out">${h}</table></div></div>`;
 }
+const r3fyStart=m=>{const [y,mm]=m.split('-').map(Number);return mm>=7?y:y-1};
+// ক্রমপুঞ্জিভুত = previous month's cumulative + this year's figure added since then
+function r3cum(r,row){
+  const b=r.base;if(!b)return;const x=r.v[row]=r.v[row]||{},p=b.v[row]||{};
+  [['F','E'],['H','G']].forEach(([cum,fy])=>{
+    const has=p[cum]!=null&&p[cum]!==''||x[fy]!=null&&x[fy]!=='';
+    if(!has){delete x[cum];return}
+    const t=r3n(p[cum])+r3n(x[fy])-(b.same?r3n(p[fy]):0);x[cum]=String(+t.toFixed(4));
+  });
+  if(!Object.keys(x).length)delete r.v[row];
+}
 async function r3openOwn(p){
-  const j=await api('/report?office='+encodeURIComponent(S.user.office)+'&leaf='+R3LEAF+'&period='+p);
+  const code=S.user.office;
+  const [j,list]=await Promise.all([api('/report?office='+encodeURIComponent(code)+'&leaf='+R3LEAF+'&period='+p),api('/reports?leaf='+R3LEAF+'&office='+encodeURIComponent(code))]);
+  const prev=list.reports.filter(x=>x.period<p).sort((a,b)=>b.period.localeCompare(a.period))[0];
+  let base=null;
+  if(prev){const pj=await api('/report?office='+encodeURIComponent(code)+'&leaf='+R3LEAF+'&period='+prev.period);
+    if(pj.report&&pj.report.data&&pj.report.data.v)base={period:prev.period,v:pj.report.data.v,same:r3fyStart(prev.period)===r3fyStart(p)}}
   let r;
-  if(j.report){r={leaf:R3LEAF,period:p,status:j.report.status,note:j.report.note,submitted:j.report.submitted,v:(j.report.data&&j.report.data.v)||{}}}
+  if(j.report)r={leaf:R3LEAF,period:p,status:j.report.status,note:j.report.note,submitted:j.report.submitted,v:(j.report.data&&j.report.data.v)||{}};
   else{
     r={leaf:R3LEAF,period:p,status:'NEW',v:{}};
-    const list=await api('/reports?leaf='+R3LEAF+'&office='+encodeURIComponent(S.user.office));
-    const prev=list.reports.filter(x=>x.period<p).sort((a,b)=>b.period.localeCompare(a.period))[0];
-    if(prev){const pj=await api('/report?office='+encodeURIComponent(S.user.office)+'&leaf='+R3LEAF+'&period='+prev.period);
-      if(pj.report&&pj.report.data&&pj.report.data.v){const fyStart=m=>{const [y,mm]=m.split('-').map(Number);return mm>=7?y:y-1};const same=fyStart(prev.period)===fyStart(p);
-        const keep=same?R3E:'FHIJKLOP';r.v={};Object.entries(pj.report.data.v).forEach(([row,x])=>{const o={};keep.split('').forEach(c=>{if(x[c]!=null&&x[c]!=='')o[c]=x[c]});if(Object.keys(o).length)r.v[row]=o});
-        toast('Figures carried from '+fmtPeriod(prev.period)+(same?'':' (new financial year: allocation and this year\'s figures start empty)')+'. Update them for '+fmtPeriod(p)+'.')}}
+    if(base){
+      // previous month's figures are filled in to help; in a new financial year this year's figures start empty
+      const keep=base.same?R3E:'FHIJKLOP';
+      Object.entries(base.v).forEach(([row,x])=>{const o={};keep.split('').forEach(c=>{if(x[c]!=null&&x[c]!=='')o[c]=x[c]});if(Object.keys(o).length)r.v[row]=o});
+      toast('Figures of '+fmtPeriod(base.period)+' are filled in'+(base.same?'':' (new financial year: allocation and this year\'s figures start empty)')+'. Update them for '+fmtPeriod(p)+'.');
+    }
   }
+  r.base=base;
+  if(base&&canEdit(r))R3DATA.forEach(row=>r3cum(r,row));
   S.r3cur=r;S.dirty=false;r3render();
 }
 function r3render(){
   const r=S.r3cur,ed=canEdit(r),o=myOffice();
-  const body=r3head(r.period,o)+r3table(r.v,{period:r.period,wo:true,edit:ed?{all:true}:null});
+  const body=r3head(r.period,o)+r3table(r.v,{period:r.period,wo:true,edit:ed?{all:true,lock:r.base?new Set(['F','H']):null}:null});
   $('#r3out').outerHTML=`<div id="r3out" class="card bn"><div style="font-family:var(--sans,inherit)"><span class="badge b-${r.status==='NEW'?'NONE':r.status}">${r.status==='NEW'?'New':STATUS_TXT[r.status]}</span> <span id="saveState" class="muted small"></span>
   ${r.status==='RETURNED'?`<div class="note n-warn"><b>Returned by Area Office:</b> ${esc(r.note)}</div>`:''}${r.status==='SUBMITTED'?`<div class="note n-ok">Submitted on ${fmtDT(r.submitted)}. Locked; the Area Office can return it if a correction is needed.</div>`:''}
-  ${ed?`<div class="note n-info">Amounts in lakh Taka; সংখ্যা columns are numbers of loans. Sub-totals, grand total and শতকরা হার (শ্রেণীকৃত ঋণ ÷ বর্তমান অনাদায়ী × ১০০) are calculated automatically. Bangla or English digits are both accepted.</div>`:''}</div>
+  ${ed?`<div class="note n-info">Amounts in lakh Taka; সংখ্যা columns are numbers of loans. Sub-totals, grand total, শতকরা হার (শ্রেণীকৃত ঋণ ÷ বর্তমান অনাদায়ী × ১০০) and the ক্রমপুঞ্জিভুত columns (previous month's cumulative + this year's disbursement / recovery since then) are calculated automatically. Bangla or English digits are both accepted.</div>`:''}</div>
   <div class="gscroll" id="r3body">${body}</div><div class="bar">${ed?`<button onclick="run(A.r3save)">Save</button><button class="pri" onclick="run(A.r3submit)">Save and submit to Area Office</button>`:''}<button onclick="A.r3printOwn()">Print</button><button onclick="r3csv('RCD-3_${S.user.office}_${r.period}.csv')">Download Excel</button></div></div>`;
   if(ed){clearInterval(S.autoTimer);S.autoTimer=setInterval(()=>{if(S.dirty)run(()=>A.r3save(true))},60000)}
 }
 A.r3set=el=>{
   const v=numIn(el);
-  if(S.r3cur&&canEdit(S.r3cur)){const x=S.r3cur.v[el.dataset.r]=S.r3cur.v[el.dataset.r]||{};if(v==='')delete x[el.dataset.c];else x[el.dataset.c]=v;markDirty();r3recalc()}
+  if(S.r3cur&&canEdit(S.r3cur)){const x=S.r3cur.v[el.dataset.r]=S.r3cur.v[el.dataset.r]||{};if(v==='')delete x[el.dataset.c];else x[el.dataset.c]=v;if(S.r3cur.base)r3cum(S.r3cur,el.dataset.r);markDirty();r3recalc()}
 };
 function r3recalc(){
   // refresh only the calculated cells without rebuilding the inputs
   const t=$('#r3body table');if(!t)return;
-  const fresh=document.createElement('div');fresh.innerHTML=r3table(S.r3cur.v,{period:S.r3cur.period,wo:true});
+  const fresh=document.createElement('div');fresh.innerHTML=r3table(S.r3cur.v,{period:S.r3cur.period,wo:true,edit:{all:true,lock:S.r3cur.base?new Set(['F','H']):null}});
   const a=[...t.rows],b=[...fresh.querySelector('table').rows];
   a.forEach((tr,i)=>{[...tr.cells].forEach((td,j)=>{if(!td.querySelector('input')&&b[i]&&b[i].cells[j]&&td.classList.contains('gn'))td.textContent=b[i].cells[j].textContent})});
 }
