@@ -142,7 +142,7 @@ function renderApp(){
   const side=`${nav('dash','Dashboard')}
    ${isAdmin()?nav('users','Users and passwords')+nav('audit','Activity log'):''}
    ${TREE.map(p=>{const c=PCOL[p.id]||PCOL._;const shut=S.open[p.id]===false;return`<div class="pillar" style="--pc:${c[0]};--pcl:${c[1]}"><button class="nav pnav" onclick="A.togglePillar('${p.id}')"><span>${esc(p.name)}</span><span class="caret" id="pc_${p.id}">${shut?'+':'&minus;'}</span></button><div class="leaves" id="pl_${p.id}" style="${shut?'display:none':''}">
-   ${menuItems(p.items,leafBtn)}</div></div>`}).join('')}
+   ${menuItems(p.items,leafBtn,true)}</div></div>`}).join('')}
    <div style="margin-top:12px;border-top:1px solid var(--line);padding-top:8px">${nav('settings','Settings')}</div>`;
   let main='';
   try{
@@ -154,7 +154,14 @@ function renderApp(){
   <div class="layout"><div class="side">${side}</div><div class="main" id="main">${main}<div class="dev">${APP.dev}</div></div></div>`);
   if(v.after){const f=v.after;v.after=null;run(f)}
 }
-function menuItems(items,leafBtn){return items.map(it=>it.group?`<div class="grp">${esc(it.group)}</div><div class="subleaves">${menuItems(it.items,leafBtn)}</div>`:leafBtn(it)).join('')}
+function menuItems(items,leafBtn,top){return items.map(it=>{
+  if(!it.group)return leafBtn(it);
+  if(!top)return`<div class="grp">${esc(it.group)}</div><div class="subleaves">${menuItems(it.items,leafBtn)}</div>`;
+  const k='g_'+it.group.replace(/\W+/g,'_'),has=g=>g.items.some(x=>x.group?has(x):x.id===S.view.leaf);
+  const open=S.open[k]===undefined?has(it):S.open[k];
+  return`<button class="nav gnav" onclick="A.toggleGroup('${k}')"><span>${esc(it.group)}</span><span class="caret" id="gc_${k}">${open?'&minus;':'+'}</span></button><div class="subleaves" id="gl_${k}" style="${open?'':'display:none'}">${menuItems(it.items,leafBtn)}</div>`;
+}).join('')}
+A.toggleGroup=k=>{const el=$('#gl_'+k);const hide=el.style.display!=='none';el.style.display=hide?'none':'';S.open[k]=!hide;$('#gc_'+k).innerHTML=hide?'+':'&minus;'};
 A.togglePillar=id=>{const el=$('#pl_'+id);const hide=el.style.display!=='none';el.style.display=hide?'none':'';S.open[id]=!hide;const c=$('#pc_'+id);if(c)c.innerHTML=hide?'+':'&minus;'};
 const PCOL={dep:['#1d5fa8','#e7f0fb'],loan:['#2e7d32','#e8f5e9'],acc:['#6a3fb5','#f0ebfa'],rec:['#b55400','#fdf0e2'],aud:['#b42318','#fdecea'],_:['#0a7aa6','#e2f4fb']};
 function setMain(h){const m=$('#main');if(m)m.innerHTML=h+`<div class="dev">${APP.dev}</div>`}
