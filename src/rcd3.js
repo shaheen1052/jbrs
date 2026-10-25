@@ -4,7 +4,7 @@ const R3CNT=new Set(['D','I','O']);    // counts, the rest are lakh Taka
 const R3DATA=RCD3_ROWS.filter(x=>x.t==='row').map(x=>x.r);
 const R3LEAF='ln_rcd3';
 const r3n=v=>{const n=parseFloat(v);return isNaN(n)?0:n};
-const r3f=(v,c)=>{if(v===null||v===undefined||v===''||!isFinite(v))return'';const n=+v;return toBn(R3CNT.has(c)?String(Math.round(n)):n.toFixed(2))};
+const r3f=(v,c)=>{if(v===null||v===undefined||v===''||!isFinite(v))return'';const n=+v;if(Math.abs(n)<0.005)return'';return toBn(R3CNT.has(c)?String(Math.round(n)):n.toFixed(2))};
 function r3fy(p){const [y,m]=p.split('-').map(Number);const a=m>=7?y:y-1;return toBn(a+'-'+String(a+1).slice(2))}
 function r3sum(v,rows){const o={};R3E.split('').forEach(c=>{let any=false,t=0;rows.forEach(r=>{const x=v[r]&&v[r][c];if(x!==undefined&&x!==null&&x!==''&&!isNaN(parseFloat(x))){any=true;t+=parseFloat(x)}});o[c]=any?t:undefined});o.M=o.J&&o.L!==undefined?o.L/o.J*100:null;return o}
 function r3line(v,r){const x=v[r]||{};const o={};R3E.split('').forEach(c=>o[c]=x[c]);const J=r3n(x.J);o.M=J&&x.L!==undefined&&x.L!==''?r3n(x.L)/J*100:null;return o}
@@ -36,19 +36,19 @@ function r3table(v,opt){
 function r3office(o){return o?(o.level==='AREA'?'এরিয়া অফিস, সিরাজগঞ্জ।':(o.nameBn||o.name).replace(/\s*$/,'')+'।'):''}
 function r3bank(o){return`<div class="r3hd"><div class="r3c"><img src="${LOGO}" alt=""><div><div class="b">জনতা ব্যাংক পিএলসি</div><div class="o">${esc(r3office(o))}</div></div></div></div>`}
 function r3head(p,o,sub,unit){
-  return r3bank(o)+`<div class="r3codes">এসএসিপি-১(ক) &nbsp; রিটেইল কাস্টমার ডিপার্টমেন্ট-৩</div>
+  return r3bank(o)+`<div class="r3codes"><div>এসএসিপি-১(ক)</div><div>রিটেইল কাস্টমার ডিপার্টমেন্ট-৩</div></div>
   <div class="r3title">রিটেইল কাস্টমার ডিপার্টমেন্ট-৩ সম্পৃক্ত কৃষি/পল্লী ঋণ হিসাবের ${gctx(p).asOn} তারিখের ${sub||''}একত্রীভুত মাসিক বিবরণী।</div><div class="r3unit">${unit||'(লক্ষ টাকা)'}</div>`;
 }
 function r3head2(p,o){return r3bank(o)+`<div class="r3title">বিষয়ঃ রিটেইল কাস্টমার ডিপার্টমেন্ট-৩ সম্পৃক্ত কৃষি/পল্লী ঋণ হিসাবের ${gctx(p).asOn} তারিখের প্রোডাক্ট ভিত্তিক একত্রীভুত মাসিক বিবরণী।</div><div class="r3unit">(লক্ষ টাকায়)</div>`}
 const r3sign=o=>`<div class="p-end"><div class="p-sign"><div>কর্মকর্তা</div><div>${o&&o.level==='BR'?'ব্যবস্থাপক':'অফিস প্রধান'}</div></div></div>`;
-function r3print(pages){
+function r3print(pages,cap){
   if(!Array.isArray(pages))pages=[pages];
   const W=712,H=1030;                       // A4 portrait inside the 10/11 mm print margins, in CSS px
   const m=document.createElement('div');m.className='bn r3p';m.style.cssText='position:absolute;left:-20000px;top:0;visibility:hidden;width:'+W+'px';document.body.appendChild(m);
   const meas=(h,w)=>{m.innerHTML='<div class="r3pg" style="width:'+w+'px">'+h+'</div>';const el=m.firstChild;return[el.scrollWidth,el.scrollHeight]};
   const out=pages.map(h=>{
     // find the largest zoom at which the page, laid out at width W/zoom, fits one A4 page
-    let lo=0.3,hi=1.6;
+    let lo=0.3,hi=cap||1.6;
     for(let i=0;i<14;i++){const z=(lo+hi)/2,[sw,sh]=meas(h,Math.floor(W/z));if(sh*z<=H&&sw<=Math.floor(W/z)+1)lo=z;else hi=z}
     const z=lo;
     return '<div class="r3pg" style="zoom:'+z.toFixed(4)+';width:'+Math.floor(W/z)+'px">'+h+'</div>'});
@@ -101,7 +101,7 @@ async function r3s1(p,of){
     if(!d.list.length){out.outerHTML=`<div id="r3out" class="card">No RCD-3 data for ${fmtPeriod(p)} yet.</div>`;return}
     const body=r3head(p,o)+r3table(d.list[0].v,{period:p,wo:true});
     out.outerHTML=`<div id="r3out" class="card bn">${!isBranch()&&d.status!=='SUBMITTED'?'':''}<div class="gscroll">${body}</div><div class="bar"><button class="pri" onclick="A.r3print()">Print</button><button onclick="r3csv('RCD-3_${d.single}_${p}.csv')">Download Excel</button></div></div>`;
-    S.r3doc=[body+r3sign(o)];return;
+    S.r3doc=[body];S.r3cap=null;return;
   }
   const kids=RCD3_ORDER.filter(c=>childBranches().some(k=>k.code===c));
   const v=r3add(d.list.map(x=>x.v));
@@ -114,14 +114,14 @@ async function r3s1(p,of){
   out.outerHTML=`<div id="r3out" class="card bn"><div class="note ${miss.length?'n-warn':'n-ok'}" style="font-family:inherit"><b>${toBn(d.list.length)} / ${toBn(kids.length)}</b> branches submitted for ${fmtPeriod(p)}.${miss.length?' Not yet: '+miss.map(c=>esc(RCD3_SHORT[c]||c)).join(', '):''}</div>
   ${isArea()?`<div class="note n-info" style="font-family:inherit">Column ৩ (allocation) is the Area Office allocation for each programme; where none is set, the branches' total is shown. ${S.r3edit?'Type the allocation and click <b>Save allocation</b>.':''}</div>`:''}
   <div class="gscroll">${body}</div><div class="bar"><button class="pri" onclick="A.r3print()">Print</button><button onclick="r3csv('RCD-3_Accumulated_${p}.csv')">Download Excel</button>${isArea()?(S.r3edit?`<button class="pri" onclick="run(A.r3saveAlloc)">Save allocation</button><button onclick="S.r3edit=false;go({...S.view,after:null})">Cancel</button>`:`<button onclick="S.r3edit=true;go({...S.view,after:null})">Edit allocation</button>`):''}</div></div>`;
-  S.r3doc=[r3head(p,o)+r3table(v,{period:p})+r3sign(o)];
+  S.r3doc=[r3head(p,o)+r3table(v,{period:p})];S.r3cap=null;
 }
 A.r3saveAlloc=async()=>{
   const r=S.r3;const v={};document.querySelectorAll('#r3out input[data-c="C"]').forEach(el=>{const n=toEn(el.value).trim();if(n!=='')(v[el.dataset.r]=v[el.dataset.r]||{}).C=n});
   await api('/report',{method:'PUT',body:{leaf:R3LEAF,period:r.p,data:{v,kind:'area-allocation'}}});
   S.r3edit=false;toast('Allocation saved.');go({...S.view,after:null});
 };
-A.r3print=()=>r3print(S.r3doc);
+A.r3print=()=>r3print(S.r3doc,S.r3cap);
 async function r3s2(p){
   const out=$('#r3out');const d=await r3fetch(p,'all');
   const pv=S.view.r3pr||'sheet';
@@ -130,20 +130,20 @@ async function r3s2(p){
   const by={};d.list.forEach(x=>by[x.office]=x.v);
   const o=isBranch()?myOffice():office('5038');
   const cols='CDEFGHIJK';
-  const head2=r3head2(p,o);let body='';const pages=[];
+  const head2=r3head2(p,o);let body='';const tabs=[];
   for(const r of prods){
     const x=RCD3_ROWS.find(z=>z.r===r);const sl=toBn(String(toEn(x.sl)).padStart(2,'0'));
     const cap=`${sl}. ${x.label}`;
-    let t=`<table class="gt r3t" data-cap="${esc(cap)}"><tr class="r3caprow"><th colspan="11">${esc(cap)}</th></tr><tr><th rowspan="3">ক্রমিক নং</th><th rowspan="3">শাখার নাম</th><th rowspan="3">চলতি অর্থ বছরে বরাদ্দ</th><th colspan="3">বিতরণকৃত ঋণ</th><th colspan="2">আদায়</th><th colspan="2">বর্তমান অনাদায়ী</th><th rowspan="3">মেয়াদোত্তীর্ণ ঋণের পরিমান</th></tr>
+    let t=`<table class="gt r3t r3t2" data-cap="${esc(cap)}"><tr class="r3caprow"><th colspan="11">${esc(cap)}</th></tr><tr><th rowspan="3">ক্রমিক নং</th><th rowspan="3">শাখার নাম</th><th rowspan="3">চলতি অর্থ বছরে বরাদ্দ</th><th colspan="3">বিতরণকৃত ঋণ</th><th colspan="2">আদায়</th><th colspan="2">বর্তমান অনাদায়ী</th><th rowspan="3">মেয়াদোত্তীর্ণ ঋণের পরিমান</th></tr>
     <tr><th colspan="2">চলতি অর্থ বছরে</th><th rowspan="2">ক্রমপুঞ্জিভুত</th><th rowspan="2">চলতি অর্থ বছরে</th><th rowspan="2">ক্রমপুঞ্জিভুত আদায়</th><th rowspan="2">সংখ্যা</th><th rowspan="2">পরিমান</th></tr><tr><th>সংখ্যা</th><th>পরিমান</th></tr>`;
     const tot={};
     codes.forEach((c,i)=>{const line=(by[c]&&by[c][r])||{};t+=`<tr${by[c]?'':' class="r3miss"'}><td class="gc0">${toBn(i+1)}</td><td class="glab">${esc(RCD3_SHORT[c]||officeName(c))}</td>${cols.split('').map(k=>{const n=line[k];if(n!=null&&n!=='')tot[k]=(tot[k]||0)+r3n(n);return`<td class="gn${R3CNT.has(k)?' cn':''}">${by[c]?r3f(n===undefined?'':n,k):''}</td>`}).join('')}</tr>`});
     t+=`<tr class="gsum"><td></td><td class="glab">মোট</td>${cols.split('').map(k=>`<td class="gn${R3CNT.has(k)?' cn':''}">${r3f(tot[k],k)}</td>`).join('')}</tr></table>`;
-    body+=t;pages.push(head2+t+r3sign(o));
+    body+=t;tabs.push(t);
   }
   const miss=codes.filter(c=>!by[c]);
   out.outerHTML=`<div id="r3out" class="card bn">${!isBranch()&&miss.length?`<div class="note n-warn" style="font-family:inherit">Not yet submitted (blank rows): ${miss.map(c=>esc(RCD3_SHORT[c]||c)).join(', ')}</div>`:''}<div class="gscroll">${head2+body}</div><div class="bar"><button class="pri" onclick="A.r3print()">Print</button><button onclick="r3csv('RCD-3_ProductWise_${p}.csv')">Download Excel</button></div></div>`;
-  S.r3doc=pages;
+  const pages=[];for(let i=0;i<tabs.length;i+=2)pages.push((i?'':head2)+tabs.slice(i,i+2).join('<div class="r3gap"></div>'));S.r3doc=pages;S.r3cap=1.1;
 }
 
 /* ---------- branch data entry ---------- */
@@ -224,7 +224,7 @@ A.r3submit=async()=>{
   await A.r3save(true);await api('/report/submit',{method:'POST',body:{leaf:R3LEAF,period:r.period}});
   toast('Submitted.');S.dirty=false;r3openOwn(r.period);
 };
-A.r3printOwn=()=>{const r=S.r3cur,o=myOffice();r3print([r3head(r.period,o)+r3table(r.v,{period:r.period,wo:true})+r3sign(o)])};
+A.r3printOwn=()=>{const r=S.r3cur,o=myOffice();r3print([r3head(r.period,o)+r3table(r.v,{period:r.period,wo:true})])};
 
 /* ---------- one-time import of the September 2026 Excel figures (admin) ---------- */
 A.r3import=async()=>{
