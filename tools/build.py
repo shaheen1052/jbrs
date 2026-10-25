@@ -3,6 +3,7 @@ ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC=os.path.join(ROOT,'src','offline_base.html')
 GL=os.path.join(ROOT,'src','glance.js')
 APPJS=os.path.join(ROOT,'src','app_online.js')
+RCD=[os.path.join(ROOT,'src',f) for f in ('rcd3_data.js','rcd3.js')]
 OUT=os.path.join(ROOT,'site','index.html')
 s=open(SRC,encoding='utf-8').read()
 style=re.search(r'<style>([\s\S]*?)</style>',s).group(1)
@@ -13,6 +14,9 @@ tree=s[s.index("const L=(id,name,tpl)=>"):s.index("}));",s.index("const LEAVES={
 tree=tree.replace("'audit')","null)")
 _old="L('rc_iwc','Interest waiver calculation','iwc')"
 assert _old in tree
+_ag="G('Agricultural credit',[L('ln_ag_rcd3','RCD-3'),L('ln_ag_rcd4','RCD-4')]),G('Rural credit',[L('ln_rc_rcd3','RCD-3'),L('ln_rc_rcd4','RCD-4'),L('ln_rc_cf','Consumer financing')])"
+assert _ag in tree
+tree=tree.replace(_ag,"G('Agricultural and rural credit',[G('RCD-3',[L('ln_rcd3','Data entry','rcd3'),L('ln_rcd3s1','Statement-1 (Accumulated)','rcd3s1'),L('ln_rcd3s2','Statement-2 (Product-wise)','rcd3s2')]),L('ln_rcd4','RCD-4'),L('ln_rcd4cf','RCD-4 Consumer Financing')])")
 tree=tree.replace(_old,"G('Interest waiver calculator',[L('rc_iwc','Data entry','iwc'),G('Report',[L('rc_iwga','Annexure-Ga','iwr'),L('rc_iwgha','Annexure-Gha','iwr')])])")
 _lb=tree.index('const LEAVES={};')
 tree=tree[:_lb]+"""const LEAVES={};
@@ -30,6 +34,7 @@ core=g[:g.index('function carryGlance')]
 cons=g[g.index('function consolidateGlance'):]
 cons=cons[:cons.index('\n}\n')+3]
 app=open(APPJS,encoding='utf-8').read()
+rcd='\n'.join(open(f,encoding='utf-8').read() for f in RCD)
 extra_css=""".b-NONE{background:#f1f1f1;color:#666}.b-NEW{background:#eef0ef;color:#4a5752}
 .stats .stat .n{font-size:28px}
 .side{padding:12px 10px}
@@ -45,6 +50,10 @@ extra_css=""".b-NONE{background:#f1f1f1;color:#666}.b-NEW{background:#eef0ef;col
 .leaves .nav.on .pend{color:#fff;border-color:rgba(255,255,255,.6)}
 .grp{color:var(--pc);font-weight:700;font-size:13px;padding:8px 10px 2px}
 .subleaves{margin-left:22px;border-left:2px dotted var(--pc);padding-left:4px;opacity:1}
+.r3t th,.r3t td{font-size:12.5px;padding:3px 5px}.r3t td.gn{min-width:58px}.r3t .gi{min-width:56px;padding:3px 5px}.r3t td.glab{min-width:200px}.r3t tr.r3no td{text-align:center;font-size:11px;color:var(--muted);background:#fafbfa}.r3t tr.r3sec td{background:#f6f8f7}.r3t tr.r3miss td{color:#9aa}
+.r3hd{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.r3l{display:flex;align-items:center;gap:10px}.r3l img{width:44px}.r3l .b{font-size:17px;font-weight:700}.r3r{text-align:right;font-size:12.5px}
+.r3title{text-align:center;font-weight:700;margin:8px 0 6px;font-size:14px}.r3title span{float:right;font-weight:400;font-size:12px}.r3cap{font-weight:700;margin:16px 0 4px}
+@media print{#printArea .r3t th,#printArea .r3t td{font-size:9px;padding:2px 3px;min-width:0}#printArea .r3t td.glab{min-width:0}#printArea .r3cap{break-after:avoid}#printArea .r3t{break-inside:auto}#printArea .r3t tr{break-inside:avoid}}
 .iwcbar{font-size:13px;padding:7px 12px;border-radius:8px;margin:8px 0}.iwcbar.ok{background:var(--ok-l);color:var(--ok)}.iwcbar.busy{background:var(--info-l);color:var(--info)}.iwcbar.bad{background:var(--danger-l);color:var(--danger)}
 """
 html=f"""<!doctype html>
@@ -70,6 +79,7 @@ const A={{}};
 {tree}
 {core}
 {cons}
+{rcd}
 {app}
 </script>
 {iwc}

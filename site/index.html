@@ -131,6 +131,10 @@ table.gt{border-collapse:collapse;width:100%}
 .leaves .nav.on .pend{color:#fff;border-color:rgba(255,255,255,.6)}
 .grp{color:var(--pc);font-weight:700;font-size:13px;padding:8px 10px 2px}
 .subleaves{margin-left:22px;border-left:2px dotted var(--pc);padding-left:4px;opacity:1}
+.r3t th,.r3t td{font-size:12.5px;padding:3px 5px}.r3t td.gn{min-width:58px}.r3t .gi{min-width:56px;padding:3px 5px}.r3t td.glab{min-width:200px}.r3t tr.r3no td{text-align:center;font-size:11px;color:var(--muted);background:#fafbfa}.r3t tr.r3sec td{background:#f6f8f7}.r3t tr.r3miss td{color:#9aa}
+.r3hd{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.r3l{display:flex;align-items:center;gap:10px}.r3l img{width:44px}.r3l .b{font-size:17px;font-weight:700}.r3r{text-align:right;font-size:12.5px}
+.r3title{text-align:center;font-weight:700;margin:8px 0 6px;font-size:14px}.r3title span{float:right;font-weight:400;font-size:12px}.r3cap{font-weight:700;margin:16px 0 4px}
+@media print{#printArea .r3t th,#printArea .r3t td{font-size:9px;padding:2px 3px;min-width:0}#printArea .r3t td.glab{min-width:0}#printArea .r3cap{break-after:avoid}#printArea .r3t{break-inside:auto}#printArea .r3t tr{break-inside:avoid}}
 .iwcbar{font-size:13px;padding:7px 12px;border-radius:8px;margin:8px 0}.iwcbar.ok{background:var(--ok-l);color:var(--ok)}.iwcbar.busy{background:var(--info-l);color:var(--info)}.iwcbar.bad{background:var(--danger-l);color:var(--danger)}
 </style>
 </head>
@@ -148,7 +152,7 @@ const L=(id,name,tpl)=>({id,name,tpl:tpl||null});
 const G=(name,items)=>({group:name,items});
 const TREE=[
  {id:'dep',name:'Deposit',items:[L('dep_pos','Deposit position'),L('dep_open','Account opening'),L('dep_dorm','Dormant and unclaimed deposit'),L('dep_cash','Cash statement')]},
- {id:'loan',name:'Loan and advance',items:[L('ln_cmsme','CMSME'),G('Agricultural credit',[L('ln_ag_rcd3','RCD-3'),L('ln_ag_rcd4','RCD-4')]),G('Rural credit',[L('ln_rc_rcd3','RCD-3'),L('ln_rc_rcd4','RCD-4'),L('ln_rc_cf','Consumer financing')]),L('ln_sod','Secured overdraft'),L('ln_staff','Staff loan')]},
+ {id:'loan',name:'Loan and advance',items:[L('ln_cmsme','CMSME'),G('Agricultural and rural credit',[G('RCD-3',[L('ln_rcd3','Data entry','rcd3'),L('ln_rcd3s1','Statement-1 (Accumulated)','rcd3s1'),L('ln_rcd3s2','Statement-2 (Product-wise)','rcd3s2')]),L('ln_rcd4','RCD-4'),L('ln_rcd4cf','RCD-4 Consumer Financing')]),L('ln_sod','Secured overdraft'),L('ln_staff','Staff loan')]},
  {id:'acc',name:'Accounts',items:[L('gl_branch','At a glance (এক নজরে)','glance'),L('ac_budget','Budget and expenditure'),L('ac_susp','Unadjusted suspense'),L('ac_bpen','Unadjusted bank pension'),L('ac_apen','Unadjusted army pension')]},
  {id:'rec',name:'Recovery',items:[L('rc_class','Classification of loan'),L('rc_recov','Recovery of classified loan'),G('Suit cases',[L('rc_ar','Artho Rin case'),L('rc_cert','Certificate case'),L('rc_ms','Money suit'),L('rc_cd','Cheque dishonour')]),G('Interest waiver calculator',[L('rc_iwc','Data entry','iwc'),G('Report',[L('rc_iwga','Annexure-Ga','iwr'),L('rc_iwgha','Annexure-Gha','iwr')])])]},
  {id:'aud',name:'Audit compliance',items:[L('au_bb','Bangladesh Bank audit',null),G('Head Office',[L('au_ho_gen','General',null),L('au_ho_it','IT',null)]),L('au_div','Divisional Office',null),G('Area Office',[L('au_ar_short','Short inspection',null),L('au_ar_test','Test inspection',null)]),L('au_comm','Commercial audit',null)]}
@@ -326,6 +330,223 @@ function consolidateGlance(got){
   got.forEach(z=>(z.core.g9||[]).forEach(rw=>g9.push({...rw,_src:rw._src||z.core.office})));
   return{g,g9};
 }
+
+/* RCD-3 statement layout and the September 2026 figures imported from the Area Office Excel workbook */
+const RCD3_ROWS=[{"t": "sec", "sl": "ক", "label": "স্বল্প মেয়াদী খাতসমূহঃ"}, {"t": "row", "r": 8, "sl": "১", "label": "এস এ সি পি"}, {"t": "row", "r": 9, "sl": "২", "label": "কলা চাষ ঋণ"}, {"t": "row", "r": 10, "sl": "৩", "label": "ইক্ষু চাষ ঋণ (সুগার মিল)"}, {"t": "row", "r": 11, "sl": "৪", "label": "ফুল চাষ ঋণ"}, {"t": "row", "r": 12, "sl": "৫", "label": "৪% সুদে ডাল, তৈলবীজ, মসলা জাতীয় ফসল ও ভুট্টা চাষ ঋণ"}, {"t": "row", "r": 13, "sl": "৬", "label": "নিবিড় পদ্ধতিতে ভুট্টা চাষ"}, {"t": "row", "r": 14, "sl": "৭", "label": "শীত ও গ্রীষ্মকালীন ফসল ও শাকসবজী"}, {"t": "row", "r": 15, "sl": "৮", "label": "মাশরুম চাষ"}, {"t": "row", "r": 16, "sl": "৯", "label": "এমএসএফএসিআইপি"}, {"t": "row", "r": 17, "sl": "১০", "label": "ভাসমান খাচায় মাছ চাষ (আরসিডি সার্কুলার ৩৪/১১ অনুযায়ী)"}, {"t": "row", "r": 18, "sl": "১১", "label": "পুকুরে মৎস্য চাষ ঋণ (আরসিডি সার্কুলার ৬৯/১৮ অনুযায়ী)"}, {"t": "row", "r": 19, "sl": "১২", "label": "সনাতন পদ্ধতিতে চিংড়ি চাষ ঋণ"}, {"t": "row", "r": 20, "sl": "১৩", "label": "দুগ্ধ উৎপাদন ও কৃত্রিম প্রজনন খাতে পুনঃঅর্থায়ন ঋণ (আরসিডি সার্কুলার ৫০/১৫ অনুযায়ী)"}, {"t": "row", "r": 21, "sl": "১৪", "label": "লবন চাষ ঋণ"}, {"t": "row", "r": 22, "sl": "১৫", "label": "সুদমুক্ত ঋণ"}, {"t": "row", "r": 23, "sl": "১৬", "label": "অন্যান্য ঋণ"}, {"t": "sub", "label": "উপমোট", "of": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]}, {"t": "sec", "sl": "খ", "label": "মেয়াদী খাতসমূহঃ"}, {"t": "row", "r": 26, "sl": "১৭", "label": "সেচ যন্ত্রপাতি ঋণ"}, {"t": "row", "r": 27, "sl": "১৮", "label": "কৃষি যন্ত্রপাতি ঋণ"}, {"t": "row", "r": 28, "sl": "১৯", "label": "ফলজ, বনজ, ঔষধী, নার্সারি, উদ্যান ঋণ"}, {"t": "row", "r": 29, "sl": "২০", "label": "হর্টিকালচার ঋণ"}, {"t": "row", "r": 30, "sl": "২১", "label": "বাউকুল ও আপেল কুল চাষ ঋণ"}, {"t": "row", "r": 31, "sl": "২২", "label": "লিচু চাষ ঋণ"}, {"t": "row", "r": 32, "sl": "২৩", "label": "পান বরজ ঋণ"}, {"t": "row", "r": 33, "sl": "২৪", "label": "পল্লী পরিবহন ঋণ"}, {"t": "row", "r": 34, "sl": "২৫", "label": "জমি বন্ধকী ঋণ"}, {"t": "row", "r": 35, "sl": "২৬", "label": "দুগ্ধবতী গাভী বাছুরসহ (আরসিডি সার্কুলার ৬৬/১৭ অনুযায়ী)"}, {"t": "row", "r": 36, "sl": "২৭", "label": "গরু মোটাতাজাকরণ/আরসিডি-৭৫/১৯"}, {"t": "row", "r": 37, "sl": "২৮", "label": "মহিষ পালন ঋণ কর্মসূচী (আরসিডি সার্কুলার ৫৬/১৬ অনুযায়ী)"}, {"t": "row", "r": 38, "sl": "২৯", "label": "হাস পালন"}, {"t": "row", "r": 39, "sl": "৩০", "label": "তাঁত ঋণ"}, {"t": "row", "r": 40, "sl": "৩১", "label": "ছাগল পালন (ক্ষুদ্র ঋণ)"}, {"t": "row", "r": 41, "sl": "৩২", "label": "আধানিবিড় ব্রিডিং খামার"}, {"t": "row", "r": 42, "sl": "৩৩", "label": "ভেড়া পালন ঋণ"}, {"t": "row", "r": 43, "sl": "৩৪", "label": "দারিদ্র/ খরাপীড়িত এলাকার জন্য বিশেষ ঋণ"}, {"t": "sub", "label": "উপমোট", "of": [26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43]}, {"t": "sec", "sl": "গ", "label": "কৃষি ভিত্তিক প্রকল্পঃ"}, {"t": "row", "r": 46, "sl": "৩৫", "label": "ডেইরি খামার"}, {"t": "row", "r": 47, "sl": "৩৬", "label": "পোল্ট্রি খামার"}, {"t": "row", "r": 48, "sl": "৩৭", "label": "মৎস খামার"}, {"t": "row", "r": 49, "sl": "৩৮", "label": "মিশ্র খামার"}, {"t": "sub", "label": "উপমোট", "of": [46, 47, 48, 49]}, {"t": "sec", "sl": "ঘ", "label": "কোভিড-১৯ প্রনোদনা ঋণ"}, {"t": "row", "r": 52, "sl": "৩৯", "label": "আরসিডি সার্কুলার-৮৩/২০ অনুযায়ী"}, {"t": "row", "r": 53, "sl": "৪০", "label": "আরসিডি সার্কুলার-৮৪/২০ অনুযায়ী"}, {"t": "row", "r": 54, "sl": "৪১", "label": "আরসিডি সার্কুলার-৯৯/২১ অনুযায়ী"}, {"t": "row", "r": 55, "sl": "৪২", "label": "আরসিডি সার্কুলার-১০২/২২ অনুযায়ী"}, {"t": "row", "r": 56, "sl": "৪৩", "label": "আরসিডি সার্কুলার-১১০/২২ অনুযায়ী"}, {"t": "row", "r": 57, "sl": "৪৪", "label": "আরসিডি সার্কুলার-১১৩/২২ অনুযায়ী"}, {"t": "sub", "label": "উপমোট", "of": [52, 53, 54, 55, 56, 57]}, {"t": "row", "r": 59, "sl": "ঙ", "label": "অন্যান্য ঋণ", "bold": 1}, {"t": "grand", "label": "সর্বমোট"}];
+const RCD3_ORDER=["0588", "0346", "0662", "0666", "0405", "0644", "0667", "0664", "0668", "0672", "0645", "0951", "0426", "0469", "0468", "0381", "0130", "0301", "0377", "0409", "0769", "0484", "0860", "0096"];
+const RCD3_SHORT={"0588": "আজুগড়া", "0346": "বাঘাবাড়ীঘাট", "0662": "বাগবাটি", "0666": "বারুহাস", "0405": "ধানগড়া", "0644": "দৌলতপুর", "0667": "ধরাইল হাট", "0664": "ধুকুরিয়াবেড়া", "0668": "ধামাইজ", "0672": "দোবিলা", "0645": "হাটিকুমরুল", "0951": "জামতৈল বাজার", "0426": "খুকনী", "0469": "চরকৈজুরী বাজার", "0468": "মাসিমপুর", "0381": "রান্ধুনীবাড়ী", "0130": "সোহাগপুর", "0301": "শাহজাদপুর", "0377": "সলংগা", "0409": "তামাই", "0769": "এস, বি, ফজলুল হক", "0484": "তাড়াশ", "0860": "উল্লাপাড়া", "0096": "সিরাজগঞ্জ কর্পোঃ"};
+const RCD3_BYPRODUCT=[8, 12, 35, 36, 37, 52, 53, 54, 55, 56, 57];
+const RCD3_SEED={period:"2026-09",branches:{"0588": {"35": {"D": 2.0, "E": 2.7, "F": 154.9, "G": 2.16, "H": 122.18, "I": 49.0, "J": 59.0, "K": 8.3, "L": 35.83, "N": 0.08}, "36": {"F": 30.25, "G": 0.44, "H": 40.35, "I": 2.0, "J": 1.7, "K": 1.8, "L": 1.85, "N": 0.03}, "37": {"F": 7.55, "H": 12.8}, "52": {"F": 13.92, "H": 22.41}, "54": {"F": 7.0, "G": 0.08, "H": 16.07, "I": 1.0, "J": 1.85, "K": 1.85, "L": 1.85, "N": 0.23}, "57": {"F": 12.7, "G": 0.55, "H": 18.65, "I": 2.0, "J": 1.61, "K": 1.61, "L": 1.61}}, "0346": {"20": {"F": 3.0, "H": 2.91}, "35": {"C": 30.0, "D": 14.0, "E": 24.3, "F": 733.18, "G": 4.88, "H": 282.97, "I": 56.0, "J": 67.6, "K": 0.45, "L": 0.45, "O": 279.0, "P": 17.25, "Q": 0.25}, "52": {"F": 3.6, "H": 5.19, "I": 1.0, "J": 0.2, "K": 0.2, "L": 0.2}}, "0662": {"8": {"C": 60.0, "F": 707.33, "G": 0.71, "H": 912.17, "I": 607.0, "J": 207.21, "K": 207.21, "L": 206.88, "N": 15.07, "O": 57.0, "P": 9.44, "Q": 0.27}, "12": {"F": 18.8, "G": 1.07, "H": 22.64, "I": 2.0, "J": 1.77, "K": 1.77, "L": 0.69}, "20": {"F": 1.5, "H": 2.93}, "34": {"F": 6.29, "H": 7.71}, "35": {"C": 15.0, "D": 11.0, "E": 19.8, "F": 145.84, "G": 6.98, "H": 28.47, "I": 77.0, "J": 119.95, "K": 6.2, "L": 3.82}, "36": {"F": 5.8, "H": 2.96, "I": 2.0, "J": 2.24, "L": 2.24}, "37": {"F": 0.9, "H": 0.16, "I": 1.0, "J": 0.84, "K": 0.84, "L": 0.84, "N": 0.06}, "40": {"F": 0.59, "H": 0.42}, "52": {"F": 3.89, "H": 3.89, "I": 1.0, "J": 0.87}, "53": {"F": 11.35, "H": 10.29, "I": 1.0, "J": 0.89, "K": 0.89, "L": 0.89}, "54": {"F": 2.55, "H": 2.59}, "57": {"F": 24.9, "H": 22.55, "I": 4.0, "J": 6.35, "K": 6.35, "L": 6.35, "N": 0.4}, "59": {"F": 4.0, "H": 1.15}}, "0666": {"8": {"C": 100.0, "D": 3.0, "E": 2.8, "F": 1061.95, "G": 4.5, "H": 877.79, "I": 302.0, "J": 189.4, "K": 148.69, "L": 148.96, "N": 39.63, "O": 49.0, "P": 31.5, "Q": 0.32}, "12": {"F": 6.55, "H": 2.59}, "14": {"C": 0.7}, "17": {"C": 5.0}, "18": {"C": 5.0}, "26": {"F": 55.75, "H": 160.44}, "34": {"F": 19.21, "H": 88.18}, "35": {"D": 3.0, "E": 5.4, "F": 50.4, "G": 1.79, "H": 9.4, "I": 25.0, "J": 38.9, "L": 12.99}, "37": {"F": 0.6, "H": 0.62}, "52": {"F": 0.6, "H": 0.63}, "53": {"F": 15.13, "H": 17.44}, "54": {"F": 1.5, "H": 1.56}, "56": {"F": 2.0, "I": 1.0, "J": 2.0}, "57": {"F": 20.12, "H": 6.35, "I": 2.0, "J": 3.72, "K": 3.72, "L": 3.72}}, "0405": {"8": {"C": 60.0, "F": 516.6, "G": 2.25, "H": 454.17, "I": 4.0, "J": 3.0}, "12": {"F": 16.74, "H": 14.17, "I": 2.0, "J": 2.0}, "20": {"F": 2.0, "H": 3.07}, "26": {"F": 31.33, "H": 74.75}, "30": {"F": 1.75, "H": 1.36}, "31": {"F": 5.45, "H": 60.52}, "32": {"F": 0.12}, "33": {"F": 0.79, "H": 1.71}, "34": {"F": 5.07, "H": 16.71}, "35": {"D": 7.0, "E": 12.6, "F": 114.0, "G": 10.15, "H": 61.69, "I": 48.0, "J": 61.66}, "37": {"F": 7.68, "H": 3.2}, "39": {"F": 13.98, "H": 34.87}, "52": {"F": 5.4, "H": 6.69}, "54": {"F": 11.01, "H": 11.73}, "57": {"F": 8.5, "H": 6.28}}, "0644": {"8": {"C": 45.0, "F": 160.78, "H": 206.39, "I": 20.0, "J": 6.91, "K": 6.91, "L": 6.91, "N": 2.05}, "12": {"F": 9.27, "H": 9.71}, "20": {"F": 3.0, "H": 3.32}, "26": {"F": 2.65, "H": 7.51}, "27": {"F": 0.48, "H": 0.92}, "35": {"D": 9.0, "E": 16.2, "F": 146.6, "G": 8.33, "H": 125.53, "I": 51.0, "J": 57.46, "K": 1.87, "L": 6.37, "N": 0.8}, "36": {"F": 17.0, "H": 16.76}, "52": {"F": 4.0, "H": 4.08}, "53": {"F": 8.9, "H": 8.45}, "54": {"F": 4.25, "H": 3.33}, "57": {"F": 1.8, "H": 1.7}}, "0667": {"8": {"D": 6.0, "E": 5.48, "F": 1502.45, "G": 4.12, "H": 1426.47, "I": 537.0, "J": 424.4, "K": 386.0, "L": 386.0, "N": 44.53, "O": 1.0, "P": 0.46}, "12": {"F": 16.29, "H": 13.51, "I": 9.0, "J": 8.93, "K": 8.63, "L": 8.63, "N": 0.07}, "35": {"C": 10.0, "F": 11.4, "G": 3.12, "H": 4.96, "I": 8.0, "J": 8.56}, "36": {"C": 5.0, "D": 1.0, "E": 2.0, "F": 16.5, "G": 1.18, "H": 16.59, "I": 6.0, "J": 7.11, "K": 0.98, "L": 0.98}, "52": {"F": 2.0, "H": 2.15}, "54": {"F": 7.3, "H": 7.58}, "56": {"I": 2.0, "J": 1.48}, "57": {"F": 2.0, "G": 1.55, "H": 2.06}}, "0664": {"8": {"C": 55.0, "D": 4.0, "E": 3.1, "F": 3272.764, "G": 5.17, "H": 346.48, "I": 71.0, "J": 53.0, "K": 43.0, "L": 29.55, "N": 15.51}, "12": {"F": 13.65, "H": 10.88, "I": 2.0, "J": 2.01}, "35": {"D": 12.0, "E": 22.0, "F": 102.9, "G": 4.55, "H": 16.68, "I": 41.0, "J": 62.0, "K": 1.96, "L": 10.62, "N": 1.59}, "36": {"D": 7.0, "E": 11.0, "F": 36.4, "G": 2.4, "H": 12.7, "I": 12.0, "J": 16.0, "K": 3.48, "L": 1.31, "N": 1.76}, "52": {"H": 3.76}, "53": {"F": 16.58, "H": 15.44, "N": 0.15}, "54": {"F": 1.5, "H": 1.54}, "56": {"F": 1.0, "I": 1.0, "J": 1.0}, "57": {"F": 7.0, "G": 0.74, "H": 4.77, "I": 2.0, "J": 1.55}}, "0668": {"8": {"C": 90.0, "D": 1.0, "E": 1.0, "F": 1016.66, "G": 24.35, "H": 1144.55, "I": 133.0, "J": 113.0, "K": 69.03, "L": 43.91, "N": 5.28}, "12": {"F": 11.05, "H": 10.94, "I": 1.0, "J": 1.0}, "26": {"F": 66.55, "H": 197.33}, "27": {"F": 0.06, "H": 0.17}, "31": {"F": 0.4, "H": 0.4}, "33": {"F": 0.79, "H": 2.28}, "34": {"F": 11.81, "H": 35.11}, "35": {"D": 2.0, "E": 3.6, "F": 82.1, "G": 2.84, "H": 77.28, "I": 22.0, "J": 37.0, "L": 8.11, "N": 0.39}, "36": {"F": 36.66, "H": 32.49, "I": 6.0, "J": 6.8, "K": 3.58}, "52": {"F": 2.4, "H": 2.52}, "53": {"F": 34.58, "H": 36.26}, "54": {"F": 4.0, "H": 4.36}, "57": {"F": 5.0, "H": 5.4}}, "0672": {"8": {"C": 88.0, "D": 5.0, "E": 3.95, "F": 2167.83, "G": 8.02, "H": 1584.01, "I": 547.0, "J": 286.0, "K": 271.5, "L": 237.0, "N": 86.6, "O": 42.0, "P": 2.17, "Q": 1.043}, "12": {"C": 3.0, "F": 14.64, "H": 10.82, "I": 1.0, "J": 1.02, "K": 1.01, "L": 1.01}, "18": {"C": 5.0, "F": 0.77, "H": 1.87}, "26": {"F": 8.66, "H": 24.03}, "33": {"F": 4.77, "H": 27.05}, "34": {"F": 21.95, "H": 69.19}, "35": {"C": 14.0, "D": 7.0, "E": 12.6, "F": 85.7, "G": 5.43, "H": 41.35, "I": 41.0, "J": 45.0, "K": 0.66, "L": 16.73, "N": 0.98}, "36": {"C": 6.0, "D": 3.0, "E": 5.0, "F": 41.3, "G": 7.05, "H": 32.59, "I": 8.0, "J": 13.0, "K": 1.12, "L": 1.12}, "52": {"F": 2.1, "H": 161.05}, "53": {"F": 21.99, "H": 13.51}, "54": {"F": 1.9, "H": 0.84}, "56": {"F": 12.04, "G": 0.64, "H": 7.85, "I": 1.0, "J": 0.6, "K": 0.61}, "57": {"F": 12.8, "H": 8.62}}, "0645": {"8": {"C": 49.0, "D": 12.0, "E": 12.7, "F": 605.54, "G": 1.47, "H": 709.45, "I": 76.0, "J": 51.61, "K": 34.96, "L": 18.34, "N": 4.85, "O": 15.0, "P": 1.92, "Q": 0.01}, "12": {"F": 10.3, "H": 10.66}, "35": {"C": 8.0, "D": 2.0, "E": 3.6, "F": 14.9, "G": 0.14, "H": 10.84, "I": 6.0, "J": 8.91}, "36": {"C": 10.0, "D": 7.0, "E": 9.5, "F": 55.5, "G": 1.97, "H": 23.61, "I": 19.0, "J": 28.27, "K": 9.92}, "52": {"F": 7.4, "H": 4.46, "I": 3.0, "J": 0.35, "K": 0.35, "L": 0.26}, "53": {"F": 18.73, "H": 15.07, "I": 1.0, "J": 0.75, "K": 0.75, "L": 0.75}, "54": {"F": 1.8, "H": 2.2}, "57": {"F": 2.0, "G": 1.22, "H": 2.3}}, "0951": {"35": {"D": 6.0, "E": 9.9, "F": 83.5, "G": 5.06, "H": 59.91, "I": 43.0, "J": 54.03, "K": 1.79, "L": 7.27, "N": 2.62}, "36": {"D": 1.0, "E": 1.0, "F": 13.0, "G": 0.18, "H": 9.42, "I": 3.0, "J": 2.33, "K": 0.83, "L": 2.22, "N": 1.43}, "52": {"F": 0.9, "H": 0.93}, "54": {"F": 5.0, "H": 5.06}, "55": {"F": 25.9, "G": 2.36, "H": 23.95, "I": 3.0, "J": 3.14, "K": 2.16, "L": 3.18, "N": 0.16}, "56": {"G": 0.06, "I": 3.0, "J": 3.36, "K": 2.22, "L": 3.18, "N": 0.32}, "57": {"F": 3.6, "H": 3.66}}, "0426": {"8": {"C": 40.0, "F": 193.21, "H": 1464.03, "I": 16.0, "J": 8.44, "K": 6.34, "L": 6.34, "N": 1.6}, "20": {"F": 5.0, "G": 0.02, "H": 5.73, "I": 2.0, "J": 0.56, "K": 0.56, "L": 0.56}, "35": {"D": 3.0, "E": 5.4, "F": 90.8, "G": 7.87, "H": 43.1, "I": 49.0, "J": 50.44, "K": 4.26, "L": 7.96, "N": 1.16}, "36": {"F": 2.0, "I": 1.0, "J": 2.004}, "52": {"F": 4.0, "H": 4.34}, "53": {"F": 12.45, "H": 12.37, "I": 3.0, "J": 1.47}, "54": {"F": 13.5, "G": 0.04, "H": 12.97, "I": 1.0, "J": 0.4, "K": 0.4, "L": 0.4, "N": 0.12}, "57": {"F": 2.4, "H": 2.53}}, "0469": {"8": {"C": 40.0, "F": 358.96, "G": 2.9, "H": 372.22, "I": 123.0, "J": 52.07, "K": 42.4, "L": 42.4, "N": 8.43, "O": 41.0, "P": 6.13}, "12": {"C": 3.0, "F": 23.95, "H": 15.8, "I": 1.0, "J": 2.04}, "17": {"C": 1.0}, "18": {"C": 2.0, "H": 4.78, "O": 1.0, "P": 0.66}, "26": {"F": 23.28, "H": 56.95}, "35": {"C": 15.0, "F": 47.9, "G": 1.04, "H": 23.59, "I": 18.0, "J": 36.45, "K": 8.1, "L": 8.1, "N": 2.0}, "36": {"C": 10.0, "D": 15.0, "E": 28.5, "F": 109.7, "G": 7.85, "H": 47.16, "I": 52.0, "J": 97.02}, "52": {"F": 6.8, "H": 7.19}, "53": {"F": 8.7, "H": 8.9}, "54": {"F": 4.1, "H": 4.16}, "57": {"F": 13.9, "H": 11.36}}, "0468": {"8": {"C": 26.0, "F": 699.45, "G": 4.03, "H": 136.38, "I": 531.0, "J": 212.06, "K": 203.38, "L": 203.4, "N": 7.55}, "12": {"F": 2.0, "H": 2.32}, "18": {"F": 2.16, "H": 3.36}, "33": {"F": 3.15, "H": 4.13}, "34": {"F": 1.57, "H": 3.59}, "35": {"C": 10.0, "D": 2.0, "E": 3.6, "F": 30.5, "G": 0.34, "H": 4.08, "I": 18.0, "J": 28.54, "K": 2.23, "L": 2.23}, "36": {"C": 5.0, "F": 9.6, "G": 0.3, "H": 3.21, "I": 5.0, "J": 8.33, "K": 0.68, "L": 0.68, "N": 0.1}, "46": {"F": 450.0, "H": 507.1}, "52": {"F": 2.0, "H": 2.19}, "53": {"F": 5.6, "H": 6.48}}, "0381": {"35": {"C": 18.0, "D": 7.0, "E": 12.6, "F": 81.2, "G": 8.49, "H": 49.07, "I": 31.0, "J": 38.85}, "36": {"C": 5.0, "F": 11.0, "G": 1.59, "H": 6.36, "I": 6.0, "J": 3.71}, "52": {"F": 7.4, "H": 7.4}, "54": {"F": 1.8, "H": 1.09}, "57": {"F": 7.0, "H": 6.1}}, "0130": {"20": {"F": 2.5, "H": 2.5}, "35": {"D": 7.0, "E": 12.6, "F": 74.4, "G": 6.73, "H": 43.67, "I": 23.0, "J": 30.95, "K": 3.56, "L": 2.46, "N": 1.4}, "36": {"F": 18.7, "G": 0.5, "H": 18.92, "I": 2.0, "J": 2.79}, "52": {"F": 8.0, "H": 9.5}, "55": {"F": 2.6, "H": 3.5, "I": 2.0, "J": 0.78, "K": 0.78, "L": 0.78, "N": 0.26}, "57": {"F": 5.6, "H": 3.96}}, "0301": {"35": {"D": 3.0, "E": 5.4, "F": 722.16, "G": 4.0, "H": 591.0, "I": 79.0, "J": 88.9, "K": 72.48, "L": 31.3, "N": 0.66, "O": 308.0, "P": 80.77, "Q": 3.34}, "36": {"F": 1.0, "G": 0.44, "H": 58.0, "I": 1.0, "J": 0.36}, "39": {"F": 111.53, "H": 127.87}, "52": {"F": 9.0, "H": 9.74}, "54": {"F": 9.0, "H": 9.32}, "57": {"F": 7.2, "H": 4.28}}, "0377": {"8": {"C": 80.0, "D": 2.0, "E": 0.9, "F": 1380.7, "G": 8.7, "H": 1250.06, "I": 113.0, "J": 70.02, "K": 63.99, "L": 63.99, "N": 7.38, "O": 1.0, "P": 0.09, "Q": 2.99}, "12": {"F": 16.05, "H": 108.82, "I": 5.0, "J": 3.41, "K": 2.43, "L": 2.43, "N": 0.2}, "35": {"D": 5.0, "E": 9.0, "F": 107.1, "G": 8.94, "H": 68.43, "I": 43.0, "J": 56.51, "K": 11.57, "L": 11.57, "N": 1.6}, "36": {"H": 3.32}, "52": {"F": 3.6, "H": 2.48}, "53": {"F": 34.2, "H": 34.24, "I": 2.0, "J": 2.02}, "54": {"F": 2.3, "H": 2.38}, "57": {"F": 11.9, "H": 15.06}}, "0409": {"35": {"D": 13.0, "E": 23.4, "F": 82.8, "G": 5.06, "H": 31.28, "I": 37.0, "J": 50.49, "K": 2.62, "L": 2.62, "N": 1.18}, "36": {"F": 5.0, "H": 6.8, "I": 2.0, "J": 1.19, "K": 1.19, "L": 1.19, "N": 0.02}, "55": {"F": 14.35, "H": 7.02, "I": 2.0, "J": 5.27}}, "0769": {"35": {"D": 2.0, "E": 3.6, "F": 77.4, "G": 4.45, "H": 40.93, "I": 26.0, "J": 33.22, "K": 10.0, "L": 16.21}, "36": {"F": 3.7, "G": 0.05, "H": 4.11, "I": 1.0, "J": 1.62, "K": 1.0, "L": 0.16}, "52": {"F": 117.82, "H": 120.99, "I": 1.0, "J": 0.2}, "54": {"G": 0.11, "H": 0.11, "I": 1.0, "J": 0.24, "K": 0.63}, "55": {"F": 3.0, "H": 1.42, "I": 1.0, "J": 0.78, "L": 0.78}, "56": {"G": 0.02, "H": 0.02, "I": 1.0, "J": 0.12, "K": 0.14, "L": 0.07}, "57": {"F": 9.2, "H": 10.21, "I": 1.0, "J": 1.73, "L": 1.73}}, "0484": {"8": {"C": 65.0, "D": 1.0, "E": 2.5, "F": 1012.87, "G": 0.05, "H": 1299.65, "I": 134.0, "J": 80.32, "K": 45.76, "L": 45.76, "N": 15.6, "O": 3.0, "P": 1.3}, "12": {"F": 4.9}, "18": {"F": 16.9, "G": 1.02, "H": 4.8, "I": 7.0, "J": 7.99, "K": 7.99, "L": 4.1, "N": 1.17}, "26": {"F": 9.28, "H": 27.79}, "35": {"C": 5.4, "F": 18.0, "G": 1.38, "H": 174.68, "I": 10.0, "J": 14.82}, "36": {"C": 9.6, "F": 30.3, "I": 4.0, "J": 3.48, "K": 23.0, "L": 0.23, "N": 0.88}, "52": {"F": 12.35, "H": 12.79}, "53": {"F": 7.15, "H": 7.38}, "54": {"F": 7.0, "H": 7.29}, "56": {"F": 8.0, "H": 2.55}, "57": {"F": 17.5, "H": 17.27, "I": 1.0, "J": 10.3, "K": 1.03, "L": 1.03, "N": 0.02}}, "0860": {"35": {"C": 10.0, "D": 12.0, "E": 21.6, "F": 84.9, "G": 5.31, "H": 40.04, "I": 38.0, "J": 52.21, "K": 1.14, "L": 9.03, "N": 0.23}, "36": {"C": 10.0, "D": 4.0, "E": 8.0, "F": 23.0, "G": 3.98, "H": 15.01, "I": 5.0, "J": 9.49, "N": 1.39}, "52": {"F": 14.3, "H": 15.0}, "54": {"F": 5.4, "H": 5.69}, "57": {"F": 1.8, "H": 1.89}}, "0096": {"18": {"D": 1.0, "E": 1.5, "F": 16.5, "G": 0.41, "H": 13.28, "I": 4.0, "J": 4.18, "L": 1.73, "N": 0.81}, "35": {"D": 5.0, "E": 9.9, "F": 70.5, "G": 1.87, "H": 25.48, "I": 22.0, "J": 41.85, "L": 5.08, "N": 0.48}, "36": {"F": 5.0, "G": 0.54, "H": 2.45}, "55": {"F": 22.0, "G": 1.08, "H": 11.34, "I": 4.0, "J": 7.23, "K": 1.02, "L": 6.26, "N": 0.06}, "57": {"F": 2.5, "G": 0.14, "H": 1.92, "I": 1.0, "J": 0.54, "K": 0.54, "L": 0.54}}},area:{"5038":{"8": {"C": 839.0}, "9": {"C": 0.0}, "10": {"C": 0.0}, "11": {"C": 0.0}, "12": {"C": 19.0}, "13": {"C": 0.0}, "14": {"C": 18.0}, "15": {"C": 4.0}, "16": {"C": 0.0}, "17": {"C": 0.0}, "18": {"C": 142.0}, "19": {"C": 0.0}, "20": {"C": 0.0}, "21": {"C": 0.0}, "22": {"C": 0.0}, "23": {"C": 0.0}, "26": {"C": 32.0}, "27": {"C": 0.0}, "28": {"C": 5.0}, "29": {"C": 0.0}, "30": {"C": 0.0}, "31": {"C": 0.0}, "32": {"C": 4.0}, "33": {"C": 0.0}, "34": {"C": 0.0}, "35": {"C": 450.0}, "36": {"C": 450.0}, "37": {"C": 0.0}, "38": {"C": 0.0}, "39": {"C": 10.0}, "40": {"C": 0.0}, "41": {"C": 0.0}, "42": {"C": 0.0}, "43": {"C": 0.0}, "46": {"C": 0.0}, "47": {"C": 0.0}, "48": {"C": 0.0}, "49": {"C": 0.0}, "52": {"C": 0.0}, "53": {"C": 0.0}, "54": {"C": 0.0}, "55": {"C": 0.0}, "56": {"C": 0.0}, "57": {"C": 0.0}, "59": {"C": 0.0}}}};
+
+/* ================= RCD-3 (Agricultural and rural credit) ================= */
+const R3E='CDEFGHIJKLNOPQ';            // columns a branch enters (M is calculated)
+const R3CNT=new Set(['D','I','O']);    // counts, the rest are lakh Taka
+const R3DATA=RCD3_ROWS.filter(x=>x.t==='row').map(x=>x.r);
+const R3LEAF='ln_rcd3';
+const r3n=v=>{const n=parseFloat(v);return isNaN(n)?0:n};
+const r3f=(v,c)=>{if(v===null||v===undefined||v===''||!isFinite(v))return'';const n=+v;if(!n)return toBn('0');return toBn(n.toLocaleString('en-IN',{maximumFractionDigits:R3CNT.has(c)?0:2}))};
+function r3fy(p){const [y,m]=p.split('-').map(Number);const a=m>=7?y:y-1;return toBn(a+'-'+String(a+1).slice(2))}
+function r3sum(v,rows){const o={};R3E.split('').forEach(c=>o[c]=rows.reduce((s,r)=>s+r3n(v[r]&&v[r][c]),0));o.M=o.J?o.L/o.J*100:null;return o}
+function r3line(v,r){const x=v[r]||{};const o={};R3E.split('').forEach(c=>o[c]=x[c]);const J=r3n(x.J),L=r3n(x.L);o.M=J?L/J*100:null;return o}
+function r3add(list){const v={};list.forEach(d=>R3DATA.forEach(r=>{const x=d&&d[r];if(!x)return;R3E.split('').forEach(c=>{const n=parseFloat(x[c]);if(!isNaN(n)){v[r]=v[r]||{};v[r][c]=+((v[r][c]||0)+n).toFixed(4)}})}));return v}
+
+/* ---------- statement table (sheet 1 format; branch sheets also have the written-off columns) ---------- */
+function r3table(v,opt){
+  const cols=opt.wo?'CDEFGHIJKLMNOPQ':'CDEFGHIJKLMN';
+  const ed=opt.edit||{};
+  const cell=(c,val,r)=>{
+    if(r&&(ed.all&&c!=='M'||ed.cols&&ed.cols.includes(c)))return`<td class="gn"><input class="gi" type="text" inputmode="decimal" data-num="1" data-r="${r}" data-c="${c}" value="${esc(toBn(val??''))}" oninput="A.r3set(this)"></td>`;
+    if(c==='M')return`<td class="gn gc">${val===null||val===undefined?'':toBn(val.toFixed(2))}</td>`;
+    return`<td class="gn${r?'':' gc'}">${r3f(val,c)}</td>`;
+  };
+  let h=`<table class="gt r3t"><tr><th rowspan="3">ক্রমিক নং</th><th rowspan="3">কর্মসূচির নাম</th><th rowspan="3">চলতি ${r3fy(opt.period)} অর্থ বছরে বরাদ্দ</th><th colspan="3">বিতরণকৃত ঋণ</th><th colspan="2">আদায়</th><th colspan="2">বর্তমান অনাদায়ী</th><th rowspan="3">মেয়াদোত্তীর্ণ ঋণের পরিমান</th><th colspan="3">শ্রেণীকৃত ঋণ</th>${opt.wo?'<th colspan="3">অবলোপনকৃত ঋণ</th>':''}</tr>
+  <tr><th colspan="2">চলতি অর্থ বছরে</th><th rowspan="2">ক্রমপুঞ্জিভুত</th><th rowspan="2">চলতি অর্থ বছরে</th><th rowspan="2">ক্রমপুঞ্জিভুত আদায়</th><th rowspan="2">সংখ্যা</th><th rowspan="2">পরিমান</th><th rowspan="2">শ্রেণীকৃত ঋণের পরিমান</th><th rowspan="2">শতকরা হার</th><th rowspan="2">শ্রেণীকৃত ঋণ হতে আদায়</th>${opt.wo?'<th rowspan="2">সংখ্যা</th><th rowspan="2">পরিমান</th><th rowspan="2">আদায়</th>':''}</tr>
+  <tr><th>সংখ্যা</th><th>পরিমান</th></tr>
+  <tr class="r3no">${['১','২','৩','৪','৫','৬','৭','৮','৯','১০','১১','১২','১৩','১৪'].concat(opt.wo?['১৫','১৬','১৭']:[]).map(x=>`<td>${x}</td>`).join('')}</tr>`;
+  const subs=[];
+  for(const x of RCD3_ROWS){
+    if(x.t==='sec'){h+=`<tr class="r3sec"><td class="gc0">${esc(x.sl)}</td><td class="glab" colspan="${cols.length+1}"><b>${esc(x.label)}</b></td></tr>`;continue}
+    if(x.t==='row'){const o=r3line(v,x.r);h+=`<tr${x.bold?' class="gsum"':''}><td class="gc0">${esc(x.sl)}</td><td class="glab">${esc(x.label)}</td>${cols.split('').map(c=>cell(c,o[c],x.r)).join('')}</tr>`;if(x.bold)subs.push([x.r]);continue}
+    if(x.t==='sub'){subs.push(x.of);const o=r3sum(v,x.of);h+=`<tr class="gsum"><td></td><td class="glab">${esc(x.label)}</td>${cols.split('').map(c=>cell(c,o[c])).join('')}</tr>`;continue}
+    if(x.t==='grand'){const o=r3sum(v,subs.flat());h+=`<tr class="gsum r3grand"><td></td><td class="glab">${esc(x.label)}</td>${cols.split('').map(c=>cell(c,o[c])).join('')}</tr>`}
+  }
+  return h+'</table>';
+}
+function r3head(p,o,sub){
+  const nm=o?(o.level==='AREA'?'এরিয়া অফিস, সিরাজগঞ্জ।':(o.nameBn||o.name).replace(/\s*$/,'')+'।'):'';
+  return`<div class="r3hd"><div class="r3l"><img src="${LOGO}" alt=""><div><div class="b">জনতা ব্যাংক পিএলসি</div><div>${esc(nm)}</div></div></div><div class="r3r"><div>এসএসিপি-১(ক)</div><div>রিটেইল কাস্টমার ডিপার্টমেন্ট-৩</div></div></div>
+  <div class="r3title">রিটেইল কাস্টমার ডিপার্টমেন্ট-৩ সম্পৃক্ত কৃষি/পল্লী ঋণ হিসাবের ${gctx(p).asOn} তারিখের ${sub||''}একত্রীভুত মাসিক বিবরণী।<span>(লক্ষ টাকা)</span></div>`;
+}
+const r3sign=o=>`<div class="p-end"><div class="p-sign"><div>কর্মকর্তা</div><div>${o&&o.level==='BR'?'ব্যবস্থাপক':'অফিস প্রধান'}</div></div></div>`;
+function r3print(html){
+  $('#printArea').innerHTML=`<div class="bn r3land">${html}</div>`;
+  let st=document.getElementById('r3pg');if(!st){st=document.createElement('style');st.id='r3pg';document.head.appendChild(st)}
+  st.textContent='@page{size:A4 landscape;margin:0}';
+  const off=()=>{st.textContent='';window.removeEventListener('afterprint',off)};window.addEventListener('afterprint',off);
+  window.print();
+}
+function r3csv(name){
+  const t=document.querySelectorAll('#r3out table.gt');if(!t.length)return;
+  const q=v=>{const s=toEn(String(v??'').trim());return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s};
+  const lines=[];
+  t.forEach(tb=>{const cap=tb.dataset.cap;if(cap)lines.push(q(cap));const grid=[];
+    [...tb.rows].forEach((tr,ri)=>{grid[ri]=grid[ri]||[];let ci=0;[...tr.cells].forEach(td=>{while(grid[ri][ci]!==undefined)ci++;const inp=td.querySelector('input');const val=inp?inp.value:td.textContent;const cs=td.colSpan||1,rs=td.rowSpan||1;for(let a=0;a<rs;a++)for(let b=0;b<cs;b++){grid[ri+a]=grid[ri+a]||[];grid[ri+a][ci+b]=(a||b)?'':val}ci+=cs})});
+    grid.forEach(r=>lines.push(r.map(q).join(',')));lines.push('')});
+  const blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);
+}
+
+/* ---------- pages ---------- */
+function pageRcd3(l){
+  const p=S.view.period||prevMonth();
+  const head=`<div class="muted small">${esc(l.pillar)} / Agricultural and rural credit / RCD-3</div><h2>${esc(l.name)}</h2>`;
+  const month=`<div style="max-width:200px"><label>Month</label><input type="month" id="r3p" value="${p}" onchange="go({...S.view,period:this.value,after:null})"></div>`;
+  if(l.tpl==='rcd3'){
+    if(isBranch()){S.view.after=()=>r3openOwn(p);return head+`<div class="card"><div class="row">${month}</div></div><div id="r3out" class="muted" style="margin-top:12px">Loading...</div>`}
+    S.view.after=()=>r3grid(p);return head+`<div class="card"><div class="row">${month}</div><div id="r3out" class="muted" style="margin-top:12px">Loading branch status...</div></div>`;
+  }
+  const kids=isBranch()?[]:RCD3_ORDER.filter(c=>childBranches().some(k=>k.code===c));
+  const of=S.view.r3of||(isBranch()?S.user.office:'all');
+  const sel=isBranch()?'':`<div style="flex:2"><label>Office</label><select id="r3of" onchange="go({...S.view,r3of:this.value,after:null})"><option value="all" ${of==='all'?'selected':''}>All branches (consolidated)</option>${kids.map(c=>`<option value="${c}" ${of===c?'selected':''}>${c} - ${esc(RCD3_SHORT[c]||officeName(c))}</option>`).join('')}</select></div>`;
+  let prod='';
+  if(l.tpl==='rcd3s2'){const pv=S.view.r3pr||'sheet';prod=`<div style="flex:2"><label>Product</label><select id="r3pr" onchange="go({...S.view,r3pr:this.value,after:null})"><option value="sheet" ${pv==='sheet'?'selected':''}>Products in the statement (${toBn(RCD3_BYPRODUCT.length)})</option><option value="all" ${pv==='all'?'selected':''}>All products</option>${RCD3_ROWS.filter(x=>x.t==='row').map(x=>`<option value="${x.r}" ${String(x.r)===pv?'selected':''}>${esc(x.sl+'. '+x.label)}</option>`).join('')}</select></div>`}
+  S.view.after=()=>l.tpl==='rcd3s1'?r3s1(p,of):r3s2(p,of);
+  return head+`<div class="card"><div class="row">${month}${l.tpl==='rcd3s1'?sel:''}${prod}</div></div><div id="r3out" class="card muted" style="margin-top:12px">Loading...</div>`;
+}
+async function r3fetch(p,of){
+  // returns {list:[{office,v}], note}
+  if(isBranch()||(of&&of!=='all'&&of!=='own')){
+    const code=isBranch()?S.user.office:of;
+    const j=await api('/report?office='+encodeURIComponent(code)+'&leaf='+R3LEAF+'&period='+p);
+    const d=j.report&&j.report.data;return{list:d?[{office:code,v:d.v||{},status:j.report.status}]:[],single:code,status:j.report?j.report.status:'NONE'};
+  }
+  const c=await api('/collect?leaf='+R3LEAF+'&period='+p);
+  return{list:c.reports.filter(x=>office(x.office)&&office(x.office).level==='BR').map(x=>({office:x.office,v:(x.data&&x.data.v)||{}}))};
+}
+async function r3s1(p,of){
+  const out=$('#r3out');const d=await r3fetch(p,of);
+  if(d.single){
+    const o=office(d.single);
+    if(!d.list.length){out.outerHTML=`<div id="r3out" class="card">No RCD-3 data for ${fmtPeriod(p)} yet.</div>`;return}
+    const body=r3head(p,o)+r3table(d.list[0].v,{period:p,wo:true});
+    out.outerHTML=`<div id="r3out" class="card bn">${!isBranch()&&d.status!=='SUBMITTED'?'':''}<div class="gscroll">${body}</div><div class="bar"><button class="pri" onclick="A.r3print()">Print</button><button onclick="r3csv('RCD-3_${d.single}_${p}.csv')">Download Excel</button></div></div>`;
+    S.r3doc=body+r3sign(o);return;
+  }
+  const kids=RCD3_ORDER.filter(c=>childBranches().some(k=>k.code===c));
+  const v=r3add(d.list.map(x=>x.v));
+  let own=null;if(isArea()){try{const j=await api('/report?office='+encodeURIComponent(S.user.office)+'&leaf='+R3LEAF+'&period='+p);own=j.report&&j.report.data&&j.report.data.v||null}catch(e){}}
+  const alloc=own||{};R3DATA.forEach(r=>{if(alloc[r]&&alloc[r].C!=null&&alloc[r].C!==''){v[r]=v[r]||{};v[r].C=r3n(alloc[r].C)}});
+  S.r3={p,v,alloc:JSON.parse(JSON.stringify(alloc))};
+  const miss=kids.filter(k=>!d.list.some(x=>x.office===k));
+  const o=isArea()?myOffice():office('5038');
+  const body=r3head(p,o)+r3table(v,{period:p,edit:S.r3edit&&isArea()?{cols:'C'}:null});
+  out.outerHTML=`<div id="r3out" class="card bn"><div class="note ${miss.length?'n-warn':'n-ok'}" style="font-family:inherit"><b>${toBn(d.list.length)} / ${toBn(kids.length)}</b> branches submitted for ${fmtPeriod(p)}.${miss.length?' Not yet: '+miss.map(c=>esc(RCD3_SHORT[c]||c)).join(', '):''}</div>
+  ${isArea()?`<div class="note n-info" style="font-family:inherit">Column ৩ (allocation) is the Area Office allocation for each programme; where none is set, the branches' total is shown. ${S.r3edit?'Type the allocation and click <b>Save allocation</b>.':''}</div>`:''}
+  <div class="gscroll">${body}</div><div class="bar"><button class="pri" onclick="A.r3print()">Print</button><button onclick="r3csv('RCD-3_Accumulated_${p}.csv')">Download Excel</button>${isArea()?(S.r3edit?`<button class="pri" onclick="run(A.r3saveAlloc)">Save allocation</button><button onclick="S.r3edit=false;go({...S.view,after:null})">Cancel</button>`:`<button onclick="S.r3edit=true;go({...S.view,after:null})">Edit allocation</button>`):''}</div></div>`;
+  S.r3doc=r3head(p,o)+r3table(v,{period:p})+r3sign(o);
+}
+A.r3saveAlloc=async()=>{
+  const r=S.r3;const v={};document.querySelectorAll('#r3out input[data-c="C"]').forEach(el=>{const n=toEn(el.value).trim();if(n!=='')(v[el.dataset.r]=v[el.dataset.r]||{}).C=n});
+  await api('/report',{method:'PUT',body:{leaf:R3LEAF,period:r.p,data:{v,kind:'area-allocation'}}});
+  S.r3edit=false;toast('Allocation saved.');go({...S.view,after:null});
+};
+A.r3print=()=>r3print(S.r3doc);
+async function r3s2(p){
+  const out=$('#r3out');const d=await r3fetch(p,'all');
+  const pv=S.view.r3pr||'sheet';
+  const prods=pv==='sheet'?RCD3_BYPRODUCT:pv==='all'?R3DATA:[+pv];
+  const codes=isBranch()?[S.user.office]:RCD3_ORDER.filter(c=>childBranches().some(k=>k.code===c));
+  const by={};d.list.forEach(x=>by[x.office]=x.v);
+  const o=isBranch()?myOffice():office('5038');
+  const cols='CDEFGHIJK';
+  let body=`<div class="r3hd"><div class="r3l"><img src="${LOGO}" alt=""><div><div class="b">জনতা ব্যাংক পিএলসি</div><div>${esc(isBranch()?(o.nameBn||o.name)+'।':'এরিয়া অফিস, সিরাজগঞ্জ।')}</div></div></div></div>
+  <div class="r3title">রিটেইল কাস্টমার ডিপার্টমেন্ট-৩ সম্পৃক্ত কৃষি/পল্লী ঋণ হিসাবের ${gctx(p).asOn} তারিখের প্রোডাক্ট ভিত্তিক একত্রীভুত মাসিক বিবরণী।<span>রিপোর্টের তারিখঃ ${gctx(p).asOn}</span></div>`;
+  for(const r of prods){
+    const x=RCD3_ROWS.find(z=>z.r===r);const sl=toBn(String(toEn(x.sl)).padStart(2,'0'));
+    const cap=`${sl}. ${x.label}`;
+    let t=`<div class="r3cap">${esc(cap)}</div><table class="gt r3t" data-cap="${esc(cap)}"><tr><th rowspan="3">ক্রমিক নং</th><th rowspan="3">শাখার নাম</th><th rowspan="3">চলতি অর্থ বছরে বরাদ্দ</th><th colspan="3">বিতরণকৃত ঋণ</th><th colspan="2">আদায়</th><th colspan="2">বর্তমান অনাদায়ী</th><th rowspan="3">মেয়াদোত্তীর্ণ ঋণের পরিমান</th></tr>
+    <tr><th colspan="2">চলতি অর্থ বছরে</th><th rowspan="2">ক্রমপুঞ্জিভুত</th><th rowspan="2">চলতি অর্থ বছরে</th><th rowspan="2">ক্রমপুঞ্জিভুত আদায়</th><th rowspan="2">সংখ্যা</th><th rowspan="2">পরিমান</th></tr><tr><th>সংখ্যা</th><th>পরিমান</th></tr>`;
+    const tot={};
+    codes.forEach((c,i)=>{const line=(by[c]&&by[c][r])||{};t+=`<tr${by[c]?'':' class="r3miss"'}><td class="gc0">${toBn(i+1)}</td><td class="glab">${esc(RCD3_SHORT[c]||officeName(c))}</td>${cols.split('').map(k=>{const n=line[k];if(n!=null&&n!=='')tot[k]=(tot[k]||0)+r3n(n);return`<td class="gn">${by[c]?r3f(n===undefined?'':n,k):''}</td>`}).join('')}</tr>`});
+    t+=`<tr class="gsum"><td></td><td class="glab">মোট</td>${cols.split('').map(k=>`<td class="gn">${r3f(tot[k]||0,k)}</td>`).join('')}</tr></table>`;
+    body+=t;
+  }
+  const miss=codes.filter(c=>!by[c]);
+  out.outerHTML=`<div id="r3out" class="card bn">${!isBranch()&&miss.length?`<div class="note n-warn" style="font-family:inherit">Not yet submitted (blank rows): ${miss.map(c=>esc(RCD3_SHORT[c]||c)).join(', ')}</div>`:''}<div class="gscroll">${body}</div><div class="bar"><button class="pri" onclick="A.r3print()">Print</button><button onclick="r3csv('RCD-3_ProductWise_${p}.csv')">Download Excel</button></div></div>`;
+  S.r3doc=body+r3sign(o);
+}
+
+/* ---------- branch data entry ---------- */
+async function r3grid(p){
+  const kids=RCD3_ORDER.filter(c=>childBranches().some(k=>k.code===c));
+  const m=await api('/reports?leaf='+R3LEAF+'&period='+p);const by={};m.reports.forEach(r=>by[r.office]=r);
+  const n=kids.filter(k=>by[k]&&by[k].status==='SUBMITTED').length;
+  let h=`<div class="note ${n===kids.length?'n-ok':'n-info'}"><b>${n} of ${kids.length}</b> branches have submitted RCD-3 for ${fmtPeriod(p)}. The statements are under <b>Statement-1</b> and <b>Statement-2</b>.</div><div class="gscroll"><table><tr><th>Code</th><th>Branch</th><th>Status</th><th>Last saved</th><th></th></tr>`;
+  kids.forEach(c=>{const r=by[c];const st=r?r.status:'NONE';h+=`<tr><td>${c}</td><td class="bn">${esc(RCD3_SHORT[c]||officeName(c))}</td><td><span class="badge b-${st}">${STATUS_TXT[st]}</span>${r&&st==='RETURNED'&&r.note?`<div class="muted small">${esc(r.note)}</div>`:''}</td><td class="small">${r?fmtDT(r.updated):''}</td><td style="white-space:nowrap">${st==='SUBMITTED'?`<button class="sm" onclick="go({page:'leaf',leaf:'ln_rcd3s1',period:'${p}',r3of:'${c}'})">View</button> <button class="sm dan" onclick="A.returnPrompt('${c}','${R3LEAF}','${p}')">Return</button>`:''}</td></tr>`});
+  $('#r3out').outerHTML=`<div id="r3out">${h}</table></div></div>`;
+}
+async function r3openOwn(p){
+  const j=await api('/report?office='+encodeURIComponent(S.user.office)+'&leaf='+R3LEAF+'&period='+p);
+  let r;
+  if(j.report){r={leaf:R3LEAF,period:p,status:j.report.status,note:j.report.note,submitted:j.report.submitted,v:(j.report.data&&j.report.data.v)||{}}}
+  else{
+    r={leaf:R3LEAF,period:p,status:'NEW',v:{}};
+    const list=await api('/reports?leaf='+R3LEAF+'&office='+encodeURIComponent(S.user.office));
+    const prev=list.reports.filter(x=>x.period<p).sort((a,b)=>b.period.localeCompare(a.period))[0];
+    if(prev){const pj=await api('/report?office='+encodeURIComponent(S.user.office)+'&leaf='+R3LEAF+'&period='+prev.period);
+      if(pj.report&&pj.report.data&&pj.report.data.v){const fyStart=m=>{const [y,mm]=m.split('-').map(Number);return mm>=7?y:y-1};const same=fyStart(prev.period)===fyStart(p);
+        const keep=same?R3E:'FHIJKLOP';r.v={};Object.entries(pj.report.data.v).forEach(([row,x])=>{const o={};keep.split('').forEach(c=>{if(x[c]!=null&&x[c]!=='')o[c]=x[c]});if(Object.keys(o).length)r.v[row]=o});
+        toast('Figures carried from '+fmtPeriod(prev.period)+(same?'':' (new financial year: allocation and this year\'s figures start empty)')+'. Update them for '+fmtPeriod(p)+'.')}}
+  }
+  S.r3cur=r;S.dirty=false;r3render();
+}
+function r3render(){
+  const r=S.r3cur,ed=canEdit(r),o=myOffice();
+  const body=r3head(r.period,o)+r3table(r.v,{period:r.period,wo:true,edit:ed?{all:true}:null});
+  $('#r3out').outerHTML=`<div id="r3out" class="card bn"><div style="font-family:var(--sans,inherit)"><span class="badge b-${r.status==='NEW'?'NONE':r.status}">${r.status==='NEW'?'New':STATUS_TXT[r.status]}</span> <span id="saveState" class="muted small"></span>
+  ${r.status==='RETURNED'?`<div class="note n-warn"><b>Returned by Area Office:</b> ${esc(r.note)}</div>`:''}${r.status==='SUBMITTED'?`<div class="note n-ok">Submitted on ${fmtDT(r.submitted)}. Locked; the Area Office can return it if a correction is needed.</div>`:''}
+  ${ed?`<div class="note n-info">Amounts in lakh Taka; সংখ্যা columns are numbers of loans. Sub-totals, grand total and শতকরা হার (শ্রেণীকৃত ঋণ ÷ বর্তমান অনাদায়ী × ১০০) are calculated automatically. Bangla or English digits are both accepted.</div>`:''}</div>
+  <div class="gscroll" id="r3body">${body}</div><div class="bar">${ed?`<button onclick="run(A.r3save)">Save</button><button class="pri" onclick="run(A.r3submit)">Save and submit to Area Office</button>`:''}<button onclick="A.r3printOwn()">Print</button><button onclick="r3csv('RCD-3_${S.user.office}_${r.period}.csv')">Download Excel</button></div></div>`;
+  if(ed){clearInterval(S.autoTimer);S.autoTimer=setInterval(()=>{if(S.dirty)run(()=>A.r3save(true))},60000)}
+}
+A.r3set=el=>{
+  const v=numIn(el);
+  if(S.r3cur&&canEdit(S.r3cur)){const x=S.r3cur.v[el.dataset.r]=S.r3cur.v[el.dataset.r]||{};if(v==='')delete x[el.dataset.c];else x[el.dataset.c]=v;markDirty();r3recalc()}
+};
+function r3recalc(){
+  // refresh only the calculated cells without rebuilding the inputs
+  const t=$('#r3body table');if(!t)return;
+  const fresh=document.createElement('div');fresh.innerHTML=r3table(S.r3cur.v,{period:S.r3cur.period,wo:true});
+  const a=[...t.rows],b=[...fresh.querySelector('table').rows];
+  a.forEach((tr,i)=>{[...tr.cells].forEach((td,j)=>{if(!td.querySelector('input')&&b[i]&&b[i].cells[j]&&td.classList.contains('gn'))td.textContent=b[i].cells[j].textContent})});
+}
+A.r3save=async quiet=>{
+  const r=S.r3cur;if(!r||!canEdit(r))return;
+  await api('/report',{method:'PUT',body:{leaf:R3LEAF,period:r.period,data:{v:r.v}}});
+  if(r.status==='NEW')r.status='DRAFT';S.dirty=false;
+  const s=$('#saveState');if(s)s.textContent='Saved '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  if(quiet!==true)toast('Saved.');
+};
+A.r3submit=async()=>{
+  const r=S.r3cur;
+  const bad=[];Object.entries(r.v).forEach(([row,x])=>Object.entries(x).forEach(([c,val])=>{const n=parseFloat(val);if(isNaN(n)||n<0)bad.push(row)}));
+  if(bad.length)throw new Error('Some figures are not valid numbers. Please check and correct them.');
+  if(!Object.keys(r.v).length)throw new Error('Enter the figures first.');
+  if(!confirm('Submit RCD-3 for '+fmtPeriod(r.period)+' to the Area Office? After submitting you cannot change it unless the Area Office returns it.'))return;
+  await A.r3save(true);await api('/report/submit',{method:'POST',body:{leaf:R3LEAF,period:r.period}});
+  toast('Submitted.');S.dirty=false;r3openOwn(r.period);
+};
+A.r3printOwn=()=>{const r=S.r3cur,o=myOffice();r3print(r3head(r.period,o)+r3table(r.v,{period:r.period,wo:true})+r3sign(o))};
+
+/* ---------- one-time import of the September 2026 Excel figures (admin) ---------- */
+A.r3import=async()=>{
+  const sd=RCD3_SEED,items=[];
+  Object.entries(sd.branches).forEach(([code,v])=>items.push({office:code,leaf:R3LEAF,period:sd.period,status:'SUBMITTED',data:{v}}));
+  Object.entries(sd.area).forEach(([code,v])=>items.push({office:code,leaf:R3LEAF,period:sd.period,status:'DRAFT',data:{v,kind:'area-allocation'}}));
+  if(!confirm('Import RCD-3 for September 2026 from the Excel workbook ('+Object.keys(sd.branches).length+' branches, as submitted, plus the Area Office allocation)? Reports that already exist online are not changed.'))return;
+  const j=await api('/admin/import',{method:'POST',body:{items}});
+  toast('Imported '+j.added+' report(s); '+j.skipped+' already existed and were kept.');
+};
 
 /* ================= JBRS ONLINE APP ================= */
 const APP={name:'JB Reporting System',short:'JBRS',version:'Online 1.0',bank:'Janata Bank PLC.',dev:'Developed by - Md. Shaheen Mahmud, Principal Officer, 024365'};
@@ -507,7 +728,8 @@ A.loadDash=async()=>{
     const j=await api('/reports?leaf=gl_branch&period='+p);
     const sub=j.reports.filter(x=>x.status==='SUBMITTED'&&kids.some(k=>k.code===x.office)).length;
     $('#dashBody').outerHTML=`<div class="stats"><div class="card stat"><div class="n">${sub} / ${kids.length}</div><div class="l">Branches submitted At a glance for ${fmtPeriod(p)}</div></div></div>
-    <button class="pri" onclick="go({page:'leaf',leaf:'gl_branch',period:'${p}'})">See branch status</button>`;
+    <button class="pri" onclick="go({page:'leaf',leaf:'gl_branch',period:'${p}'})">See branch status</button>
+    ${isAdmin()?`<div class="card" style="margin-top:14px"><h3 style="margin-top:0">Data import</h3><p class="muted">RCD-3 for September 2026, taken from the Area Office Excel workbook (24 branches and the Area Office allocation). Existing online reports are never overwritten.</p><button onclick="run(A.r3import)">Import RCD-3 September 2026</button></div>`:''}`;
   }
 };
 
@@ -516,6 +738,7 @@ function pageLeaf(){
   const l=LEAVES[S.view.leaf];const head=`<div class="muted small">${esc(l.pillar)}</div><h2>${esc(l.title)}</h2>`;
   if(l.tpl==='iwc')return pageIwc(l);
   if(l.tpl==='iwr')return pageIwr(l);
+  if(l.tpl&&l.tpl.startsWith('rcd3'))return pageRcd3(l);
   if(!l.tpl)return head+`<div class="card"><p><b>Format pending.</b> This report will be added when its format is digitised.</p></div>`;
   const p=S.view.period||prevMonth();
   let h=head;

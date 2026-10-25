@@ -301,6 +301,22 @@ async function handle(req, env) {
       await audit(db, u.id, b.active ? 'enabled' : 'disabled', id);
       return json({ ok: true });
     }
+    if (p === '/admin/import' && m === 'POST') {
+      const b = await body(req);
+      if (!Array.isArray(b.items) || b.items.length > 200) return err('Bad import.');
+      const offices = new Set((await db.prepare('SELECT code FROM offices').all()).results.map(x => x.code));
+      let added = 0, skipped = 0;
+      for (const it of b.items) {
+        if (!offices.has(it.office) || !LEAF_RE.test(it.leaf || '') || !PERIOD_RE.test(it.period || '') || !['DRAFT', 'SUBMITTED'].includes(it.status)) return err('Bad import item for ' + it.office);
+        const data = JSON.stringify(it.data || {});
+        if (data.length > MAX_DATA) return err('Import item too large.');
+        const r = await db.prepare('INSERT OR IGNORE INTO reports(office,leaf,period,status,data,note,updated,updated_by,submitted) VALUES(?,?,?,?,?,NULL,?,?,?)')
+          .bind(it.office, it.leaf, it.period, it.status, data, iso(), 'import', it.status === 'SUBMITTED' ? iso() : null).run();
+        if (r.meta && r.meta.changes) added++; else skipped++;
+      }
+      await audit(db, u.id, 'import', added + ' added, ' + skipped + ' kept');
+      return json({ ok: true, added, skipped });
+    }
     if (p === '/admin/audit' && m === 'GET') {
       return json({ audit: (await db.prepare('SELECT at,user,action,detail FROM audit ORDER BY id DESC LIMIT 300').all()).results });
     }
