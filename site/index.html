@@ -134,6 +134,7 @@ table.gt{border-collapse:collapse;width:100%}
 .r3t th,.r3t td{font-size:12.5px;padding:3px 5px;color:#000}.r3t th{font-weight:700}.r3t td.gn{text-align:right;white-space:nowrap}.r3t td.gn.cn{text-align:center}.r3t .gi{min-width:56px;padding:3px 5px;text-align:right}.r3t .gi.cn{text-align:center}.r3t td.glab{min-width:180px}.r3t tr.r3no td{text-align:center;font-size:11px;color:#333;background:#fafbfa}.r3t tr.r3sec td{background:#f6f8f7}.r3t tr.r3miss td{color:#555}
 .r3hd{margin-bottom:2px}.r3codes{text-align:right;font-size:12.5px;margin-bottom:2px;line-height:1.3}.r3gap{height:16px}.r3t2 td.glab{white-space:nowrap}.r3p .r3t2 td.glab{max-width:none}.r3t tr.r3caprow th{font-size:14px;text-align:center;background:#fff}.r3c{display:flex;justify-content:center;align-items:center;gap:10px;text-align:center}.r3c img{width:44px}.r3c .b{font-size:18px;font-weight:700}.r3c .o{font-size:14px}.r3r{position:absolute;right:0;top:0;text-align:right;font-size:12.5px}
 .r3title{text-align:center;font-weight:700;margin:8px 0 2px;font-size:14.5px}.r3unit{text-align:right;font-size:12.5px;margin-bottom:3px}.r3cap{font-weight:700;margin:14px 0 4px;font-size:14px}
+.r4nfl{display:flex;justify-content:space-between;align-items:flex-end;font-size:13px;font-weight:700;margin:6px 0 3px}.r4nfr{text-align:right;font-weight:400}
 .r3p{color:#000}.r3p .r3pg{break-after:page;page-break-after:always}.r3p .r3pg:last-child{break-after:auto;page-break-after:auto}
 .r3p .r3t{width:100%;border-collapse:collapse}.r3p .r3t th,.r3p .r3t td{border:1px solid #444;font-size:12px;padding:1px 2px;line-height:1.12}.r3p{line-height:1.35}.r3p .r3t td.glab{min-width:0;max-width:330px}.r3p .r3t th.r3th3{width:48px;max-width:56px}.r3p .r3t td.gn{min-width:0}.r3p .r3t th{min-width:0}.r3p .r3t tr.r3sec td,.r3p .r3t tr.r3no td{background:#fff}.r3p .r3cap{margin-top:8px}.r3p .p-sign{margin-top:46px}
 .iwcbar{font-size:13px;padding:7px 12px;border-radius:8px;margin:8px 0}.iwcbar.ok{background:var(--ok-l);color:var(--ok)}.iwcbar.busy{background:var(--info-l);color:var(--info)}.iwcbar.bad{background:var(--danger-l);color:var(--danger)}
@@ -153,7 +154,7 @@ const L=(id,name,tpl)=>({id,name,tpl:tpl||null});
 const G=(name,items)=>({group:name,items});
 const TREE=[
  {id:'dep',name:'Deposit',items:[L('dep_pos','Deposit position'),L('dep_open','Account opening'),L('dep_dorm','Dormant and unclaimed deposit'),L('dep_cash','Cash statement')]},
- {id:'loan',name:'Loan and advance',items:[L('ln_cmsme','CMSME'),G('Agricultural and rural credit',[G('RCD-3',[L('ln_rcd3','Data entry','rcd3'),L('ln_rcd3s1','Statement-1 (Accumulated)','rcd3s1'),L('ln_rcd3s2','Statement-2 (Product-wise)','rcd3s2')]),L('ln_rcd4','RCD-4'),L('ln_rcd4cf','RCD-4 Consumer Financing')]),L('ln_sod','Secured overdraft'),L('ln_staff','Staff loan')]},
+ {id:'loan',name:'Loan and advance',items:[L('ln_cmsme','CMSME'),G('Agricultural and rural credit',[G('RCD-3',[L('ln_rcd3','Data entry','rcd3'),L('ln_rcd3s1','Statement-1 (Accumulated)','rcd3s1'),L('ln_rcd3s2','Statement-2 (Product-wise)','rcd3s2')]),G('RCD-4',[L('ln_rcd4','Data entry','rcd4'),L('ln_rcd4s1','Statement-1 (ছক-ক)','rcd4s1'),L('ln_rcd4s2','Statement-2 (Accumulated)','rcd4s2'),L('ln_rcd4s3','Statement-3 (Product-wise)','rcd4s3')]),L('ln_rcd4cf','RCD-4 Consumer Financing')]),L('ln_sod','Secured overdraft'),L('ln_staff','Staff loan')]},
  {id:'acc',name:'Accounts',items:[L('gl_branch','At a glance (এক নজরে)','glance'),L('ac_budget','Budget and expenditure'),L('ac_susp','Unadjusted suspense'),L('ac_bpen','Unadjusted bank pension'),L('ac_apen','Unadjusted army pension')]},
  {id:'rec',name:'Recovery',items:[L('rc_class','Classification of loan'),L('rc_recov','Recovery of classified loan'),G('Suit cases',[L('rc_ar','Artho Rin case'),L('rc_cert','Certificate case'),L('rc_ms','Money suit'),L('rc_cd','Cheque dishonour')]),G('Interest waiver calculator',[L('rc_iwc','Data entry','iwc'),G('Report',[L('rc_iwga','Annexure-Ga','iwr'),L('rc_iwgha','Annexure-Gha','iwr')])])]},
  {id:'aud',name:'Audit compliance',items:[L('au_bb','Bangladesh Bank audit',null),G('Head Office',[L('au_ho_gen','General',null),L('au_ho_it','IT',null)]),L('au_div','Divisional Office',null),G('Area Office',[L('au_ar_short','Short inspection',null),L('au_ar_test','Test inspection',null)]),L('au_comm','Commercial audit',null)]}
@@ -382,9 +383,12 @@ function r3head(p,o,sub,unit){
 }
 function r3head2(p,o){return r3bank(o)+`<div class="r3title">বিষয়ঃ রিটেইল কাস্টমার ডিপার্টমেন্ট-৩ সম্পৃক্ত কৃষি/পল্লী ঋণ হিসাবের ${gctx(p).asOn} তারিখের প্রোডাক্ট ভিত্তিক একত্রীভুত মাসিক বিবরণী।</div><div class="r3unit">(লক্ষ টাকায়)</div>`}
 const r3sign=o=>`<div class="p-end"><div class="p-sign"><div>কর্মকর্তা</div><div>${o&&o.level==='BR'?'ব্যবস্থাপক':'অফিস প্রধান'}</div></div></div>`;
-function r3print(pages,cap){
+function r3print(pages,cap,land){
   if(!Array.isArray(pages))pages=[pages];
-  const W=712,H=1030;                       // A4 portrait inside the 10/11 mm print margins, in CSS px
+  const W=land?1040:712,H=land?700:1030;    // A4 inside the 10/11 mm print margins, in CSS px
+  let st=document.getElementById('r3pg');if(!st){st=document.createElement('style');st.id='r3pg';document.head.appendChild(st)}
+  st.textContent=land?'@page{size:A4 landscape;margin:0}':'';
+  const off=()=>{st.textContent='';window.removeEventListener('afterprint',off)};window.addEventListener('afterprint',off);
   const m=document.createElement('div');m.className='bn r3p';m.style.cssText='position:absolute;left:-20000px;top:0;visibility:hidden;width:'+W+'px';document.body.appendChild(m);
   const meas=(h,w)=>{m.innerHTML='<div class="r3pg" style="width:'+w+'px">'+h+'</div>';const el=m.firstChild;return[el.scrollWidth,el.scrollHeight]};
   const out=pages.map(h=>{
@@ -442,7 +446,7 @@ async function r3s1(p,of){
     if(!d.list.length){out.outerHTML=`<div id="r3out" class="card">No RCD-3 data for ${fmtPeriod(p)} yet.</div>`;return}
     const body=r3head(p,o)+r3table(d.list[0].v,{period:p,wo:true});
     out.outerHTML=`<div id="r3out" class="card bn">${!isBranch()&&d.status!=='SUBMITTED'?'':''}<div class="gscroll">${body}</div><div class="bar"><button class="pri" onclick="A.r3print()">Print</button><button onclick="r3csv('RCD-3_${d.single}_${p}.csv')">Download Excel</button></div></div>`;
-    S.r3doc=[body];S.r3cap=null;return;
+    S.r3doc=[body];S.r3cap=null;S.r3land=false;return;
   }
   const kids=RCD3_ORDER.filter(c=>childBranches().some(k=>k.code===c));
   const v=r3add(d.list.map(x=>x.v));
@@ -455,14 +459,14 @@ async function r3s1(p,of){
   out.outerHTML=`<div id="r3out" class="card bn"><div class="note ${miss.length?'n-warn':'n-ok'}" style="font-family:inherit"><b>${toBn(d.list.length)} / ${toBn(kids.length)}</b> branches submitted for ${fmtPeriod(p)}.${miss.length?' Not yet: '+miss.map(c=>esc(RCD3_SHORT[c]||c)).join(', '):''}</div>
   ${isArea()?`<div class="note n-info" style="font-family:inherit">Column ৩ (allocation) is the Area Office allocation for each programme; where none is set, the branches' total is shown. ${S.r3edit?'Type the allocation and click <b>Save allocation</b>.':''}</div>`:''}
   <div class="gscroll">${body}</div><div class="bar"><button class="pri" onclick="A.r3print()">Print</button><button onclick="r3csv('RCD-3_Accumulated_${p}.csv')">Download Excel</button>${isArea()?(S.r3edit?`<button class="pri" onclick="run(A.r3saveAlloc)">Save allocation</button><button onclick="S.r3edit=false;go({...S.view,after:null})">Cancel</button>`:`<button onclick="S.r3edit=true;go({...S.view,after:null})">Edit allocation</button>`):''}</div></div>`;
-  S.r3doc=[r3head(p,o)+r3table(v,{period:p})];S.r3cap=null;
+  S.r3doc=[r3head(p,o)+r3table(v,{period:p})];S.r3cap=null;S.r3land=false;
 }
 A.r3saveAlloc=async()=>{
   const r=S.r3;const v={};document.querySelectorAll('#r3out input[data-c="C"]').forEach(el=>{const n=toEn(el.value).trim();if(n!=='')(v[el.dataset.r]=v[el.dataset.r]||{}).C=n});
   await api('/report',{method:'PUT',body:{leaf:R3LEAF,period:r.p,data:{v,kind:'area-allocation'}}});
   S.r3edit=false;toast('Allocation saved.');go({...S.view,after:null});
 };
-A.r3print=()=>r3print(S.r3doc,S.r3cap);
+A.r3print=()=>r3print(S.r3doc,S.r3cap,S.r3land);
 async function r3s2(p){
   const out=$('#r3out');const d=await r3fetch(p,'all');
   const pv=S.view.r3pr||'sheet';
@@ -484,7 +488,7 @@ async function r3s2(p){
   }
   const miss=codes.filter(c=>!by[c]);
   out.outerHTML=`<div id="r3out" class="card bn">${!isBranch()&&miss.length?`<div class="note n-warn" style="font-family:inherit">Not yet submitted (blank rows): ${miss.map(c=>esc(RCD3_SHORT[c]||c)).join(', ')}</div>`:''}<div class="gscroll">${head2+body}</div><div class="bar"><button class="pri" onclick="A.r3print()">Print</button><button onclick="r3csv('RCD-3_ProductWise_${p}.csv')">Download Excel</button></div></div>`;
-  const pages=[];for(let i=0;i<tabs.length;i+=2)pages.push((i?'':head2)+tabs.slice(i,i+2).join('<div class="r3gap"></div>'));S.r3doc=pages;S.r3cap=1.1;
+  const pages=[];for(let i=0;i<tabs.length;i+=2)pages.push((i?'':head2)+tabs.slice(i,i+2).join('<div class="r3gap"></div>'));S.r3doc=pages;S.r3cap=1.1;S.r3land=false;
 }
 
 /* ---------- branch data entry ---------- */
@@ -573,6 +577,231 @@ A.r3import=async()=>{
   Object.entries(sd.branches).forEach(([code,v])=>items.push({office:code,leaf:R3LEAF,period:sd.period,status:'SUBMITTED',data:{v}}));
   Object.entries(sd.area).forEach(([code,v])=>items.push({office:code,leaf:R3LEAF,period:sd.period,status:'DRAFT',data:{v,kind:'area-allocation'}}));
   if(!confirm('Import RCD-3 for September 2026 from the Excel workbook ('+Object.keys(sd.branches).length+' branches, as submitted, plus the Area Office allocation)? Reports that already exist online are not changed.'))return;
+  const j=await api('/admin/import',{method:'POST',body:{items}});
+  toast('Imported '+j.added+' report(s); '+j.skipped+' already existed and were kept.');
+};
+
+/* RCD-4 layouts and the September 2026 figures imported from the Area Office Excel workbook */
+const RCD4_ROWS=[{"r": 9, "sl": "১", "label": "বহুমুখী তদারকী ঋণ"}, {"r": 10, "sl": "২", "label": "স্বনির্ভর ঋণ"}, {"r": 11, "sl": "৩", "label": "এনজিও লিংকেজ ঋণ"}, {"r": 12, "sl": "৪", "label": "শষ্য গুদাম ঋণ"}, {"r": 13, "sl": "৫", "label": "মহিলা উদ্যোক্তা ঋণ"}, {"r": 14, "sl": "৬", "label": "ঘরোয়া ঋণ"}, {"r": 15, "sl": "৭", "label": "পরিবার ভিত্তিক ক্ষুদ্র ঋণ"}, {"r": 16, "sl": "৮", "label": "ক্ষুদ্র ব্যবসা উন্নয়ন ঋণ"}, {"r": 17, "sl": "৯", "label": "সোলার এনার্জি ঋণ"}, {"r": 18, "sl": "১০", "label": "বায়োগ্যাস প্লান্ট ঋণ"}, {"r": 19, "sl": "১১", "label": "পল্লী গৃহ নির্মান ঋণ"}, {"r": 20, "sl": "১২", "label": "কো-অপারেটিভ ক্রেডিটঃ (ক) ইউসিসিএ (বিআরডিবি)"}, {"r": 21, "sl": "", "label": "(খ)এনআরডিপি-১"}, {"r": 22, "sl": "", "label": "(গ) এনআরডিপি-২"}, {"r": 23, "sl": "১৩", "label": "কৃষি ভিত্তিক শিল্প ঋণ"}, {"r": 24, "sl": "১৪", "label": "প্রতিবন্ধী ঋণ"}, {"r": 25, "sl": "১৫", "label": "সাইবার ক্যাফে"}, {"r": 26, "sl": "১৬", "label": "কার লোন"}, {"r": 27, "sl": "১৭", "label": "নিম্ন আয়ের পেশাজীবিদের জন্য ক্ষুদ্র ঋণ"}, {"r": 28, "sl": "১৮", "label": "মুজিববর্ষ স্বারক ঋণ"}, {"r": 29, "sl": "১৯", "label": "এন,বি,এফ,আই/ঘরে ফেরা"}, {"r": 30, "sl": "২০", "label": "এস,এফ,ডি,এফ"}, {"r": 31, "sl": "২১", "label": "জৈব সার উৎপাদন ঋণ"}, {"r": 32, "sl": "২২", "label": "কেচো সার উৎপাদন ঋণ"}, {"r": 33, "sl": "২৩", "label": "গ্রামীন নারী কর্মসংস্থান ঋণ"}, {"r": 34, "sl": "২৪", "label": "প্রশিক্ষিত যুবকের জন্য ঋণ"}, {"r": 35, "sl": "২৫", "label": "১০, ৫০ ও ১০০টাকার হিসাবধারীদের জন্য ঋণ"}, {"r": 36, "sl": "২৬", "label": "বাই-সাইকেলঋণ"}, {"r": 37, "sl": "২৭", "label": "ভাতাপ্রাপ্ত মুক্তিযোদ্ধা ঋণ"}, {"r": 38, "sl": "২৮", "label": "নারী বান্ধব স্কুটারস ঋণ"}];
+const RCD4_NF=[{"t": "row", "n": 1, "sl": "১", "label": "বহুমূখী তদারকী ঋণ", "acc": 9}, {"t": "row", "n": 2, "sl": "২", "label": "প্রশিক্ষিত যুবদের জন্য ঋণ", "acc": 34}, {"t": "row", "n": 3, "sl": "৩", "label": "প্রতিবন্ধী ঋণ", "acc": 24}, {"t": "row", "n": 4, "sl": "৪", "label": "পরিবার ভিত্তিক ক্ষুদ্র ঋণ", "acc": 15}, {"t": "row", "n": 5, "sl": "৫", "label": "ঘরোয়া ঋণ", "acc": 14}, {"t": "row", "n": 6, "sl": "৬", "label": "গ্রামীণ নারী কর্মসংস্থান ঋণ", "acc": 33}, {"t": "row", "n": 7, "sl": "৭", "label": "সোলার এনার্জি ঋণ", "acc": 17}, {"t": "row", "n": 8, "sl": "৮", "label": "সমন্বিত গরু পালণ ঋণ", "acc": null}, {"t": "row", "n": 9, "sl": "৯", "label": "বায়োগ্যাস প্ল্যান্ট ঋণ", "acc": 18}, {"t": "row", "n": 10, "sl": "১০", "label": "জৈব সার উৎপাদন ঋণ", "acc": 31}, {"t": "row", "n": 11, "sl": "১১", "label": "কেঁচো কম্পোস্ট সার উৎ. ঋণ", "acc": 32}, {"t": "row", "n": 12, "sl": "১২", "label": "ক্ষুদ্র ব্যবসা উন্নয়ন ঋণ", "acc": 16}, {"t": "row", "n": 13, "sl": "১৩", "label": "বাই-সাইকেল ঋণ", "acc": 36}, {"t": "row", "n": 14, "sl": "১৪", "label": "ভাতা প্রাপ্ত মুক্তিযোদ্ধা ঋণ", "acc": 37}, {"t": "row", "n": 15, "sl": "১৫", "label": "নারীবান্ধব স্কুটারস্ ঋণ", "acc": 38}, {"t": "row", "n": 16, "sl": "১৬", "label": "মহিলা উদ্যোক্তা ঋণ", "acc": 13}, {"t": "row", "n": 17, "sl": "১৭", "label": "শস্য গুদাম ঋণ", "acc": 12}, {"t": "sub", "sl": "(ক)", "label": "উপ-মোট"}, {"t": "row", "n": 18, "sl": "১৮", "label": "স্বনির্ভর ঋণ", "acc": 10}, {"t": "row", "n": 19, "sl": "১৯", "label": "পল্লী গৃহ নির্মাণ ঋণ", "acc": 19}, {"t": "row", "n": 20, "sl": "২০", "label": "এন আর ডিপি-১", "acc": 21}, {"t": "row", "n": 21, "sl": "২১", "label": "এনআর ডিপি-২", "acc": 22}, {"t": "row", "n": 22, "sl": "২২", "label": "এস.এফ.ডি.পি", "acc": 30}, {"t": "row", "n": 23, "sl": "২৩", "label": "১০ টাকার হিসাব", "acc": null}, {"t": "row", "n": 24, "sl": "২৪", "label": "১০,৫০ও ১০০ টাকার হিসাবধারীদের জন্য ঋণ", "acc": 35}, {"t": "row", "n": 25, "sl": "২৫", "label": "১০১,নভেল করোনা ভাইরাস", "acc": null}, {"t": "row", "n": 26, "sl": "২৬", "label": "এনজিও লিংকেজ ঋণ", "acc": 11}, {"t": "row", "n": 27, "sl": "২৭", "label": "মুজিব বর্ষ স্মারক ঋণ", "acc": 28}, {"t": "sub", "sl": "(খ)", "label": "উপ-মোট"}];
+const RCD4_BYP=[{"r": 9, "title": "০১. বহুমুখী তদারকী ঋণ"}, {"r": 19, "title": "১১. পল্লী গৃহ নির্মান ঋণ"}, {"r": 27, "title": "১৭. নিম্ন আয়ের পেশাজীবিদের জন্য ক্ষুদ্র ঋণ"}, {"r": 28, "title": "১৮. মুজিববর্ষ স্মারক ঋণ"}, {"r": 33, "title": "২৩. গ্রামীন নারী কর্মসংস্থান ঋণ"}];
+const RCD4_SEED={period:"2026-09",branches:{"0588": {"9": {"C": 1.0, "F": 98.58, "G": 0.42, "H": 0.18, "I": 122.82, "J": 3.0, "K": 1.51}, "33": {"C": 5.0, "D": 1.0, "E": 0.75, "F": 52.7, "G": 4.5, "H": 0.34, "I": 49.6, "J": 18.0, "K": 7.8, "L": 1.25, "M": 12.0, "N": 5.1, "P": 1.6}}, "0346": {"9": {"C": 2.0, "D": 3.0, "E": 3.0, "F": 23.98, "G": 0.85, "H": 0.54, "I": 33.03, "J": 8.0, "K": 7.38, "L": 1.63, "M": 1.0, "N": 1.63, "Q": 10.0, "R": 0.35, "S": 0.05}, "33": {"F": 1.7, "H": 0.19, "I": 0.37, "J": 3.0, "K": 1.25}}, "0662": {"9": {"C": 1.0, "F": 6.0, "G": 1.5, "H": 0.95, "I": 2.79, "J": 5.0, "K": 3.62, "Q": 9.0, "R": 0.92, "S": 0.19}, "33": {"C": 1.0, "F": 3.0, "G": 1.15, "H": 0.09, "I": 1.68, "J": 3.0, "K": 2.09}, "35": {"F": 3.0, "G": 1.8, "H": 0.63, "I": 1.33, "J": 1.0, "K": 3.2, "L": 1.77, "P": 0.14}}, "0666": {"9": {"C": 1.0, "F": 8.5, "G": 0.5, "H": 0.55, "I": 1.31, "J": 6.0, "K": 4.43, "M": 2.0, "N": 0.96}, "33": {"C": 1.0, "F": 4.5, "G": 0.42, "H": 0.53, "I": 0.68, "J": 3.0, "K": 1.0, "M": 1.0, "N": 0.5}}, "0405": {"9": {"C": 1.0, "F": 41.49, "G": 1.05, "H": 0.73, "I": 45.76, "J": 8.0, "K": 5.13}, "13": {"F": 3.0, "G": 0.95, "I": 3.47}, "28": {"F": 0.5, "I": 0.55}, "33": {"F": 21.55, "G": 0.5, "H": 0.06, "I": 24.64, "J": 1.0, "K": 0.15}}, "0644": {"9": {"F": 3.0, "G": 0.25, "H": 0.14, "I": 0.92, "J": 2.0, "K": 1.37, "M": 1.0, "N": 0.75, "P": 0.94}, "33": {"D": 1.0, "E": 0.5, "F": 15.7, "G": 0.4, "H": 0.2, "I": 21.65, "J": 2.0, "K": 0.77}}, "0667": {"9": {"C": 1.0, "F": 78.44, "G": 0.25, "H": 0.39, "I": 96.3, "J": 4.0, "K": 0.51, "Q": 22.0, "R": 1.86, "S": 0.05}, "28": {"F": 0.5, "I": 0.53}, "33": {"F": 0.5, "G": 0.3, "H": 0.03, "I": 0.35, "J": 1.0, "K": 0.15}, "35": {"F": 4.5, "G": 1.31, "I": 3.6, "J": 1.0, "K": 1.18, "L": 1.18, "M": 10.0, "N": 1.18}}, "0664": {"9": {"C": 2.0, "D": 3.0, "E": 2.3, "F": 25.94, "G": 2.5, "H": 0.63, "I": 6.81, "J": 9.0, "K": 4.6, "L": 0.72, "M": 4.0, "N": 1.23, "P": 0.1}, "13": {"I": 0.1, "J": 1.0, "K": 0.05}, "28": {"F": 0.5, "G": 0.2, "I": 0.17, "J": 1.0, "K": 0.24, "L": 0.25, "M": 1.0, "N": 0.24, "P": 0.1}, "33": {"C": 2.0, "D": 2.0, "E": 1.3, "F": 12.42, "G": 1.5, "H": 0.93, "I": 5.31, "J": 9.0, "K": 3.6, "L": 0.91, "M": 4.0, "N": 1.64, "P": 0.1}}, "0668": {"9": {"D": 1.0, "E": 0.7, "F": 13.45, "G": 0.2, "H": 0.8, "I": 15.52, "J": 4.0, "K": 2.8}, "33": {"D": 1.0, "E": 0.5, "F": 4.7, "G": 0.35, "H": 0.35, "I": 0.9, "J": 8.0, "K": 3.1, "L": 0.08, "S": 1.0}}, "0672": {"9": {"C": 1.0, "D": 1.0, "E": 1.0, "F": 26.11, "G": 0.97, "H": 0.58, "I": 26.46, "J": 7.0, "K": 4.7}, "28": {"F": 0.5, "G": 0.1, "I": 0.46, "J": 1.0, "K": 0.1, "M": 1.0, "N": 0.1}, "33": {"F": 0.4, "H": 0.04, "I": 0.63}}, "0645": {"9": {"C": 2.0, "D": 2.0, "E": 2.0, "F": 107.15, "G": 1.0, "H": 0.39, "I": 13.75, "J": 6.0, "K": 4.56}, "33": {"C": 1.0, "F": 3.68, "G": 0.45, "H": 0.42, "I": 2.27, "J": 1.0, "K": 1.5}}, "0951": {"9": {"D": 3.0, "E": 3.0, "F": 43.45, "G": 3.75, "H": 0.94, "I": 38.58, "J": 13.0, "K": 8.25, "L": 0.84, "M": 4.0, "N": 2.37, "P": 0.7}, "28": {"F": 16.5, "G": 4.58, "H": 0.48, "I": 11.18, "J": 7.0, "K": 1.44, "M": 1.0, "N": 0.79}, "33": {"F": 4.0, "G": 1.05, "H": 0.08, "I": 3.1, "J": 1.0, "K": 0.22, "M": 1.0, "N": 0.68, "P": 0.79}}, "0426": {"9": {"C": 1.0, "F": 26.3, "G": 1.15, "H": 0.04, "I": 33.58, "J": 7.0, "K": 2.96, "L": 0.27, "M": 6.0, "N": 1.99, "P": 0.15}, "13": {"H": 0.18, "I": 0.18, "J": 2.0, "K": 1.05}, "28": {"F": 1.0, "I": 0.68, "J": 1.0, "K": 0.45, "L": 0.45, "M": 1.0, "N": 0.45}, "33": {"C": 1.0, "F": 1.75, "G": 0.5, "H": 0.07, "I": 0.41, "J": 3.0, "K": 1.24}}, "0469": {"9": {"C": 2.0, "F": 47.6, "G": 0.85, "H": 0.05, "I": 68.94, "J": 3.0, "K": 2.14}, "13": {"F": 0.5, "I": 0.76, "J": 1.0, "K": 0.03, "L": 0.03, "M": 1.0, "N": 0.03, "P": 0.22}, "28": {"F": 0.5, "G": 0.1, "H": 0.11, "I": 0.46, "J": 1.0, "K": 0.09, "L": 0.09}, "33": {"C": 1.5, "D": 1.0, "E": 1.0, "F": 27.3, "G": 0.75, "I": 37.42, "J": 6.0, "K": 4.68}}, "0468": {"9": {"D": 1.0, "E": 1.0, "F": 118.2, "H": 0.04, "I": 144.3, "J": 1.0, "K": 1.94, "Q": 8.0, "R": 1.16, "S": 0.26}, "13": {"J": 1.0, "K": 2.37}, "28": {"F": 3.0, "G": 0.89, "I": 3.09, "J": 1.0, "K": 0.4}, "33": {"C": 1.0, "F": 8.8, "G": 1.15, "I": 3.89, "J": 5.0, "K": 3.16, "L": 0.08, "M": 1.0, "N": 0.08}, "35": {"F": 0.5, "H": 0.1, "I": 0.1, "J": 1.0, "K": 0.4}}, "0381": {"9": {"D": 2.0, "E": 2.0, "F": 11.5, "G": 2.47, "H": 0.45, "I": 8.45, "J": 5.0, "K": 4.09}, "33": {"C": 1.5, "F": 2.5, "G": 0.45, "H": 0.2, "I": 1.63, "J": 3.0, "K": 0.95}}, "0130": {"9": {"C": 2.0, "F": 55.41, "G": 1.4, "H": 0.27, "I": 62.06, "J": 2.0, "K": 0.97, "L": 0.2}, "28": {"F": 1.0, "I": 1.09}, "33": {"C": 2.0, "F": 9.2, "G": 0.87, "H": 0.09, "I": 6.27, "J": 4.0, "K": 1.98, "L": 0.76, "M": 2.0, "N": 0.73, "P": 0.12}}, "0301": {"9": {"F": 56.41, "G": 0.5, "H": 0.5, "I": 59.94, "J": 2.0, "K": 0.71, "Q": 36.0, "R": 7.1, "S": 0.38}, "28": {"F": 1.0, "G": 1.04, "H": 0.04, "I": 1.11}, "33": {"F": 10.4, "G": 0.58, "H": 0.35, "I": 6.0, "J": 6.0, "K": 4.92}, "36": {"F": 0.5}}, "0377": {"9": {"C": 1.0, "F": 95.13, "G": 0.14, "H": 0.06, "I": 110.81, "J": 2.0, "K": 1.97, "Q": 17.0, "R": 1.63, "S": 0.34}, "13": {"C": 1.0}, "14": {"F": 18.31, "I": 20.76}, "15": {"F": 11.08, "I": 12.81}, "16": {"C": 1.0}, "17": {"C": 1.0}, "33": {"C": 2.0, "F": 5.5, "G": 1.4, "H": 0.22, "I": 3.01, "J": 3.0, "K": 1.36}, "34": {"C": 2.0}, "36": {"C": 0.5}}, "0409": {"9": {"D": 1.0, "E": 1.0, "F": 53.76, "G": 0.45, "H": 0.47, "I": 67.59, "J": 3.0, "K": 1.86, "L": 0.32, "M": 1.0, "N": 0.32}, "33": {"F": 2.0, "G": 0.35, "H": 0.56, "I": 1.34, "J": 1.0, "K": 0.73}}, "0769": {"9": {"F": 7.2, "G": 1.05, "H": 0.21, "I": 1.85, "J": 3.0, "K": 1.2, "M": 1.0, "N": 1.01, "Q": 2.0, "R": 0.2, "S": 0.02}, "28": {"F": 1.0, "I": 0.45, "J": 1.0, "K": 0.34, "L": 0.34, "M": 1.0, "N": 0.34}, "29": {"F": 1.0, "G": 0.74, "I": 1.4}, "33": {"D": 1.0, "E": 0.8, "F": 4.7, "G": 1.3, "H": 0.32, "I": 1.66, "J": 4.0, "K": 2.42, "L": 0.66, "M": 1.0, "N": 0.66}, "35": {"F": 1.0, "H": 0.18, "I": 0.18, "J": 2.0, "K": 0.64}}, "0484": {"9": {"C": 2.0, "D": 1.0, "E": 1.0, "F": 40.75, "G": 0.5, "H": 0.8, "I": 51.04, "J": 7.0, "K": 5.62}, "28": {"F": 3.0, "G": 2.18, "H": 0.18, "I": 1.43, "J": 2.0, "K": 1.3, "L": 1.3, "M": 2.0, "N": 1.3, "P": 0.02}, "33": {"F": 0.6, "G": 0.67, "I": 0.67}}, "0860": {"9": {"C": 2.0, "F": 131.2, "I": 176.22, "Q": 7.0, "R": 0.15, "S": 0.09}, "13": {"F": 6.0, "G": 3.49, "H": 0.19, "I": 4.82, "J": 1.0, "K": 0.86, "M": 1.0, "N": 0.86}, "19": {"F": 2.71, "I": 4.17}, "28": {"F": 1.0, "I": 1.08}, "33": {"C": 3.0, "D": 2.0, "E": 2.0, "F": 8.5, "G": 1.34, "H": 1.58, "I": 4.24, "J": 4.0, "K": 2.84}}, "0096": {"9": {"C": 5.0, "F": 42.14, "I": 49.36}, "28": {"F": 5.5, "G": 0.65, "H": 0.06, "I": 4.54, "J": 1.0, "K": 0.04}, "33": {"C": 3.0, "D": 8.0, "E": 9.0, "F": 28.0, "G": 4.5, "H": 0.9, "I": 11.97, "J": 18.0, "K": 15.03, "M": 1.19}}},area:{"5038":{v:{"9": {"C": 35}, "10": {"C": 0}, "11": {"C": 0}, "12": {"C": 0}, "13": {"C": 10}, "14": {"C": 0}, "15": {"C": 0}, "16": {"C": 0}, "17": {"C": 0}, "18": {"C": 0}, "19": {"C": 0}, "20": {"C": 0}, "21": {"C": 0}, "22": {"C": 0}, "23": {"C": 0}, "24": {"C": 0}, "25": {"C": 0}, "26": {"C": 0}, "27": {"C": 0}, "28": {"C": 0}, "29": {"C": 0}, "30": {"C": 0}, "31": {"C": 0}, "32": {"C": 0}, "33": {"C": 30}, "34": {"C": 3}, "35": {"C": 3}, "36": {"C": 0}, "37": {"C": 0}, "38": {"C": 0}},nf:{"1": 71, "2": 0, "3": 0, "4": 0, "5": 0, "6": 70, "7": 0, "8": 0, "9": 0, "10": 0, "11": 0, "12": 0, "13": 0, "14": 0, "15": 0, "16": 3, "17": 0, "18": 0, "19": 0, "20": 0, "21": 0, "22": 0, "23": 0, "24": 3, "25": 0, "26": 0, "27": 0}}}};
+
+/* ================= RCD-4 (Retail Customer Department-4 loans) ================= */
+const R4E='CDEFGHIJKLMNPQRS';            // entered columns (O, শতকরা হার, is calculated)
+const R4CNT=new Set(['D','J','M','Q']);   // counts; the rest are lakh Taka
+const R4DATA=RCD4_ROWS.map(x=>x.r);
+const R4LEAF='ln_rcd4';
+const r4f=(v,c)=>{if(v===null||v===undefined||v===''||!isFinite(v))return'';const n=+v;if(Math.abs(n)<0.005)return'';return toBn(R4CNT.has(c)?String(Math.round(n)):n.toFixed(2))};
+const r4fy=p=>{const [y,m]=p.split('-').map(Number);const a=m>=7?y:y-1;return toBn(a+'-'+(a+1))};
+const r4has=x=>x!==undefined&&x!==null&&x!==''&&!isNaN(parseFloat(x));
+function r4sum(v,rows,cols){const o={};(cols||R4E).split('').forEach(c=>{let any=false,t=0;rows.forEach(r=>{const x=v[r]&&v[r][c];if(r4has(x)){any=true;t+=parseFloat(x)}});o[c]=any?t:undefined});o.O=o.K&&o.N!==undefined?o.N/o.K*100:null;return o}
+function r4line(v,r){const x=v[r]||{};const o={...x};o.O=r3n(x.K)&&r4has(x.N)?r3n(x.N)/r3n(x.K)*100:null;return o}
+function r4add(list){const v={};list.forEach(d=>R4DATA.forEach(r=>{const x=d&&d[r];if(!x)return;R4E.split('').forEach(c=>{const n=parseFloat(x[c]);if(!isNaN(n)){v[r]=v[r]||{};v[r][c]=+((v[r][c]||0)+n).toFixed(4)}})}));return v}
+function r4cell(c,val,r,ed){
+  const al=R4CNT.has(c)?' cn':'';const lock=ed&&ed.lock&&ed.lock.has(c);
+  if(r&&ed&&(ed.all&&c!=='O'&&!lock||ed.cols&&ed.cols.includes(c)))return`<td class="gn${al}"><input class="gi${al}" type="text" inputmode="decimal" data-num="1" data-r="${r}" data-c="${c}" value="${esc(toBn(val??''))}" oninput="A.r4set(this)"></td>`;
+  if(c==='O')return`<td class="gn gc">${val===null||val===undefined?'':toBn(val.toFixed(2))}</td>`;
+  return`<td class="gn${al}${r&&!lock?'':' gc'}">${r4f(val,c)}</td>`;
+}
+const r4nums=n=>`<tr class="r3no">${Array.from({length:n},(_,i)=>`<td>${toBn(i+1)}</td>`).join('')}</tr>`;
+
+/* ---------- sheet 2 / branch sheet: accumulated statement ---------- */
+function r4table(v,opt){
+  const cols=opt.wo?'CDEFGHIJKLMNOPQRS':'CDEFGHIJKLMNOP',ed=opt.edit||null;
+  let h=`<table class="gt r3t"><tr><th rowspan="3">ক্রমিক নং</th><th rowspan="3">ঋণ কর্মসূচীর নাম</th><th rowspan="3" class="r3th3">${r4fy(opt.period)} অর্থ বছরে বরাদ্দ</th><th colspan="3">বিতরণকৃত ঋণ</th><th rowspan="3">আদায়যোগ্য ঋণ</th><th colspan="2">আদায়</th><th colspan="2">বর্তমান অনাদায়ী</th><th rowspan="3">মেয়াদোত্তীর্ণ ঋণের পরিমান</th><th colspan="3">শ্রেণীকৃত ঋণ</th><th rowspan="3">শ্রেণীকৃত ঋণ হতে চলতি বছরে আদায়</th>${opt.wo?'<th colspan="3">অবলোপনকৃত ঋণ</th>':''}</tr>
+  <tr><th colspan="2">চলতি অর্থবছরে</th><th rowspan="2">ক্রমপুঞ্জিভুত বিতরণ</th><th rowspan="2">চলতি অর্থ বছরে</th><th rowspan="2">ক্রমপুঞ্জিভুত আদায়</th><th rowspan="2">ঋণ গ্রহীতার সংখ্যা</th><th rowspan="2">ঋণের পরিমান</th><th rowspan="2">সংখ্যা</th><th rowspan="2">পরিমান</th><th rowspan="2">শতকরা হার</th>${opt.wo?'<th rowspan="2">সংখ্যা</th><th rowspan="2">পরিমান</th><th rowspan="2">আদায়</th>':''}</tr>
+  <tr><th>সংখ্যা</th><th>পরিমান</th></tr>${r4nums(cols.length+2)}`;
+  RCD4_ROWS.forEach(x=>{const o=r4line(v,x.r);h+=`<tr><td class="gc0">${esc(x.sl)}</td><td class="glab">${esc(x.label)}</td>${cols.split('').map(c=>r4cell(c,o[c],x.r,ed)).join('')}</tr>`});
+  const t=r4sum(v,R4DATA);h+=`<tr class="gsum r3grand"><td></td><td class="glab">মোটঃ-</td>${cols.split('').map(c=>r4cell(c,t[c])).join('')}</tr>`;
+  return h+'</table>';
+}
+function r4head2(p,o){return r3bank(o)+`<div class="r3title">বিষয়ঃ-রিটেইল কাস্টমার-৪ সংশ্লিষ্ট ঋণের মাসিক বিবরণী।</div><div class="r3unit">রিপোর্টের তারিখঃ ${gctx(p).asOn}<br>(লক্ষ টাকায়)</div>`}
+
+/* ---------- sheet 1: Head Office format (ছক-ক) ---------- */
+function r4nfhead(p,o){
+  const [y,m]=p.split('-').map(Number);
+  return`<div class="r3hd"><div class="r3c"><img src="${LOGO}" alt=""><div><div class="b">জনতা ব্যাংক পিএলসি.</div><div class="o">রিটেইল কাস্টমার ডিপার্টমেন্ট-৪ এর একীভূত ঋণের মাসিক বিবরণী</div></div></div></div>
+  <div class="r4nfl"><div>রিপোর্টিং মাস : ${MBN[m-1]}, ${toBn(y)} &nbsp;&nbsp;&nbsp; এরিয়ার নাম : সিরাজগঞ্জ${o&&o.level==='BR'?' &nbsp;&nbsp; শাখা : '+esc((o.nameBn||o.name).split(',')[0]):''}</div><div class="r4nfr">ছক-“ক”<br>(লক্ষ টাকায়)</div></div>`;
+}
+function r4nftable(v,nfc,opt){
+  const cols='CDEFGHIJKLMNOPQR';const ed=opt.edit;
+  const lineOf=x=>{const s=x.acc?r4line(v,x.acc):{};const o={};'DEFGHIJKLMNP'.split('').forEach(c=>o[c]=s[c]);o.O=s.O;o.Q=s.R;o.R=s.S;o.C=nfc[x.n]!==undefined?nfc[x.n]:(x.acc?s.C:undefined);return o};
+  let h=`<table class="gt r3t"><tr><th rowspan="3">ক্রঃ নং</th><th rowspan="3">ঋণ কর্মসূচীর নাম</th><th rowspan="3" class="r3th3">${r4fy(opt.period)} অর্থ বছরে বরাদ্দ</th><th colspan="3">বিতরণকৃত ঋণ</th><th rowspan="3">মোট আদায়যোগ্য ঋণ</th><th colspan="2">আদায়</th><th colspan="2">বর্তমান মোট অনাদায়ী</th><th rowspan="3">মোট মেয়াদোত্তীর্ণ ঋণের পরিমাণ</th><th colspan="3">মোট শ্রেণীকৃত ঋণ</th><th rowspan="3">শ্রেণীকৃত ঋণ হতে চলতি অর্থ বছরে আদায়</th><th rowspan="3">মোট অবলোপনকৃত ঋণের পরিমাণ</th><th rowspan="3">অবলোপনকৃত ঋণ হতে চলতি অর্থ বছরে আদায়</th></tr>
+  <tr><th colspan="2">চলতি অর্থ বছরে</th><th rowspan="2">ক্রমপুঞ্জিভূত</th><th rowspan="2">চলতি অর্থ বছরে মোট আদায়</th><th rowspan="2">ক্রমপুঞ্জিভূত</th><th rowspan="2">সংখ্যা</th><th rowspan="2">পরিমাণ (অবলোপনকৃত ঋণসহ)</th><th rowspan="2">সংখ্যা</th><th rowspan="2">পরিমাণ</th><th rowspan="2">শতকরা হার</th></tr>
+  <tr><th>সংখ্যা</th><th>পরিমাণ</th></tr>${r4nums(18)}`;
+  const grp=[];let cur=[],all=[];
+  const cnt=c=>c==='M'||c==='J'||c==='D';
+  const tot=list=>{const o={};cols.split('').forEach(c=>{let any=false,t=0;list.forEach(l=>{if(r4has(l[c])){any=true;t+=parseFloat(l[c])}});o[c]=any?t:undefined});o.O=o.K&&o.N!==undefined?o.N/o.K*100:null;return o};
+  const td=(c,val,n)=>{
+    if(n&&ed&&c==='C')return`<td class="gn"><input class="gi" type="text" inputmode="decimal" data-num="1" data-n="${n}" value="${esc(toBn(val??''))}" oninput="A.r4nfset(this)"></td>`;
+    if(c==='O')return`<td class="gn gc">${val===null||val===undefined?'':toBn(val.toFixed(2))}</td>`;
+    return`<td class="gn${cnt(c)?' cn':''}${n?'':' gc'}">${r4f(val,cnt(c)?'D':'C')}</td>`;
+  };
+  RCD4_NF.forEach(x=>{
+    if(x.t==='sub'){const o=tot(cur);all.push(...cur);cur=[];h+=`<tr class="gsum"><td class="gc0">${esc(x.sl)}</td><td class="glab">${esc(x.label)}</td>${cols.split('').map(c=>td(c,o[c])).join('')}</tr>`;return}
+    const o=lineOf(x);cur.push(o);h+=`<tr><td class="gc0">${esc(x.sl)}</td><td class="glab">${esc(x.label)}</td>${cols.split('').map(c=>td(c,o[c],x.n)).join('')}</tr>`;
+  });
+  const g=tot(all);h+=`<tr class="gsum r3grand"><td colspan="2" class="glab">সর্বমোট ঋণ = (ক+খ)</td>${cols.split('').map(c=>td(c,g[c])).join('')}</tr>`;
+  return h+'</table>';
+}
+
+/* ---------- pages ---------- */
+function pageRcd4(l){
+  const p=S.view.period||prevMonth();
+  const head=`<div class="muted small">${esc(l.pillar)} / Agricultural and rural credit / RCD-4</div><h2>${esc(l.name)}</h2>`;
+  const month=`<div style="max-width:200px"><label>Month</label><input type="month" id="r3p" value="${p}" onchange="go({...S.view,period:this.value,after:null})"></div>`;
+  if(l.tpl==='rcd4'){
+    if(isBranch()){S.view.after=()=>r4openOwn(p);return head+`<div class="card"><div class="row">${month}</div></div><div id="r3out" class="muted" style="margin-top:12px">Loading...</div>`}
+    S.view.after=()=>r4grid(p);return head+`<div class="card"><div class="row">${month}</div><div id="r3out" class="muted" style="margin-top:12px">Loading branch status...</div></div>`;
+  }
+  const kids=isBranch()?[]:RCD3_ORDER.filter(c=>childBranches().some(k=>k.code===c));
+  const of=S.view.r4of||(isBranch()?S.user.office:'all');
+  const sel=isBranch()||l.tpl==='rcd4s3'?'':`<div style="flex:2"><label>Office</label><select onchange="go({...S.view,r4of:this.value,after:null})"><option value="all" ${of==='all'?'selected':''}>All branches (consolidated)</option>${kids.map(c=>`<option value="${c}" ${of===c?'selected':''}>${c} - ${esc(RCD3_SHORT[c]||officeName(c))}</option>`).join('')}</select></div>`;
+  S.view.after=()=>l.tpl==='rcd4s1'?r4s1(p,of):l.tpl==='rcd4s2'?r4s2(p,of):r4s3(p);
+  return head+`<div class="card"><div class="row">${month}${sel}</div></div><div id="r3out" class="card muted" style="margin-top:12px">Loading...</div>`;
+}
+async function r4fetch(p,of){
+  if(isBranch()||(of&&of!=='all')){
+    const code=isBranch()?S.user.office:of;
+    const j=await api('/report?office='+encodeURIComponent(code)+'&leaf='+R4LEAF+'&period='+p);
+    const d=j.report&&j.report.data;return{list:d?[{office:code,v:d.v||{}}]:[],single:code};
+  }
+  const c=await api('/collect?leaf='+R4LEAF+'&period='+p);
+  return{list:c.reports.filter(x=>office(x.office)&&office(x.office).level==='BR').map(x=>({office:x.office,v:(x.data&&x.data.v)||{}}))};
+}
+async function r4own(p){if(!isArea())return null;try{const j=await api('/report?office='+encodeURIComponent(S.user.office)+'&leaf='+R4LEAF+'&period='+p);return j.report&&j.report.data||null}catch(e){return null}}
+function r4note(d,kids){const miss=kids.filter(k=>!d.list.some(x=>x.office===k));return`<div class="note ${miss.length?'n-warn':'n-ok'}" style="font-family:inherit"><b>${toBn(d.list.length)} / ${toBn(kids.length)}</b> branches submitted.${miss.length?' Not yet: '+miss.map(c=>esc(RCD3_SHORT[c]||c)).join(', '):''}</div>`}
+const r4btns=(file,edit)=>`<div class="bar"><button class="pri" onclick="A.r3print()">Print</button><button onclick="r3csv('${file}')">Download Excel</button>${isArea()&&edit?(S.r4edit===edit?`<button class="pri" onclick="run(()=>A.r4saveAlloc('${edit}'))">Save allocation</button><button onclick="S.r4edit=null;go({...S.view,after:null})">Cancel</button>`:`<button onclick="S.r4edit='${edit}';go({...S.view,after:null})">Edit allocation</button>`):''}</div>`;
+async function r4s2(p,of){
+  const out=$('#r3out');const d=await r4fetch(p,of);
+  if(d.single){const o=office(d.single);
+    if(!d.list.length){out.outerHTML=`<div id="r3out" class="card">No RCD-4 data for ${fmtPeriod(p)} yet.</div>`;return}
+    const body=r4head2(p,o)+r4table(d.list[0].v,{period:p,wo:true});
+    out.outerHTML=`<div id="r3out" class="card bn"><div class="gscroll">${body}</div>${r4btns('RCD-4_'+d.single+'_'+p+'.csv')}</div>`;S.r3doc=[body];S.r3cap=null;S.r3land=true;return}
+  const kids=RCD3_ORDER.filter(c=>childBranches().some(k=>k.code===c));
+  const v=r4add(d.list.map(x=>x.v));const own=await r4own(p);const al=(own&&own.v)||{};
+  R4DATA.forEach(r=>{if(al[r]&&r4has(al[r].C)){v[r]=v[r]||{};v[r].C=r3n(al[r].C)}});
+  S.r4={p,own:own||{}};
+  const o=isArea()?myOffice():office('5038');
+  const body=r4head2(p,o)+r4table(v,{period:p,edit:S.r4edit==='acc'&&isArea()?{cols:'C'}:null});
+  out.outerHTML=`<div id="r3out" class="card bn">${r4note(d,kids)}<div class="gscroll">${body}</div>${r4btns('RCD-4_Accumulated_'+p+'.csv','acc')}</div>`;
+  S.r3doc=[r4head2(p,o)+r4table(v,{period:p})];S.r3cap=null;S.r3land=true;
+}
+async function r4s1(p,of){
+  const out=$('#r3out');const d=await r4fetch(p,of);
+  const kids=RCD3_ORDER.filter(c=>childBranches().some(k=>k.code===c));
+  let v,nfc={},o;
+  if(d.single){o=office(d.single);if(!d.list.length){out.outerHTML=`<div id="r3out" class="card">No RCD-4 data for ${fmtPeriod(p)} yet.</div>`;return}v=d.list[0].v}
+  else{v=r4add(d.list.map(x=>x.v));const own=await r4own(p);nfc=(own&&own.nf)||{};S.r4={p,own:own||{}};o=isArea()?myOffice():office('5038')}
+  const body=r4nfhead(p,d.single?o:null)+r4nftable(v,nfc,{period:p,edit:!d.single&&S.r4edit==='nf'&&isArea()});
+  out.outerHTML=`<div id="r3out" class="card bn">${d.single?'':r4note(d,kids)}<div class="gscroll">${body}</div>${r4btns('RCD-4_Format-Ka_'+p+'.csv',d.single?null:'nf')}</div>`;
+  S.r3doc=[r4nfhead(p,d.single?o:null)+r4nftable(v,nfc,{period:p})];S.r3cap=null;S.r3land=true;
+}
+A.r4nfset=el=>{numIn(el)};
+A.r4saveAlloc=async which=>{
+  const r=S.r4;const own=JSON.parse(JSON.stringify(r.own||{}));
+  if(which==='acc'){const v={};document.querySelectorAll('#r3out input[data-c="C"]').forEach(el=>{const n=toEn(el.value).trim();if(n!=='')(v[el.dataset.r]=v[el.dataset.r]||{}).C=n});own.v=v}
+  else{const nf={};document.querySelectorAll('#r3out input[data-n]').forEach(el=>{const n=toEn(el.value).trim();if(n!=='')nf[el.dataset.n]=n});own.nf=nf}
+  own.kind='area-allocation';
+  await api('/report',{method:'PUT',body:{leaf:R4LEAF,period:r.p,data:own}});
+  S.r4edit=null;toast('Allocation saved.');go({...S.view,after:null});
+};
+async function r4s3(p){
+  const out=$('#r3out');const d=await r4fetch(p,'all');
+  const codes=isBranch()?[S.user.office]:RCD3_ORDER.filter(c=>childBranches().some(k=>k.code===c));
+  const by={};d.list.forEach(x=>by[x.office]=x.v);
+  const o=isBranch()?myOffice():office('5038');
+  const cols='DEFHIJKLN';
+  const head=r3bank(o)+`<div class="r3title">বিষয়ঃ-রিটেইল কাস্টমার-৪ সংশ্লিষ্ট ঋণের প্রোডাক্ট ভিত্তিক মাসিক বিবরণী।</div><div class="r3unit">রিপোর্টের তারিখঃ ${gctx(p).asOn}<br>(লক্ষ টাকায়)</div>`;
+  const tabs=[];
+  RCD4_BYP.forEach(pr=>{
+    let t=`<table class="gt r3t r3t2" data-cap="${esc(pr.title)}"><tr class="r3caprow"><th colspan="11">${esc(pr.title)}</th></tr><tr><th rowspan="3">ক্রমিক নং</th><th rowspan="3">শাখার নাম</th><th colspan="3">বিতরণকৃত ঋণ</th><th colspan="2">আদায়</th><th colspan="2">বর্তমান অনাদায়ী</th><th rowspan="3">মেয়াদোত্তীর্ণ ঋণের পরিমান</th><th rowspan="3">শ্রেণীকৃত ঋণের পরিমান</th></tr>
+    <tr><th colspan="2">চলতি অর্থবছরে</th><th rowspan="2">ক্রমপুঞ্জিভুত বিতরণ</th><th rowspan="2">চলতি অর্থ বছরে</th><th rowspan="2">ক্রমপুঞ্জিভুত আদায়</th><th rowspan="2">ঋণ গ্রহীতার সংখ্যা</th><th rowspan="2">ঋণের পরিমান</th></tr><tr><th>সংখ্যা</th><th>পরিমান</th></tr>`;
+    const tot={};
+    codes.forEach((c,i)=>{const line=(by[c]&&by[c][pr.r])||{};t+=`<tr${by[c]?'':' class="r3miss"'}><td class="gc0">${toBn(i+1)}</td><td class="glab">${esc(RCD3_SHORT[c]||officeName(c))}</td>${cols.split('').map(k=>{const n=line[k];if(r4has(n))tot[k]=(tot[k]||0)+r3n(n);return`<td class="gn${R4CNT.has(k)?' cn':''}">${by[c]?r4f(n,k):''}</td>`}).join('')}</tr>`});
+    t+=`<tr class="gsum"><td></td><td class="glab">মোট</td>${cols.split('').map(k=>`<td class="gn${R4CNT.has(k)?' cn':''}">${r4f(tot[k],k)}</td>`).join('')}</tr></table>`;
+    tabs.push(t);
+  });
+  const miss=codes.filter(c=>!by[c]);
+  out.outerHTML=`<div id="r3out" class="card bn">${!isBranch()&&miss.length?`<div class="note n-warn" style="font-family:inherit">Not yet submitted (blank rows): ${miss.map(c=>esc(RCD3_SHORT[c]||c)).join(', ')}</div>`:''}<div class="gscroll">${head+tabs.join('<div class="r3gap"></div>')}</div><div class="bar"><button class="pri" onclick="A.r3print()">Print</button><button onclick="r3csv('RCD-4_ProductWise_${p}.csv')">Download Excel</button></div></div>`;
+  const pages=[];for(let i=0;i<tabs.length;i+=2)pages.push((i?'':head)+tabs.slice(i,i+2).join('<div class="r3gap"></div>'));
+  S.r3doc=pages;S.r3cap=1.1;S.r3land=false;
+}
+
+/* ---------- branch data entry ---------- */
+async function r4grid(p){
+  const kids=RCD3_ORDER.filter(c=>childBranches().some(k=>k.code===c));
+  const m=await api('/reports?leaf='+R4LEAF+'&period='+p);const by={};m.reports.forEach(r=>by[r.office]=r);
+  const n=kids.filter(k=>by[k]&&by[k].status==='SUBMITTED').length;
+  let h=`<div class="note ${n===kids.length?'n-ok':'n-info'}"><b>${n} of ${kids.length}</b> branches have submitted RCD-4 for ${fmtPeriod(p)}.</div><div class="gscroll"><table><tr><th>Code</th><th>Branch</th><th>Status</th><th>Last saved</th><th></th></tr>`;
+  kids.forEach(c=>{const r=by[c];const st=r?r.status:'NONE';h+=`<tr><td>${c}</td><td class="bn">${esc(RCD3_SHORT[c]||officeName(c))}</td><td><span class="badge b-${st}">${STATUS_TXT[st]}</span>${r&&st==='RETURNED'&&r.note?`<div class="muted small">${esc(r.note)}</div>`:''}</td><td class="small">${r?fmtDT(r.updated):''}</td><td style="white-space:nowrap">${st==='SUBMITTED'?`<button class="sm" onclick="go({page:'leaf',leaf:'ln_rcd4s2',period:'${p}',r4of:'${c}'})">View</button> <button class="sm dan" onclick="A.returnPrompt('${c}','${R4LEAF}','${p}')">Return</button>`:''}</td></tr>`});
+  $('#r3out').outerHTML=`<div id="r3out">${h}</table></div></div>`;
+}
+function r4cum(r,row){
+  const b=r.base;if(!b)return;const x=r.v[row]=r.v[row]||{},q=b.v[row]||{};
+  [['F','E'],['I','H']].forEach(([cum,fy])=>{
+    const has=r4has(q[cum])||r4has(x[fy]);
+    if(!has){delete x[cum];return}
+    x[cum]=String(+(r3n(q[cum])+r3n(x[fy])-(b.same?r3n(q[fy]):0)).toFixed(4));
+  });
+  if(!Object.keys(x).length)delete r.v[row];
+}
+async function r4openOwn(p){
+  const code=S.user.office;
+  const [j,list]=await Promise.all([api('/report?office='+encodeURIComponent(code)+'&leaf='+R4LEAF+'&period='+p),api('/reports?leaf='+R4LEAF+'&office='+encodeURIComponent(code))]);
+  const prev=list.reports.filter(x=>x.period<p).sort((a,b)=>b.period.localeCompare(a.period))[0];
+  let base=null;
+  if(prev){const pj=await api('/report?office='+encodeURIComponent(code)+'&leaf='+R4LEAF+'&period='+prev.period);
+    if(pj.report&&pj.report.data&&pj.report.data.v)base={period:prev.period,v:pj.report.data.v,same:r3fyStart(prev.period)===r3fyStart(p)}}
+  let r;
+  if(j.report)r={period:p,status:j.report.status,note:j.report.note,submitted:j.report.submitted,v:(j.report.data&&j.report.data.v)||{}};
+  else{
+    r={period:p,status:'NEW',v:{}};
+    if(base){const keep=base.same?R4E:'FGIJKLMNQR';
+      Object.entries(base.v).forEach(([row,x])=>{const o={};keep.split('').forEach(c=>{if(r4has(x[c]))o[c]=x[c]});if(Object.keys(o).length)r.v[row]=o});
+      toast('Figures of '+fmtPeriod(base.period)+' are filled in'+(base.same?'':' (new financial year: allocation and this year\'s figures start empty)')+'. Update them for '+fmtPeriod(p)+'.')}
+  }
+  r.base=base;if(base&&canEdit(r))R4DATA.forEach(row=>r4cum(r,row));
+  S.r4cur=r;S.dirty=false;r4render();
+}
+const r4lock=r=>r.base?new Set(['F','I']):null;
+function r4render(){
+  const r=S.r4cur,ed=canEdit(r),o=myOffice();
+  const body=r4head2(r.period,o)+r4table(r.v,{period:r.period,wo:true,edit:ed?{all:true,lock:r4lock(r)}:null});
+  $('#r3out').outerHTML=`<div id="r3out" class="card bn"><div style="font-family:var(--sans,inherit)"><span class="badge b-${r.status==='NEW'?'NONE':r.status}">${r.status==='NEW'?'New':STATUS_TXT[r.status]}</span> <span id="saveState" class="muted small"></span>
+  ${r.status==='RETURNED'?`<div class="note n-warn"><b>Returned by Area Office:</b> ${esc(r.note)}</div>`:''}${r.status==='SUBMITTED'?`<div class="note n-ok">Submitted on ${fmtDT(r.submitted)}. Locked; the Area Office can return it if a correction is needed.</div>`:''}
+  ${ed?`<div class="note n-info">Amounts in lakh Taka; সংখ্যা columns are numbers. The total row, শতকরা হার (শ্রেণীকৃত ঋণ ÷ ঋণের পরিমান × ১০০) and the ক্রমপুঞ্জিভুত columns (previous month's cumulative + this year's disbursement / recovery since then) are calculated automatically.</div>`:''}</div>
+  <div class="gscroll" id="r3body">${body}</div><div class="bar">${ed?`<button onclick="run(A.r4save)">Save</button><button class="pri" onclick="run(A.r4submit)">Save and submit to Area Office</button>`:''}<button onclick="A.r4printOwn()">Print</button><button onclick="r3csv('RCD-4_${S.user.office}_${r.period}.csv')">Download Excel</button></div></div>`;
+  if(ed){clearInterval(S.autoTimer);S.autoTimer=setInterval(()=>{if(S.dirty)run(()=>A.r4save(true))},60000)}
+}
+A.r4set=el=>{
+  const v=numIn(el);const r=S.r4cur;
+  if(r&&canEdit(r)){const x=r.v[el.dataset.r]=r.v[el.dataset.r]||{};if(v==='')delete x[el.dataset.c];else x[el.dataset.c]=v;if(r.base)r4cum(r,el.dataset.r);markDirty();
+    const t=$('#r3body table');if(!t)return;const f=document.createElement('div');f.innerHTML=r4table(r.v,{period:r.period,wo:true,edit:{all:true,lock:r4lock(r)}});
+    const a=[...t.rows],b=[...f.querySelector('table').rows];a.forEach((tr,i)=>[...tr.cells].forEach((td,j)=>{if(!td.querySelector('input')&&b[i]&&b[i].cells[j]&&td.classList.contains('gn'))td.textContent=b[i].cells[j].textContent}))}
+};
+A.r4save=async quiet=>{
+  const r=S.r4cur;if(!r||!canEdit(r))return;
+  await api('/report',{method:'PUT',body:{leaf:R4LEAF,period:r.period,data:{v:r.v}}});
+  if(r.status==='NEW')r.status='DRAFT';S.dirty=false;
+  const s=$('#saveState');if(s)s.textContent='Saved '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  if(quiet!==true)toast('Saved.');
+};
+A.r4submit=async()=>{
+  const r=S.r4cur;let bad=false;Object.values(r.v).forEach(x=>Object.values(x).forEach(val=>{const n=parseFloat(val);if(isNaN(n)||n<0)bad=true}));
+  if(bad)throw new Error('Some figures are not valid numbers. Please check and correct them.');
+  if(!Object.keys(r.v).length)throw new Error('Enter the figures first.');
+  if(!confirm('Submit RCD-4 for '+fmtPeriod(r.period)+' to the Area Office? After submitting you cannot change it unless the Area Office returns it.'))return;
+  await A.r4save(true);await api('/report/submit',{method:'POST',body:{leaf:R4LEAF,period:r.period}});
+  toast('Submitted.');S.dirty=false;r4openOwn(r.period);
+};
+A.r4printOwn=()=>{const r=S.r4cur,o=myOffice();r3print([r4head2(r.period,o)+r4table(r.v,{period:r.period,wo:true})],null,true)};
+A.r4import=async()=>{
+  const sd=RCD4_SEED,items=[];
+  Object.entries(sd.branches).forEach(([code,v])=>items.push({office:code,leaf:R4LEAF,period:sd.period,status:'SUBMITTED',data:{v}}));
+  Object.entries(sd.area).forEach(([code,a])=>items.push({office:code,leaf:R4LEAF,period:sd.period,status:'DRAFT',data:{v:a.v,nf:a.nf,kind:'area-allocation'}}));
+  if(!confirm('Import RCD-4 for September 2026 from the Excel workbook ('+Object.keys(sd.branches).length+' branches, as submitted, plus the Area Office allocations)? Reports that already exist online are not changed.'))return;
   const j=await api('/admin/import',{method:'POST',body:{items}});
   toast('Imported '+j.added+' report(s); '+j.skipped+' already existed and were kept.');
 };
@@ -758,7 +987,7 @@ A.loadDash=async()=>{
     const sub=j.reports.filter(x=>x.status==='SUBMITTED'&&kids.some(k=>k.code===x.office)).length;
     $('#dashBody').outerHTML=`<div class="stats"><div class="card stat"><div class="n">${sub} / ${kids.length}</div><div class="l">Branches submitted At a glance for ${fmtPeriod(p)}</div></div></div>
     <button class="pri" onclick="go({page:'leaf',leaf:'gl_branch',period:'${p}'})">See branch status</button>
-    ${isAdmin()?`<div class="card" style="margin-top:14px"><h3 style="margin-top:0">Data import</h3><p class="muted">RCD-3 for September 2026, taken from the Area Office Excel workbook (24 branches and the Area Office allocation). Existing online reports are never overwritten.</p><button onclick="run(A.r3import)">Import RCD-3 September 2026</button></div>`:''}`;
+    ${isAdmin()?`<div class="card" style="margin-top:14px"><h3 style="margin-top:0">Data import</h3><p class="muted">RCD-3 and RCD-4 for September 2026, taken from the Area Office Excel workbook (24 branches and the Area Office allocation). Existing online reports are never overwritten.</p><button onclick="run(A.r3import)">Import RCD-3 September 2026</button> <button onclick="run(A.r4import)">Import RCD-4 September 2026</button></div>`:''}`;
   }
 };
 
@@ -768,6 +997,7 @@ function pageLeaf(){
   if(l.tpl==='iwc')return pageIwc(l);
   if(l.tpl==='iwr')return pageIwr(l);
   if(l.tpl&&l.tpl.startsWith('rcd3'))return pageRcd3(l);
+  if(l.tpl&&l.tpl.startsWith('rcd4'))return pageRcd4(l);
   if(!l.tpl)return head+`<div class="card"><p><b>Format pending.</b> This report will be added when its format is digitised.</p></div>`;
   const p=S.view.period||prevMonth();
   let h=head;

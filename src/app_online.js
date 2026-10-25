@@ -179,7 +179,7 @@ A.loadDash=async()=>{
     const sub=j.reports.filter(x=>x.status==='SUBMITTED'&&kids.some(k=>k.code===x.office)).length;
     $('#dashBody').outerHTML=`<div class="stats"><div class="card stat"><div class="n">${sub} / ${kids.length}</div><div class="l">Branches submitted At a glance for ${fmtPeriod(p)}</div></div></div>
     <button class="pri" onclick="go({page:'leaf',leaf:'gl_branch',period:'${p}'})">See branch status</button>
-    ${isAdmin()?`<div class="card" style="margin-top:14px"><h3 style="margin-top:0">Data import</h3><p class="muted">RCD-3 for September 2026, taken from the Area Office Excel workbook (24 branches and the Area Office allocation). Existing online reports are never overwritten.</p><button onclick="run(A.r3import)">Import RCD-3 September 2026</button></div>`:''}`;
+    ${isAdmin()?`<div class="card" style="margin-top:14px"><h3 style="margin-top:0">Data import</h3><p class="muted">RCD-3 and RCD-4 for September 2026, taken from the Area Office Excel workbook (24 branches and the Area Office allocation). Existing online reports are never overwritten.</p><button onclick="run(A.r3import)">Import RCD-3 September 2026</button> <button onclick="run(A.r4import)">Import RCD-4 September 2026</button></div>`:''}`;
   }
 };
 
@@ -189,6 +189,7 @@ function pageLeaf(){
   if(l.tpl==='iwc')return pageIwc(l);
   if(l.tpl==='iwr')return pageIwr(l);
   if(l.tpl&&l.tpl.startsWith('rcd3'))return pageRcd3(l);
+  if(l.tpl&&l.tpl.startsWith('rcd4'))return pageRcd4(l);
   if(!l.tpl)return head+`<div class="card"><p><b>Format pending.</b> This report will be added when its format is digitised.</p></div>`;
   const p=S.view.period||prevMonth();
   let h=head;
