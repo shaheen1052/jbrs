@@ -20,7 +20,7 @@ function r3table(v,opt){
     if(c==='M')return`<td class="gn gc">${val===null||val===undefined?'':toBn(val.toFixed(2))}</td>`;
     return`<td class="gn${al}${r&&!(ed.lock&&ed.lock.has(c))?'':' gc'}">${r3f(val,c)}</td>`;
   };
-  let h=`<table class="gt r3t"><tr><th rowspan="3">ক্রমিক নং</th><th rowspan="3">কর্মসূচির নাম</th><th rowspan="3">চলতি ${r3fy(opt.period)} অর্থ বছরে বরাদ্দ</th><th colspan="3">বিতরণকৃত ঋণ</th><th colspan="2">আদায়</th><th colspan="2">বর্তমান অনাদায়ী</th><th rowspan="3">মেয়াদোত্তীর্ণ ঋণের পরিমান</th><th colspan="3">শ্রেণীকৃত ঋণ</th>${opt.wo?'<th colspan="3">অবলোপনকৃত ঋণ</th>':''}</tr>
+  let h=`<table class="gt r3t"><tr><th rowspan="3">ক্রমিক নং</th><th rowspan="3">কর্মসূচির নাম</th><th rowspan="3" class="r3th3">চলতি ${r3fy(opt.period)} অর্থ বছরে বরাদ্দ</th><th colspan="3">বিতরণকৃত ঋণ</th><th colspan="2">আদায়</th><th colspan="2">বর্তমান অনাদায়ী</th><th rowspan="3">মেয়াদোত্তীর্ণ ঋণের পরিমান</th><th colspan="3">শ্রেণীকৃত ঋণ</th>${opt.wo?'<th colspan="3">অবলোপনকৃত ঋণ</th>':''}</tr>
   <tr><th colspan="2">চলতি অর্থ বছরে</th><th rowspan="2">ক্রমপুঞ্জিভুত</th><th rowspan="2">চলতি অর্থ বছরে</th><th rowspan="2">ক্রমপুঞ্জিভুত আদায়</th><th rowspan="2">সংখ্যা</th><th rowspan="2">পরিমান</th><th rowspan="2">শ্রেণীকৃত ঋণের পরিমান</th><th rowspan="2">শতকরা হার</th><th rowspan="2">শ্রেণীকৃত ঋণ হতে আদায়</th>${opt.wo?'<th rowspan="2">সংখ্যা</th><th rowspan="2">পরিমান</th><th rowspan="2">আদায়</th>':''}</tr>
   <tr><th>সংখ্যা</th><th>পরিমান</th></tr>
   <tr class="r3no">${['১','২','৩','৪','৫','৬','৭','৮','৯','১০','১১','১২','১৩','১৪'].concat(opt.wo?['১৫','১৬','১৭']:[]).map(x=>`<td>${x}</td>`).join('')}</tr>`;
