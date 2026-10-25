@@ -3,7 +3,7 @@ ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC=os.path.join(ROOT,'src','offline_base.html')
 GL=os.path.join(ROOT,'src','glance.js')
 APPJS=os.path.join(ROOT,'src','app_online.js')
-RCD=[os.path.join(ROOT,'src',f) for f in ('rcd3_data.js','rcd3.js','rcd4_data.js','rcd4.js')]
+RCD=[os.path.join(ROOT,'src',f) for f in ('rcd3_data.js','rcd3.js','rcd4_data.js','rcd4cf_data.js','rcd4.js')]
 OUT=os.path.join(ROOT,'site','index.html')
 s=open(SRC,encoding='utf-8').read()
 style=re.search(r'<style>([\s\S]*?)</style>',s).group(1)
@@ -16,7 +16,7 @@ _old="L('rc_iwc','Interest waiver calculation','iwc')"
 assert _old in tree
 _ag="G('Agricultural credit',[L('ln_ag_rcd3','RCD-3'),L('ln_ag_rcd4','RCD-4')]),G('Rural credit',[L('ln_rc_rcd3','RCD-3'),L('ln_rc_rcd4','RCD-4'),L('ln_rc_cf','Consumer financing')])"
 assert _ag in tree
-tree=tree.replace(_ag,"G('Agricultural and rural credit',[G('RCD-3',[L('ln_rcd3','Data entry','rcd3'),L('ln_rcd3s1','Statement-1 (Accumulated)','rcd3s1'),L('ln_rcd3s2','Statement-2 (Product-wise)','rcd3s2')]),G('RCD-4',[L('ln_rcd4','Data entry','rcd4'),L('ln_rcd4s1','Statement-1 (ছক-ক)','rcd4s1'),L('ln_rcd4s2','Statement-2 (Accumulated)','rcd4s2'),L('ln_rcd4s3','Statement-3 (Product-wise)','rcd4s3')]),L('ln_rcd4cf','RCD-4 Consumer Financing')])")
+tree=tree.replace(_ag,"G('Agricultural and rural credit',[G('RCD-3',[L('ln_rcd3','Data entry','rcd3'),L('ln_rcd3s1','Statement-1 (Accumulated)','rcd3s1'),L('ln_rcd3s2','Statement-2 (Product-wise)','rcd3s2')]),G('RCD-4',[L('ln_rcd4','Data entry','rcd4'),L('ln_rcd4s1','Statement-1 (ছক-ক)','rcd4s1'),L('ln_rcd4s2','Statement-2 (Accumulated)','rcd4s2'),L('ln_rcd4s3','Statement-3 (Product-wise)','rcd4s3')]),G('RCD-4 Consumer Financing',[L('ln_rcd4cf','Data entry','rcd4cf'),L('ln_rcd4cfs1','Statement-1 (ছক-খ)','rcd4cfs1'),L('ln_rcd4cfs2','Statement-2 (Accumulated)','rcd4cfs2'),L('ln_rcd4cfs3','Statement-3 (Product-wise)','rcd4cfs3')])])")
 tree=tree.replace(_old,"G('Interest waiver calculator',[L('rc_iwc','Data entry','iwc'),G('Report',[L('rc_iwga','Annexure-Ga','iwr'),L('rc_iwgha','Annexure-Gha','iwr')])])")
 _lb=tree.index('const LEAVES={};')
 tree=tree[:_lb]+"""const LEAVES={};
