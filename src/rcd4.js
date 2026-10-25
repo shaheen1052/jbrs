@@ -15,30 +15,31 @@ function r4cell(c,val,r,ed){
   if(c==='O')return`<td class="gn gc">${val===null||val===undefined?'':toBn(val.toFixed(2))}</td>`;
   return`<td class="gn${al}${r&&!lock?'':' gc'}">${r4f(val,c)}</td>`;
 }
+const r4cg=(n,lab)=>`<colgroup><col style="width:3%"><col style="width:${lab}%">${`<col style="width:${((97-lab)/n).toFixed(2)}%">`.repeat(n)}</colgroup>`;
 const r4nums=n=>`<tr class="r3no">${Array.from({length:n},(_,i)=>`<td>${toBn(i+1)}</td>`).join('')}</tr>`;
 
 /* ---------- sheet 2 / branch sheet: accumulated statement ---------- */
 function r4table(v,opt){
   const cols=opt.wo?'CDEFGHIJKLMNOPQRS':'CDEFGHIJKLMNOP',ed=opt.edit||null;
-  let h=`<table class="gt r3t"><tr><th rowspan="3">ক্রমিক নং</th><th rowspan="3">ঋণ কর্মসূচীর নাম</th><th rowspan="3" class="r3th3">${r4fy(opt.period)} অর্থ বছরে বরাদ্দ</th><th colspan="3">বিতরণকৃত ঋণ</th><th rowspan="3">আদায়যোগ্য ঋণ</th><th colspan="2">আদায়</th><th colspan="2">বর্তমান অনাদায়ী</th><th rowspan="3">মেয়াদোত্তীর্ণ ঋণের পরিমান</th><th colspan="3">শ্রেণীকৃত ঋণ</th><th rowspan="3">শ্রেণীকৃত ঋণ হতে চলতি বছরে আদায়</th>${opt.wo?'<th colspan="3">অবলোপনকৃত ঋণ</th>':''}</tr>
+  let h=`<table class="gt r3t r4t">${ed&&ed.all?'':r4cg(cols.length,22)}<tr><th rowspan="3">ক্রমিক নং</th><th rowspan="3">ঋণ কর্মসূচীর নাম</th><th rowspan="3" class="r3th3">${r4fy(opt.period)} অর্থ বছরে বরাদ্দ</th><th colspan="3">বিতরণকৃত ঋণ</th><th rowspan="3">আদায়যোগ্য ঋণ</th><th colspan="2">আদায়</th><th colspan="2">বর্তমান অনাদায়ী</th><th rowspan="3">মেয়াদোত্তীর্ণ ঋণের পরিমান</th><th colspan="3">শ্রেণীকৃত ঋণ</th><th rowspan="3">শ্রেণীকৃত ঋণ হতে চলতি বছরে আদায়</th>${opt.wo?'<th colspan="3">অবলোপনকৃত ঋণ</th>':''}</tr>
   <tr><th colspan="2">চলতি অর্থবছরে</th><th rowspan="2">ক্রমপুঞ্জিভুত বিতরণ</th><th rowspan="2">চলতি অর্থ বছরে</th><th rowspan="2">ক্রমপুঞ্জিভুত আদায়</th><th rowspan="2">ঋণ গ্রহীতার সংখ্যা</th><th rowspan="2">ঋণের পরিমান</th><th rowspan="2">সংখ্যা</th><th rowspan="2">পরিমান</th><th rowspan="2">শতকরা হার</th>${opt.wo?'<th rowspan="2">সংখ্যা</th><th rowspan="2">পরিমান</th><th rowspan="2">আদায়</th>':''}</tr>
   <tr><th>সংখ্যা</th><th>পরিমান</th></tr>${r4nums(cols.length+2)}`;
   RCD4_ROWS.forEach(x=>{const o=r4line(v,x.r);h+=`<tr><td class="gc0">${esc(x.sl)}</td><td class="glab">${esc(x.label)}</td>${cols.split('').map(c=>r4cell(c,o[c],x.r,ed)).join('')}</tr>`});
   const t=r4sum(v,R4DATA);h+=`<tr class="gsum r3grand"><td></td><td class="glab">মোটঃ-</td>${cols.split('').map(c=>r4cell(c,t[c])).join('')}</tr>`;
   return h+'</table>';
 }
-function r4head2(p,o){return r3bank(o)+`<div class="r3title">বিষয়ঃ-রিটেইল কাস্টমার-৪ সংশ্লিষ্ট ঋণের মাসিক বিবরণী।</div><div class="r3unit">রিপোর্টের তারিখঃ ${gctx(p).asOn}<br>(লক্ষ টাকায়)</div>`}
+function r4head2(p,o){return r3bank(o)+`<div class="r3title r4sp">বিষয়ঃ-রিটেইল কাস্টমার-৪ সংশ্লিষ্ট ঋণের ${gctx(p).asOn} ভিত্তিক মাসিক বিবরণী।</div><div class="r3unit">(লক্ষ টাকায়)</div>`}
 
 /* ---------- sheet 1: Head Office format (ছক-ক) ---------- */
 function r4nfhead(p,o){
   const [y,m]=p.split('-').map(Number);
-  return`<div class="r3hd"><div class="r3c"><img src="${LOGO}" alt=""><div><div class="b">জনতা ব্যাংক পিএলসি.</div><div class="o">রিটেইল কাস্টমার ডিপার্টমেন্ট-৪ এর একীভূত ঋণের মাসিক বিবরণী</div></div></div></div>
+  return`<div class="r3hd"><div class="r3c"><img src="${LOGO}" alt=""><div class="b">জনতা ব্যাংক পিএলসি.</div></div></div><div class="r3title">রিটেইল কাস্টমার ডিপার্টমেন্ট-৪ এর একীভূত ঋণের মাসিক বিবরণী</div>
   <div class="r4nfl"><div>রিপোর্টিং মাস : ${MBN[m-1]}, ${toBn(y)} &nbsp;&nbsp;&nbsp; এরিয়ার নাম : সিরাজগঞ্জ${o&&o.level==='BR'?' &nbsp;&nbsp; শাখা : '+esc((o.nameBn||o.name).split(',')[0]):''}</div><div class="r4nfr">ছক-“ক”<br>(লক্ষ টাকায়)</div></div>`;
 }
 function r4nftable(v,nfc,opt){
   const cols='CDEFGHIJKLMNOPQR';const ed=opt.edit;
   const lineOf=x=>{const s=x.acc?r4line(v,x.acc):{};const o={};'DEFGHIJKLMNP'.split('').forEach(c=>o[c]=s[c]);o.O=s.O;o.Q=s.R;o.R=s.S;o.C=nfc[x.n]!==undefined?nfc[x.n]:(x.acc?s.C:undefined);return o};
-  let h=`<table class="gt r3t"><tr><th rowspan="3">ক্রঃ নং</th><th rowspan="3">ঋণ কর্মসূচীর নাম</th><th rowspan="3" class="r3th3">${r4fy(opt.period)} অর্থ বছরে বরাদ্দ</th><th colspan="3">বিতরণকৃত ঋণ</th><th rowspan="3">মোট আদায়যোগ্য ঋণ</th><th colspan="2">আদায়</th><th colspan="2">বর্তমান মোট অনাদায়ী</th><th rowspan="3">মোট মেয়াদোত্তীর্ণ ঋণের পরিমাণ</th><th colspan="3">মোট শ্রেণীকৃত ঋণ</th><th rowspan="3">শ্রেণীকৃত ঋণ হতে চলতি অর্থ বছরে আদায়</th><th rowspan="3">মোট অবলোপনকৃত ঋণের পরিমাণ</th><th rowspan="3">অবলোপনকৃত ঋণ হতে চলতি অর্থ বছরে আদায়</th></tr>
+  let h=`<table class="gt r3t r4t">${r4cg(16,19)}<tr><th rowspan="3">ক্রঃ নং</th><th rowspan="3">ঋণ কর্মসূচীর নাম</th><th rowspan="3" class="r3th3">${r4fy(opt.period)} অর্থ বছরে বরাদ্দ</th><th colspan="3">বিতরণকৃত ঋণ</th><th rowspan="3">মোট আদায়যোগ্য ঋণ</th><th colspan="2">আদায়</th><th colspan="2">বর্তমান মোট অনাদায়ী</th><th rowspan="3">মোট মেয়াদোত্তীর্ণ ঋণের পরিমাণ</th><th colspan="3">মোট শ্রেণীকৃত ঋণ</th><th rowspan="3">শ্রেণীকৃত ঋণ হতে চলতি অর্থ বছরে আদায়</th><th rowspan="3">মোট অবলোপনকৃত ঋণের পরিমাণ</th><th rowspan="3">অবলোপনকৃত ঋণ হতে চলতি অর্থ বছরে আদায়</th></tr>
   <tr><th colspan="2">চলতি অর্থ বছরে</th><th rowspan="2">ক্রমপুঞ্জিভূত</th><th rowspan="2">চলতি অর্থ বছরে মোট আদায়</th><th rowspan="2">ক্রমপুঞ্জিভূত</th><th rowspan="2">সংখ্যা</th><th rowspan="2">পরিমাণ (অবলোপনকৃত ঋণসহ)</th><th rowspan="2">সংখ্যা</th><th rowspan="2">পরিমাণ</th><th rowspan="2">শতকরা হার</th></tr>
   <tr><th>সংখ্যা</th><th>পরিমাণ</th></tr>${r4nums(18)}`;
   const grp=[];let cur=[],all=[];
@@ -124,10 +125,10 @@ async function r4s3(p){
   const by={};d.list.forEach(x=>by[x.office]=x.v);
   const o=isBranch()?myOffice():office('5038');
   const cols='DEFHIJKLN';
-  const head=r3bank(o)+`<div class="r3title">বিষয়ঃ-রিটেইল কাস্টমার-৪ সংশ্লিষ্ট ঋণের প্রোডাক্ট ভিত্তিক মাসিক বিবরণী।</div><div class="r3unit">রিপোর্টের তারিখঃ ${gctx(p).asOn}<br>(লক্ষ টাকায়)</div>`;
+  const head=r3bank(o)+`<div class="r3title r4sp">বিষয়ঃ-রিটেইল কাস্টমার-৪ সংশ্লিষ্ট ঋণের ${gctx(p).asOn} তারিখের প্রোডাক্ট ভিত্তিক মাসিক বিবরণী।</div><div class="r3unit">(লক্ষ টাকায়)</div>`;
   const tabs=[];
   RCD4_BYP.forEach(pr=>{
-    let t=`<table class="gt r3t r3t2" data-cap="${esc(pr.title)}"><tr class="r3caprow"><th colspan="11">${esc(pr.title)}</th></tr><tr><th rowspan="3">ক্রমিক নং</th><th rowspan="3">শাখার নাম</th><th colspan="3">বিতরণকৃত ঋণ</th><th colspan="2">আদায়</th><th colspan="2">বর্তমান অনাদায়ী</th><th rowspan="3">মেয়াদোত্তীর্ণ ঋণের পরিমান</th><th rowspan="3">শ্রেণীকৃত ঋণের পরিমান</th></tr>
+    let t=`<table class="gt r3t r3t2 r4t" data-cap="${esc(pr.title)}">${r4cg(9,18)}<tr class="r3caprow"><th colspan="11">${esc(pr.title)}</th></tr><tr><th rowspan="3">ক্রমিক নং</th><th rowspan="3">শাখার নাম</th><th colspan="3">বিতরণকৃত ঋণ</th><th colspan="2">আদায়</th><th colspan="2">বর্তমান অনাদায়ী</th><th rowspan="3">মেয়াদোত্তীর্ণ ঋণের পরিমান</th><th rowspan="3">শ্রেণীকৃত ঋণের পরিমান</th></tr>
     <tr><th colspan="2">চলতি অর্থবছরে</th><th rowspan="2">ক্রমপুঞ্জিভুত বিতরণ</th><th rowspan="2">চলতি অর্থ বছরে</th><th rowspan="2">ক্রমপুঞ্জিভুত আদায়</th><th rowspan="2">ঋণ গ্রহীতার সংখ্যা</th><th rowspan="2">ঋণের পরিমান</th></tr><tr><th>সংখ্যা</th><th>পরিমান</th></tr>`;
     const tot={};
     codes.forEach((c,i)=>{const line=(by[c]&&by[c][pr.r])||{};t+=`<tr${by[c]?'':' class="r3miss"'}><td class="gc0">${toBn(i+1)}</td><td class="glab">${esc(RCD3_SHORT[c]||officeName(c))}</td>${cols.split('').map(k=>{const n=line[k];if(r4has(n))tot[k]=(tot[k]||0)+r3n(n);return`<td class="gn${R4CNT.has(k)?' cn':''}">${by[c]?r4f(n,k):''}</td>`}).join('')}</tr>`});
