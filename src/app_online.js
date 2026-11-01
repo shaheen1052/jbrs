@@ -195,6 +195,7 @@ function pageLeaf(){
   const l=LEAVES[S.view.leaf];const head=`<div class="muted small">${esc(l.pillar)}</div><h2>${esc(l.title)}</h2>`;
   if(l.tpl==='iwc')return pageIwc(l);
   if(l.tpl==='iwr')return pageIwr(l);
+  if(l.tpl==='lf')return pageLoanForms(l);
   if(l.tpl&&l.tpl.startsWith('rcd3'))return pageRcd3(l);
   if(l.tpl&&l.tpl.startsWith('rcd4'))return pageRcd4(l);
   if(!l.tpl)return head+`<div class="card"><p><b>Format pending.</b> This report will be added when its format is digitised.</p></div>`;

@@ -16,7 +16,8 @@ const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS audit(id INTEGER PRIMARY KEY AUTOINCREMENT,at TEXT,user TEXT,action TEXT,detail TEXT)`,
   `CREATE TABLE IF NOT EXISTS fails(k TEXT PRIMARY KEY,n INTEGER,until INTEGER)`,
   `CREATE TABLE IF NOT EXISTS iwc_state(office TEXT,k TEXT,v TEXT,updated TEXT,PRIMARY KEY(office,k))`,
-  `CREATE TABLE IF NOT EXISTS iwc_cases(office TEXT,key TEXT,name TEXT,acct TEXT,lt TEXT,saved TEXT,item TEXT,updated TEXT,updated_by TEXT,PRIMARY KEY(office,key))`
+  `CREATE TABLE IF NOT EXISTS iwc_cases(office TEXT,key TEXT,name TEXT,acct TEXT,lt TEXT,saved TEXT,item TEXT,updated TEXT,updated_by TEXT,PRIMARY KEY(office,key))`,
+  `CREATE TABLE IF NOT EXISTS loan_forms(office TEXT,id TEXT,type TEXT,name TEXT,acct TEXT,data TEXT,updated TEXT,updated_by TEXT,PRIMARY KEY(office,id))`
 ];
 const IWC_STATE_KEYS = ['exit-policy-v3', 'iw-typemap', 'iw-lang'];
 const MAX_IWC = 600000;
@@ -274,6 +275,47 @@ async function handle(req, env) {
     if (office !== 'all') { if (r !== null && !r.has(office)) return err('Not allowed.', 403); q += ' WHERE office=?'; a.push(office); }
     const rows = (await db.prepare(q + ' ORDER BY office,name').bind(...a).all()).results.filter(x => r === null || r.has(x.office));
     return json({ cases: rows.map(x => full ? { office: x.office, item: JSON.parse(x.item) } : x) });
+  }
+
+  // ---------- loan application forms (saved per branch) ----------
+  if (p === '/lf/list' && m === 'GET') {
+    const type = url.searchParams.get('type') || '';
+    const office = url.searchParams.get('office') || u.office || 'all';
+    if (office !== 'all' && !ID_RE.test(office)) return err('Bad office.');
+    if (!/^[a-z]{2,12}$/.test(type)) return err('Bad type.');
+    const r = await readable(db, u);
+    if (office !== 'all' && r !== null && !r.has(office)) return err('Not allowed.', 403);
+    let q = 'SELECT office,id,type,name,acct,updated FROM loan_forms WHERE type=?'; const a = [type];
+    if (office !== 'all') { q += ' AND office=?'; a.push(office); }
+    const rows = (await db.prepare(q + ' ORDER BY updated DESC LIMIT 500').bind(...a).all()).results.filter(x => r === null || r.has(x.office));
+    return json({ forms: rows });
+  }
+  if (p === '/lf/get' && m === 'GET') {
+    const office = url.searchParams.get('office') || u.office, id = url.searchParams.get('id') || '';
+    if (!office || !ID_RE.test(office) || !/^[A-Za-z0-9_-]{1,40}$/.test(id)) return err('Bad request.');
+    if (!(await canRead(db, u, office))) return err('Not allowed.', 403);
+    const x = await db.prepare('SELECT office,id,type,name,acct,data,updated FROM loan_forms WHERE office=? AND id=?').bind(office, id).first();
+    if (!x) return err('Not found.', 404);
+    return json({ form: { ...x, data: JSON.parse(x.data || '{}') } });
+  }
+  if (p === '/lf/save' && m === 'PUT') {
+    if (!u.office) return err('The admin login cannot save loan forms.', 403);
+    const b = await body(req);
+    if (!/^[A-Za-z0-9_-]{1,40}$/.test(String(b.id || '')) || !/^[a-z]{2,12}$/.test(String(b.type || '')) || !b.data || typeof b.data !== 'object') return err('Bad form.');
+    const s = JSON.stringify(b.data); if (s.length > 60000) return err('This form is too large to save.');
+    const isNew = !(await db.prepare('SELECT 1 AS x FROM loan_forms WHERE office=? AND id=?').bind(u.office, b.id).first());
+    await db.prepare('INSERT OR REPLACE INTO loan_forms(office,id,type,name,acct,data,updated,updated_by) VALUES(?,?,?,?,?,?,?,?)')
+      .bind(u.office, b.id, b.type, String(b.data.a_name || '').slice(0, 200), String(b.data.a_acct || '').slice(0, 60), s, iso(), u.id).run();
+    if (isNew) await audit(db, u.id, 'loan form added', b.type);
+    return json({ ok: true });
+  }
+  if (p === '/lf/delete' && m === 'POST') {
+    if (!u.office) return err('Not allowed.', 403);
+    const b = await body(req);
+    if (!/^[A-Za-z0-9_-]{1,40}$/.test(String(b.id || ''))) return err('Bad request.');
+    await db.prepare('DELETE FROM loan_forms WHERE office=? AND id=?').bind(u.office, b.id).run();
+    await audit(db, u.id, 'loan form removed', String(b.id));
+    return json({ ok: true });
   }
 
   // ---------- admin ----------
