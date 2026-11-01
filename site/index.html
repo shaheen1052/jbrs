@@ -154,7 +154,7 @@ const L=(id,name,tpl)=>({id,name,tpl:tpl||null});
 const G=(name,items)=>({group:name,items});
 const TREE=[
  {id:'dep',name:'Deposit',items:[L('dep_pos','Deposit position'),L('dep_open','Account opening'),L('dep_dorm','Dormant and unclaimed deposit'),L('dep_cash','Cash statement')]},
- {id:'loan',name:'Loan and advance',items:[G('Loan Application',[L('lf_cmsme','CMSME','lf'),L('lf_agri','Agricultural credit','lf'),L('lf_cf','Consumer financing','lf'),L('lf_sod','Secured overdraft','lf'),L('lf_staff','Staff loan','lf')]),G('Reports',[L('ln_cmsme','CMSME'),G('Agricultural and rural credit',[G('RCD-3',[L('ln_rcd3','Data entry','rcd3'),L('ln_rcd3s1','Statement-1 (Accumulated)','rcd3s1'),L('ln_rcd3s2','Statement-2 (Product-wise)','rcd3s2')]),G('RCD-4',[L('ln_rcd4','Data entry','rcd4'),L('ln_rcd4s1','Statement-1 (ছক-ক)','rcd4s1'),L('ln_rcd4s2','Statement-2 (Accumulated)','rcd4s2'),L('ln_rcd4s3','Statement-3 (Product-wise)','rcd4s3')]),G('RCD-4 Consumer Financing',[L('ln_rcd4cf','Data entry','rcd4cf'),L('ln_rcd4cfs1','Statement-1 (ছক-খ)','rcd4cfs1'),L('ln_rcd4cfs2','Statement-2 (Accumulated)','rcd4cfs2'),L('ln_rcd4cfs3','Statement-3 (Product-wise)','rcd4cfs3')])]),L('ln_sod','Secured overdraft'),L('ln_staff','Staff loan')])]},
+ {id:'loan',name:'Loan and advance',items:[L('ln_cmsme','CMSME'),G('Agricultural and rural credit',[G('RCD-3',[L('ln_rcd3','Data entry','rcd3'),L('ln_rcd3s1','Statement-1 (Accumulated)','rcd3s1'),L('ln_rcd3s2','Statement-2 (Product-wise)','rcd3s2')]),G('RCD-4',[L('ln_rcd4','Data entry','rcd4'),L('ln_rcd4s1','Statement-1 (ছক-ক)','rcd4s1'),L('ln_rcd4s2','Statement-2 (Accumulated)','rcd4s2'),L('ln_rcd4s3','Statement-3 (Product-wise)','rcd4s3')]),G('RCD-4 Consumer Financing',[L('ln_rcd4cf','Data entry','rcd4cf'),L('ln_rcd4cfs1','Statement-1 (ছক-খ)','rcd4cfs1'),L('ln_rcd4cfs2','Statement-2 (Accumulated)','rcd4cfs2'),L('ln_rcd4cfs3','Statement-3 (Product-wise)','rcd4cfs3')])]),L('ln_sod','Secured overdraft'),L('ln_staff','Staff loan'),G('Loan Application',[L('lf_cmsme','CMSME','lf'),L('lf_agri','Agricultural credit','lf'),L('lf_cf','Consumer financing','lf'),L('lf_sod','Secured overdraft','lf'),L('lf_staff','Staff loan','lf')])]},
  {id:'acc',name:'Accounts',items:[L('gl_branch','At a glance (এক নজরে)','glance'),L('ac_budget','Budget and expenditure'),L('ac_susp','Unadjusted suspense'),L('ac_bpen','Unadjusted bank pension'),L('ac_apen','Unadjusted army pension')]},
  {id:'rec',name:'Recovery',items:[L('rc_class','Classification of loan'),L('rc_recov','Recovery of classified loan'),G('Suit cases',[L('rc_ar','Artho Rin case'),L('rc_cert','Certificate case'),L('rc_ms','Money suit'),L('rc_cd','Cheque dishonour')]),G('Interest waiver calculator',[L('rc_iwc','Data entry','iwc'),G('Report',[L('rc_iwga','Annexure-Ga','iwr'),L('rc_iwgha','Annexure-Gha','iwr')])])]},
  {id:'aud',name:'Audit compliance',items:[L('au_bb','Bangladesh Bank audit',null),G('Head Office',[L('au_ho_gen','General',null),L('au_ho_it','IT',null)]),L('au_div','Divisional Office',null),G('Area Office',[L('au_ar_short','Short inspection',null),L('au_ar_test','Test inspection',null)]),L('au_comm','Commercial audit',null)]}
@@ -1124,8 +1124,8 @@ function renderApp(){
   const leafBtn=l=>`<button class="nav ${v.leaf===l.id?'on':''}" onclick="go({page:'leaf',leaf:'${l.id}'})">${esc(l.name)}${!l.tpl?'<span class="pend">pending</span>':''}</button>`;
   const side=`${nav('dash','Dashboard')}
    ${isAdmin()?nav('users','Users and passwords')+nav('audit','Activity log'):''}
-   ${TREE.map(p=>{const c=PCOL[p.id]||PCOL._;const shut=S.open[p.id]===false;return`<div class="pillar" style="--pc:${c[0]};--pcl:${c[1]}"><button class="nav pnav" onclick="A.togglePillar('${p.id}')"><span>${esc(p.name)}</span><span class="caret" id="pc_${p.id}">${shut?'+':'&minus;'}</span></button><div class="leaves" id="pl_${p.id}" style="${shut?'display:none':''}">
-   ${menuItems(p.items,leafBtn,true)}</div></div>`}).join('')}
+   ${MAINMENU().map(p=>{const c=PCOL[p.id]||PCOL._;const shut=S.open[p.id]===false;return`<div class="pillar" style="--pc:${c[0]};--pcl:${c[1]}"><button class="nav pnav" onclick="A.togglePillar('${p.id}')"><span>${esc(p.name)}</span><span class="caret" id="pc_${p.id}">${shut?'+':'&minus;'}</span></button><div class="leaves" id="pl_${p.id}" style="${shut?'display:none':''}">
+   ${menuItems(p.items,leafBtn,p.lvl)}</div></div>`}).join('')}
    <div style="margin-top:12px;border-top:1px solid var(--line);padding-top:8px">${nav('settings','Settings')}</div>`;
   let main='';
   try{
@@ -1137,16 +1137,22 @@ function renderApp(){
   <div class="layout"><div class="side">${side}</div><div class="main" id="main">${main}<div class="dev">${APP.dev}</div></div></div>`);
   if(v.after){const f=v.after;v.after=null;run(f)}
 }
+function MAINMENU(){
+  const lp=TREE.find(p=>p.id==='loan').items.find(x=>x.group==='Loan Application');
+  const rep=TREE.map(p=>({group:p.name,items:p.items.filter(x=>x!==lp)}));
+  return[{id:'lapp',name:'Loan Application',items:lp.items,lvl:0},{id:'rep',name:'Reports',items:rep,lvl:2}];
+}
 function menuItems(items,leafBtn,top){return items.map(it=>{
   if(!it.group)return leafBtn(it);
   if(!top)return`<div class="grp">${esc(it.group)}</div><div class="subleaves">${menuItems(it.items,leafBtn)}</div>`;
+  const sub=top-1;
   const k='g_'+it.group.replace(/\W+/g,'_'),has=g=>g.items.some(x=>x.group?has(x):x.id===S.view.leaf);
   const open=S.open[k]===undefined?has(it):S.open[k];
-  return`<button class="nav gnav" onclick="A.toggleGroup('${k}')"><span>${esc(it.group)}</span><span class="caret" id="gc_${k}">${open?'&minus;':'+'}</span></button><div class="subleaves" id="gl_${k}" style="${open?'':'display:none'}">${menuItems(it.items,leafBtn)}</div>`;
+  return`<button class="nav gnav" onclick="A.toggleGroup('${k}')"><span>${esc(it.group)}</span><span class="caret" id="gc_${k}">${open?'&minus;':'+'}</span></button><div class="subleaves" id="gl_${k}" style="${open?'':'display:none'}">${menuItems(it.items,leafBtn,sub)}</div>`;
 }).join('')}
 A.toggleGroup=k=>{const el=$('#gl_'+k);const hide=el.style.display!=='none';el.style.display=hide?'none':'';S.open[k]=!hide;$('#gc_'+k).innerHTML=hide?'+':'&minus;'};
 A.togglePillar=id=>{const el=$('#pl_'+id);const hide=el.style.display!=='none';el.style.display=hide?'none':'';S.open[id]=!hide;const c=$('#pc_'+id);if(c)c.innerHTML=hide?'+':'&minus;'};
-const PCOL={dep:['#1d5fa8','#e7f0fb'],loan:['#2e7d32','#e8f5e9'],acc:['#6a3fb5','#f0ebfa'],rec:['#b55400','#fdf0e2'],aud:['#b42318','#fdecea'],_:['#0a7aa6','#e2f4fb']};
+const PCOL={lapp:['#2e7d32','#e8f5e9'],rep:['#1d5fa8','#e7f0fb'],dep:['#1d5fa8','#e7f0fb'],loan:['#2e7d32','#e8f5e9'],acc:['#6a3fb5','#f0ebfa'],rec:['#b55400','#fdf0e2'],aud:['#b42318','#fdecea'],_:['#0a7aa6','#e2f4fb']};
 function setMain(h){const m=$('#main');if(m)m.innerHTML=h+`<div class="dev">${APP.dev}</div>`}
 
 /* ---------- dashboard ---------- */
