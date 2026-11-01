@@ -38,7 +38,10 @@ cons=g[g.index('function consolidateGlance'):]
 cons=cons[:cons.index('\n}\n')+3]
 app=open(APPJS,encoding='utf-8').read()
 rcd='\n'.join(open(f,encoding='utf-8').read() for f in RCD)
-extra_css=""".b-NONE{background:#f1f1f1;color:#666}.b-NEW{background:#eef0ef;color:#4a5752}
+extra_css=""".menubtn{background:transparent;border:1px solid rgba(255,255,255,.7);color:#fff;font-size:20px;line-height:1;padding:5px 11px;margin-right:6px}
+.sidebg{display:none}.layout.noside .side{display:none}
+@media (max-width:760px){.side{position:fixed;top:0;left:0;bottom:0;width:84%;max-width:330px;max-height:none;z-index:50;border-right:1px solid var(--line);border-bottom:none;box-shadow:0 0 30px rgba(0,0,0,.3);padding-top:16px}.layout:not(.noside) .sidebg{display:block;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:40}}
+.b-NONE{background:#f1f1f1;color:#666}.b-NEW{background:#eef0ef;color:#4a5752}
 .stats .stat .n{font-size:28px}
 .side{padding:12px 10px}
 .nav.topnav{font-weight:600;padding:8px 10px}.nav.topnav.on{background:var(--brand);color:#fff}

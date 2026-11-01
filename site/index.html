@@ -116,6 +116,9 @@ table.gt{border-collapse:collapse;width:100%}
   #printArea .glance{border:none;padding:0}#printArea .gt td,#printArea .gt th{font-size:10px;padding:2px 4px}#printArea .gt td.gc{background:#fff}#printArea .gt td.gn,#printArea .gt td.glab{min-width:0}#printArea .gsec{margin:9px 0 3px;font-size:11.5px}#printArea .gtitle{font-size:12.5px}#printArea .ghead{grid-template-columns:repeat(3,1fr);gap:4px 12px;font-size:11px}#printArea .ghead label{color:#000;font-size:10.5px;display:inline}#printArea .gv{display:inline;padding:0 0 0 4px}#printArea .gflex>div{min-width:0}
   @page{size:A4;margin:0}
 }
+.menubtn{background:transparent;border:1px solid rgba(255,255,255,.7);color:#fff;font-size:20px;line-height:1;padding:5px 11px;margin-right:6px}
+.sidebg{display:none}.layout.noside .side{display:none}
+@media (max-width:760px){.side{position:fixed;top:0;left:0;bottom:0;width:84%;max-width:330px;max-height:none;z-index:50;border-right:1px solid var(--line);border-bottom:none;box-shadow:0 0 30px rgba(0,0,0,.3);padding-top:16px}.layout:not(.noside) .sidebg{display:block;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:40}}
 .b-NONE{background:#f1f1f1;color:#666}.b-NEW{background:#eef0ef;color:#4a5752}
 .stats .stat .n{font-size:28px}
 .side{padding:12px 10px}
@@ -881,7 +884,7 @@ const LF_TYPE_BY_LEAF=Object.fromEntries(Object.entries(LF_TYPES).map(([k,v])=>[
 function lfNewId(){return 'F'+Date.now().toString(36)+Math.random().toString(36).slice(2,5)}
 function pageLoanForms(l){
   const type=LF_TYPE_BY_LEAF[l.id];const T0=LF_TYPES[type];
-  const head=`<div class="muted small">${esc(l.pillar)} / Loan application forms</div><h2>${esc(T0.en)} - application and documents</h2>`;
+  const head=`<div class="muted small">Loan Application</div><h2>${esc(T0.en)} - application and documents</h2>`;
   if(S.view.lfid){S.view.after=()=>lfOpen(type);return head+`<div id="lfbox" class="muted" style="margin-top:12px">Loading...</div>`}
   const kids=isBranch()?[]:childBranches();
   const of=S.view.lfof||(isBranch()||isArea()?S.user.office:'all');
@@ -929,7 +932,7 @@ A.lfset=el=>{const k=el.dataset.k;S.lf.d[k]=el.type==='checkbox'?el.checked:el.v
   if(el.tagName==='INPUT'&&el.inputMode==='decimal'){const nx=el.parentElement.querySelector('.muted.small.bn');const tk=lfTaka(el.value);if(nx)nx.textContent=tk;else if(tk&&/টাকা/.test(el.parentElement.querySelector('label').textContent)){const d=document.createElement('div');d.className='muted small bn';d.textContent=tk;el.parentElement.appendChild(d)}}};
 A.lfSave=async()=>{const f=S.lf;await api('/lf/save',{method:'PUT',body:{id:f.id,type:f.type,data:f.d}});f.dirty=false;f.isNew=false;toast('Saved.')};
 A.lfDel=async()=>{await api('/lf/delete',{method:'POST',body:{id:S.lf.id}});S.lf=null;toast('Deleted.');A.lfBack()};
-A.lfBack=()=>{if(S.lf&&S.lf.dirty&&!confirm('Leave without saving?'))return;S.lf=null;go({page:'leaf',leaf:S.view.leaf})};
+A.lfBack=()=>{if(S.lf&&S.lf.dirty&&!confirm('Leave without saving?'))return;S.lf=null;S.side=undefined;go({page:'leaf',leaf:S.view.leaf})};
 
 /* ---------- printing ---------- */
 function lfHead(){const o=office(S.lf.office);return`<div class="p-h"><img src="${LOGO}" alt=""><div class="tx"><div class="b">জনতা ব্যাংক পিএলসি.</div><div>${esc(o?(o.nameBn||o.name):'')}</div></div></div>`}
@@ -1116,8 +1119,12 @@ function childBranches(){return S.offices.filter(o=>o.level==='BR'&&(isAdmin()||
 function go(v){
   if(IWC.pending.size&&!confirm('Calculator changes are still being saved online. Leave anyway?'))return;
   if(S.dirty&&!confirm('You have unsaved changes on this report. Leave without saving?'))return;
-  S.dirty=false;clearInterval(S.autoTimer);S.view=v;renderApp();window.scrollTo(0,0);
+  S.dirty=false;clearInterval(S.autoTimer);S.view=v;
+  if(v.lfid||innerWidth<=760)S.side=false;   // forms open full screen; on phones the menu closes after a choice
+  renderApp();window.scrollTo(0,0);
 }
+const sideOn=()=>S.side===undefined?innerWidth>760:S.side;
+A.toggleSide=()=>{const L=$('.layout');if(!L)return;const on=L.classList.contains('noside');L.classList.toggle('noside',!on);S.side=on};
 function renderApp(){
   const v=S.view,u=S.user,o=myOffice();
   const nav=(p,label)=>`<button class="nav topnav ${v.page===p?'on':''}" onclick="go({page:'${p}'})">${label}</button>`;
@@ -1132,9 +1139,9 @@ function renderApp(){
     if(v.page==='dash')main=pageDash();else if(v.page==='leaf')main=pageLeaf();else if(v.page==='report')main=pageReport();
     else if(v.page==='view')main=pageView();else if(v.page==='users')main=pageUsers();else if(v.page==='audit')main=pageAudit();else if(v.page==='settings')main=pageSettings();
   }catch(e){main=`<div class="card">${esc(e.message)}</div>`}
-  shell(`<div class="top"><img class="toplogo" src="${LOGO}" alt="JB"><div><div class="t1">${APP.name} (${APP.short})</div><div class="small" style="opacity:.85">${o?esc(o.name)+' &middot; '+LEVELS[o.level]:'Administrator'}</div></div><div class="sp"></div>
+  shell(`<div class="top"><button class="menubtn" onclick="A.toggleSide()" title="Show / hide menu">&#9776;</button><img class="toplogo" src="${LOGO}" alt="JB"><div><div class="t1">${APP.name} (${APP.short})</div><div class="small" style="opacity:.85">${o?esc(o.name)+' &middot; '+LEVELS[o.level]:'Administrator'}</div></div><div class="sp"></div>
   <div class="who">${esc(u.name)} (${esc(u.id)})<br><b>${ROLES[u.role]}</b></div><button onclick="run(A.logout)">Log out</button></div>
-  <div class="layout"><div class="side">${side}</div><div class="main" id="main">${main}<div class="dev">${APP.dev}</div></div></div>`);
+  <div class="layout ${sideOn()?'':'noside'}"><div class="sidebg" onclick="A.toggleSide()"></div><div class="side">${side}</div><div class="main" id="main">${main}<div class="dev">${APP.dev}</div></div></div>`);
   if(v.after){const f=v.after;v.after=null;run(f)}
 }
 function MAINMENU(){

@@ -52,7 +52,7 @@ const LF_TYPE_BY_LEAF=Object.fromEntries(Object.entries(LF_TYPES).map(([k,v])=>[
 function lfNewId(){return 'F'+Date.now().toString(36)+Math.random().toString(36).slice(2,5)}
 function pageLoanForms(l){
   const type=LF_TYPE_BY_LEAF[l.id];const T0=LF_TYPES[type];
-  const head=`<div class="muted small">${esc(l.pillar)} / Loan application forms</div><h2>${esc(T0.en)} - application and documents</h2>`;
+  const head=`<div class="muted small">Loan Application</div><h2>${esc(T0.en)} - application and documents</h2>`;
   if(S.view.lfid){S.view.after=()=>lfOpen(type);return head+`<div id="lfbox" class="muted" style="margin-top:12px">Loading...</div>`}
   const kids=isBranch()?[]:childBranches();
   const of=S.view.lfof||(isBranch()||isArea()?S.user.office:'all');
@@ -100,7 +100,7 @@ A.lfset=el=>{const k=el.dataset.k;S.lf.d[k]=el.type==='checkbox'?el.checked:el.v
   if(el.tagName==='INPUT'&&el.inputMode==='decimal'){const nx=el.parentElement.querySelector('.muted.small.bn');const tk=lfTaka(el.value);if(nx)nx.textContent=tk;else if(tk&&/টাকা/.test(el.parentElement.querySelector('label').textContent)){const d=document.createElement('div');d.className='muted small bn';d.textContent=tk;el.parentElement.appendChild(d)}}};
 A.lfSave=async()=>{const f=S.lf;await api('/lf/save',{method:'PUT',body:{id:f.id,type:f.type,data:f.d}});f.dirty=false;f.isNew=false;toast('Saved.')};
 A.lfDel=async()=>{await api('/lf/delete',{method:'POST',body:{id:S.lf.id}});S.lf=null;toast('Deleted.');A.lfBack()};
-A.lfBack=()=>{if(S.lf&&S.lf.dirty&&!confirm('Leave without saving?'))return;S.lf=null;go({page:'leaf',leaf:S.view.leaf})};
+A.lfBack=()=>{if(S.lf&&S.lf.dirty&&!confirm('Leave without saving?'))return;S.lf=null;S.side=undefined;go({page:'leaf',leaf:S.view.leaf})};
 
 /* ---------- printing ---------- */
 function lfHead(){const o=office(S.lf.office);return`<div class="p-h"><img src="${LOGO}" alt=""><div class="tx"><div class="b">জনতা ব্যাংক পিএলসি.</div><div>${esc(o?(o.nameBn||o.name):'')}</div></div></div>`}
