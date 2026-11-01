@@ -161,7 +161,7 @@ function renderApp(){
 function MAINMENU(){
   const lp=TREE.find(p=>p.id==='loan').items.find(x=>x.group==='Loan Application');
   const rep=TREE.map(p=>({group:p.name,items:p.items.filter(x=>x!==lp)}));
-  return[{id:'lapp',name:'Loan Application',items:lp.items,lvl:0},{id:'rep',name:'Reports',items:rep,lvl:2}];
+  return[{id:'lapp',name:'Loan Application',items:lp.items,lvl:1},{id:'rep',name:'Reports',items:rep,lvl:2}];
 }
 function menuItems(items,leafBtn,top){return items.map(it=>{
   if(!it.group)return leafBtn(it);

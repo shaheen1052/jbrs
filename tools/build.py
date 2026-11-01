@@ -19,7 +19,7 @@ assert _ag in tree
 tree=tree.replace(_ag,"G('Agricultural and rural credit',[G('RCD-3',[L('ln_rcd3','Data entry','rcd3'),L('ln_rcd3s1','Statement-1 (Accumulated)','rcd3s1'),L('ln_rcd3s2','Statement-2 (Product-wise)','rcd3s2')]),G('RCD-4',[L('ln_rcd4','Data entry','rcd4'),L('ln_rcd4s1','Statement-1 (ছক-ক)','rcd4s1'),L('ln_rcd4s2','Statement-2 (Accumulated)','rcd4s2'),L('ln_rcd4s3','Statement-3 (Product-wise)','rcd4s3')]),G('RCD-4 Consumer Financing',[L('ln_rcd4cf','Data entry','rcd4cf'),L('ln_rcd4cfs1','Statement-1 (ছক-খ)','rcd4cfs1'),L('ln_rcd4cfs2','Statement-2 (Accumulated)','rcd4cfs2'),L('ln_rcd4cfs3','Statement-3 (Product-wise)','rcd4cfs3')])])")
 _ln="L('ln_sod','Secured overdraft'),L('ln_staff','Staff loan')]}"
 assert _ln in tree
-tree=tree.replace(_ln,"L('ln_sod','Secured overdraft'),L('ln_staff','Staff loan'),G('Loan Application',[L('lf_cmsme','CMSME','lf'),L('lf_agri','Agricultural credit','lf'),L('lf_cf','Consumer financing','lf'),L('lf_sod','Secured overdraft','lf'),L('lf_staff','Staff loan','lf')])]}")
+tree=tree.replace(_ln,"L('ln_sod','Secured overdraft'),L('ln_staff','Staff loan'),G('Loan Application',[L('lf_cmsme','CMSME','lf'),L('lf_agri','Agricultural credit','lf'),G('Consumer financing',[L('lf_cfpersonal','Personal Loan','lf'),L('lf_cfcredit','Consumer Credit','lf'),L('lf_cfhealth','Janata Support Health Care Loan','lf'),L('lf_cfpension','Janata Support Loan for Pensioner','lf')]),L('lf_sod','Secured overdraft','lf'),L('lf_staff','Staff loan','lf')])]}")
 tree=tree.replace(_old,"G('Interest waiver calculator',[L('rc_iwc','Data entry','iwc'),G('Report',[L('rc_iwga','Annexure-Ga','iwr'),L('rc_iwgha','Annexure-Gha','iwr')])])")
 _lb=tree.index('const LEAVES={};')
 tree=tree[:_lb]+"""const LEAVES={};

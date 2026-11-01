@@ -157,7 +157,7 @@ const L=(id,name,tpl)=>({id,name,tpl:tpl||null});
 const G=(name,items)=>({group:name,items});
 const TREE=[
  {id:'dep',name:'Deposit',items:[L('dep_pos','Deposit position'),L('dep_open','Account opening'),L('dep_dorm','Dormant and unclaimed deposit'),L('dep_cash','Cash statement')]},
- {id:'loan',name:'Loan and advance',items:[L('ln_cmsme','CMSME'),G('Agricultural and rural credit',[G('RCD-3',[L('ln_rcd3','Data entry','rcd3'),L('ln_rcd3s1','Statement-1 (Accumulated)','rcd3s1'),L('ln_rcd3s2','Statement-2 (Product-wise)','rcd3s2')]),G('RCD-4',[L('ln_rcd4','Data entry','rcd4'),L('ln_rcd4s1','Statement-1 (ছক-ক)','rcd4s1'),L('ln_rcd4s2','Statement-2 (Accumulated)','rcd4s2'),L('ln_rcd4s3','Statement-3 (Product-wise)','rcd4s3')]),G('RCD-4 Consumer Financing',[L('ln_rcd4cf','Data entry','rcd4cf'),L('ln_rcd4cfs1','Statement-1 (ছক-খ)','rcd4cfs1'),L('ln_rcd4cfs2','Statement-2 (Accumulated)','rcd4cfs2'),L('ln_rcd4cfs3','Statement-3 (Product-wise)','rcd4cfs3')])]),L('ln_sod','Secured overdraft'),L('ln_staff','Staff loan'),G('Loan Application',[L('lf_cmsme','CMSME','lf'),L('lf_agri','Agricultural credit','lf'),L('lf_cf','Consumer financing','lf'),L('lf_sod','Secured overdraft','lf'),L('lf_staff','Staff loan','lf')])]},
+ {id:'loan',name:'Loan and advance',items:[L('ln_cmsme','CMSME'),G('Agricultural and rural credit',[G('RCD-3',[L('ln_rcd3','Data entry','rcd3'),L('ln_rcd3s1','Statement-1 (Accumulated)','rcd3s1'),L('ln_rcd3s2','Statement-2 (Product-wise)','rcd3s2')]),G('RCD-4',[L('ln_rcd4','Data entry','rcd4'),L('ln_rcd4s1','Statement-1 (ছক-ক)','rcd4s1'),L('ln_rcd4s2','Statement-2 (Accumulated)','rcd4s2'),L('ln_rcd4s3','Statement-3 (Product-wise)','rcd4s3')]),G('RCD-4 Consumer Financing',[L('ln_rcd4cf','Data entry','rcd4cf'),L('ln_rcd4cfs1','Statement-1 (ছক-খ)','rcd4cfs1'),L('ln_rcd4cfs2','Statement-2 (Accumulated)','rcd4cfs2'),L('ln_rcd4cfs3','Statement-3 (Product-wise)','rcd4cfs3')])]),L('ln_sod','Secured overdraft'),L('ln_staff','Staff loan'),G('Loan Application',[L('lf_cmsme','CMSME','lf'),L('lf_agri','Agricultural credit','lf'),G('Consumer financing',[L('lf_cfpersonal','Personal Loan','lf'),L('lf_cfcredit','Consumer Credit','lf'),L('lf_cfhealth','Janata Support Health Care Loan','lf'),L('lf_cfpension','Janata Support Loan for Pensioner','lf')]),L('lf_sod','Secured overdraft','lf'),L('lf_staff','Staff loan','lf')])]},
  {id:'acc',name:'Accounts',items:[L('gl_branch','At a glance (এক নজরে)','glance'),L('ac_budget','Budget and expenditure'),L('ac_susp','Unadjusted suspense'),L('ac_bpen','Unadjusted bank pension'),L('ac_apen','Unadjusted army pension')]},
  {id:'rec',name:'Recovery',items:[L('rc_class','Classification of loan'),L('rc_recov','Recovery of classified loan'),G('Suit cases',[L('rc_ar','Artho Rin case'),L('rc_cert','Certificate case'),L('rc_ms','Money suit'),L('rc_cd','Cheque dishonour')]),G('Interest waiver calculator',[L('rc_iwc','Data entry','iwc'),G('Report',[L('rc_iwga','Annexure-Ga','iwr'),L('rc_iwgha','Annexure-Gha','iwr')])])]},
  {id:'aud',name:'Audit compliance',items:[L('au_bb','Bangladesh Bank audit',null),G('Head Office',[L('au_ho_gen','General',null),L('au_ho_it','IT',null)]),L('au_div','Divisional Office',null),G('Area Office',[L('au_ar_short','Short inspection',null),L('au_ar_test','Test inspection',null)]),L('au_comm','Commercial audit',null)]}
@@ -868,9 +868,18 @@ const LF_TYPES={
   agri:{name:'কৃষি ঋণ',en:'Agricultural credit',leaf:'lf_agri',
     ex:{h:'কৃষি তথ্য',f:[lfT('x_crop','ফসল/খাত'),lfS('x_season','মৌসুম',['রবি','খরিফ-১','খরিফ-২','সারা বছর']),lfN('x_land','আবাদযোগ্য জমির পরিমাণ (শতাংশ)'),lfS('x_own','জমির মালিকানা',['নিজস্ব','বর্গা','লিজ']),lfN('x_cost','মোট আনুমানিক ব্যয় (টাকা)'),lfN('x_yield','প্রত্যাশিত আয় (টাকা)'),lfA('x_loc','জমির অবস্থান (মৌজা, দাগ নং)')]},
     docs:['জমির মালিকানা দলিল/খতিয়ান/খাজনার রসিদ','বর্গা/লিজ চুক্তিপত্র (প্রযোজ্য ক্ষেত্রে)','কৃষি কর্মকর্তা/ইউনিয়ন পরিষদের প্রত্যয়নপত্র','কৃষক পরিচয়পত্র/কৃষি উপকরণ সহায়তা কার্ড (থাকলে)']},
-  cf:{name:'ভোক্তা ঋণ (কনজ্যুমার ফাইন্যান্সিং)',en:'Consumer financing',leaf:'lf_cf',
+  cfpersonal:{name:'পার্সোনাল লোন',en:'Consumer financing - Personal Loan',leaf:'lf_cfpersonal',
+    ex:{h:'আয় ও কর্মস্থলের তথ্য',f:[lfT('x_employer','কর্মস্থল/নিয়োগকর্তা'),lfT('x_desig','পদবী'),lfN('x_income','মাসিক নীট আয় (টাকা)'),lfN('x_emi','বিদ্যমান মাসিক কিস্তি (টাকা)'),lfD('x_join','চাকরি/ব্যবসা শুরুর তারিখ'),lfA('x_use','ঋণের অর্থ ব্যবহারের খাত')]},
+    docs:['আয়ের প্রমাণপত্র (বেতন সনদ/ব্যবসার তথ্য)','কর্মস্থলের পরিচয়পত্র/প্রত্যয়নপত্র','ঠিকানার প্রমাণ (ইউটিলিটি বিল ইত্যাদি)']},
+  cfcredit:{name:'কনজ্যুমার ক্রেডিট',en:'Consumer financing - Consumer Credit',leaf:'lf_cfcredit',
     ex:{h:'ক্রয় ও আয়ের তথ্য',f:[lfT('x_item','পণ্যের নাম/বিবরণ'),lfT('x_vendor','বিক্রেতা প্রতিষ্ঠান'),lfN('x_price','পণ্যের মূল্য (টাকা)'),lfN('x_down','ডাউন পেমেন্ট (টাকা)'),lfN('x_income','মাসিক আয় (টাকা)'),lfN('x_emi','বিদ্যমান মাসিক কিস্তি (টাকা)'),lfT('x_employer','কর্মস্থল/নিয়োগকর্তা')]},
     docs:['পণ্যের কোটেশন/প্রোফর্মা ইনভয়েস','আয়ের প্রমাণপত্র (বেতন সনদ/ব্যবসার তথ্য)','কর্মস্থলের পরিচয়পত্রের ফটোকপি/প্রত্যয়নপত্র','ঠিকানার প্রমাণ (ইউটিলিটি বিল ইত্যাদি)']},
+  cfhealth:{name:'জনতা সাপোর্ট হেলথ কেয়ার লোন',en:'Consumer financing - Janata Support Health Care Loan',leaf:'lf_cfhealth',
+    ex:{h:'চিকিৎসা ও আয়ের তথ্য',f:[lfT('x_patient','রোগীর নাম'),lfT('x_rel','আবেদনকারীর সাথে সম্পর্ক'),lfT('x_hosp','হাসপাতাল/ক্লিনিকের নাম'),lfT('x_doc','চিকিৎসকের নাম'),lfN('x_cost','চিকিৎসার আনুমানিক ব্যয় (টাকা)'),lfN('x_income','মাসিক আয় (টাকা)'),lfN('x_emi','বিদ্যমান মাসিক কিস্তি (টাকা)'),lfT('x_employer','কর্মস্থল/নিয়োগকর্তা')]},
+    docs:['চিকিৎসকের প্রেসক্রিপশন/চিকিৎসা প্রতিবেদন','হাসপাতাল/ক্লিনিকের ব্যয়ের প্রাক্কলন (এস্টিমেট)','আয়ের প্রমাণপত্র (বেতন সনদ/ব্যবসার তথ্য)','রোগীর সাথে সম্পর্কের প্রমাণ (প্রযোজ্য ক্ষেত্রে)']},
+  cfpension:{name:'জনতা সাপোর্ট লোন ফর পেনশনার',en:'Consumer financing - Janata Support Loan for Pensioner',leaf:'lf_cfpension',
+    ex:{h:'পেনশন সংক্রান্ত তথ্য',f:[lfT('x_ppo','পেনশন পেমেন্ট অর্ডার (পিপিও) নম্বর'),lfT('x_ptype','পেনশনের ধরন'),lfT('x_last','সর্বশেষ কর্মস্থল ও পদবী'),lfD('x_ret','অবসরের তারিখ'),lfN('x_pension','মাসিক পেনশন (টাকা)'),lfT('x_pbank','পেনশন উত্তোলনের হিসাব/শাখা'),lfN('x_emi','বিদ্যমান মাসিক কিস্তি (টাকা)'),lfA('x_use','ঋণের অর্থ ব্যবহারের খাত')]},
+    docs:['পেনশন পেমেন্ট অর্ডার (পিপিও) এর ফটোকপি','পেনশন উত্তোলনের হিসাবের সর্বশেষ স্টেটমেন্ট','অবসর গ্রহণের আদেশ/পরিচয়পত্র','পেনশন কর্তনের/উত্তোলনের অঙ্গীকারপত্র']},
   sod:{name:'সিকিউরড ওভারড্রাফট (এসওডি)',en:'Secured overdraft',leaf:'lf_sod',
     ex:{h:'জামানতকৃত আমানতের তথ্য',f:[lfS('x_inst','আমানতের ধরন',['এফডিআর','ডিপিএস','সঞ্চয়পত্র','অন্যান্য']),lfT('x_no','আমানত/হিসাব নম্বর'),lfN('x_dep','আমানতের পরিমাণ (টাকা)'),lfD('x_open','খোলার তারিখ'),lfD('x_mat','মেয়াদপূর্তির তারিখ'),lfN('x_margin','মার্জিন (%)'),lfT('x_depo','আমানতকারীর নাম (যদি ভিন্ন হয়)')]},
     docs:['এফডিআর/আমানতের মূল রসিদ (লিয়েন চিহ্নিত)','লিয়েন ও সেট-অফ চুক্তিপত্র','তৃতীয় পক্ষের আমানত হলে আমানতকারীর সম্মতিপত্র']},
@@ -1147,7 +1156,7 @@ function renderApp(){
 function MAINMENU(){
   const lp=TREE.find(p=>p.id==='loan').items.find(x=>x.group==='Loan Application');
   const rep=TREE.map(p=>({group:p.name,items:p.items.filter(x=>x!==lp)}));
-  return[{id:'lapp',name:'Loan Application',items:lp.items,lvl:0},{id:'rep',name:'Reports',items:rep,lvl:2}];
+  return[{id:'lapp',name:'Loan Application',items:lp.items,lvl:1},{id:'rep',name:'Reports',items:rep,lvl:2}];
 }
 function menuItems(items,leafBtn,top){return items.map(it=>{
   if(!it.group)return leafBtn(it);
