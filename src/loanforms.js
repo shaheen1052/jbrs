@@ -109,7 +109,7 @@ function lfRender(){
   const docs=lfDocs(t);
   box.outerHTML=`<div id="lfbox">${ro?'<div class="note n-info">View only: this application belongs to another office.</div>':''}
   ${lfSections(f.type).map(s=>`<div class="card bn" style="margin-top:12px"><h3 style="margin-top:0">${s.h}</h3><div class="row" style="flex-wrap:wrap">${s.f.map(x=>lfField(x,f.d[x.k],ro)).join('')}</div></div>`).join('')}
-  ${t.calc?`<div class="card bn" style="margin-top:12px"><h3 style="margin-top:0">স্বয়ংক্রিয় হিসাব ও নীতিমালা যাচাই (আরসিডি সার্কুলার নং-১১৯/২৫)</h3><div id="lfcalc">${t.calc(f.d)}</div></div>`:''}
+  ${t.calc?`<div class="card bn" style="margin-top:12px"><h3 style="margin-top:0">স্বয়ংক্রিয় হিসাব ও নীতিমালা যাচাই (আরসিডি সার্কুলার ১১৯/২৫, ১২২/২৬, ১২৬/২৬)</h3><div id="lfcalc">${t.calc(f.d)}</div></div>`:''}
   <div class="card bn" style="margin-top:12px"><h3 style="margin-top:0">প্রয়োজনীয় কাগজপত্র (চেকলিস্ট)</h3>${docs.map((x,i)=>`<label style="display:block;font-weight:400;margin:4px 0"><input type="checkbox" data-k="ck${i}" ${f.d['ck'+i]?'checked':''} onchange="A.lfset(this)" ${ro?'disabled':''}> ${esc(x)}</label>`).join('')}</div>
   <div class="bar" style="margin-top:12px">${ro?'':`<button class="pri" onclick="run(A.lfSave)">Save</button>`}
   ${lfPrintList(t).map(([k,l])=>`<button onclick="A.lfPrint('${k}')">${l}</button>`).join('')}<button onclick="A.lfPrint('all')">Print all</button>
@@ -179,22 +179,23 @@ const lfGuaSec=(g,h)=>({h,f:[lfT(g+'_name','নাম'),lfT(g+'_prof','পেশ
 const lfEmi=(P,n,r)=>{P=+P;n=+n;r=+r;if(!(P>0&&n>0&&r>=0))return null;const i=r/1200;const e=i?P*i*Math.pow(1+i,n)/(Math.pow(1+i,n)-1):P/n;return Math.ceil(e/10-1e-9)*10};   // matches the circular's table (rounded up to Tk 10)
 const lfFmt=n=>toBn(Math.round(n).toLocaleString('en-IN'));
 function lfPersonalCalc(d){
-  const P=parseFloat(d.l_amt)||0,n=parseInt(d.l_months)||0,r=d.l_rate===undefined||d.l_rate===''?13:parseFloat(d.l_rate);
+  const P=parseFloat(d.l_amt)||0,n=parseInt(d.l_months)||0,r=d.l_rate===undefined||d.l_rate===''?12:parseFloat(d.l_rate);
   if(!P||!n)return'<span class="muted">ঋণের পরিমাণ ও কিস্তির সংখ্যা দিলে এখানে মাসিক কিস্তি ও নীতিমালা যাচাই দেখা যাবে।</span>';
   const e=lfEmi(P,n,r),tot=e*n,th=parseFloat(d.x_takehome)||0;
   const ok=(c,t)=>`<div style="color:${c?'#1b6e2c':'#b42318'}">${c?'✓':'✗'} ${t}</div>`;
   const out=[`<div><b>মাসিক কিস্তি (${toBn(r)}% হারে, ${toBn(n)} কিস্তি): ${lfFmt(e)} টাকা</b> &nbsp; মোট পরিশোধ: ${lfFmt(tot)} টাকা, সুদ: ${lfFmt(tot-P)} টাকা</div>`];
-  out.push('<div class="muted small">অন্যান্য কিস্তি সংখ্যায়: '+[12,24,36,48,60].map(k=>toBn(k)+' কিস্তি '+lfFmt(lfEmi(P,k,r))).join(' | ')+'</div>');
-  out.push(ok(P>=100000&&P<=2000000,'ঋণের পরিমাণ ১,০০,০০০ থেকে ২০,০০,০০০ টাকার মধ্যে'+(P>2000000?' - সর্বোচ্চ সীমা অতিক্রম করেছে':P<100000?' - ১ লক্ষ টাকার নিচে (সারণি ১ লক্ষ থেকে)':'')));
+  out.push('<div class="muted small">অন্যান্য কিস্তি সংখ্যায়: '+[12,24,36,48,60,72,84,96].map(k=>toBn(k)+' কিস্তি '+lfFmt(lfEmi(P,k,r))).join(' | ')+'</div>');
+  out.push(ok(P<=4000000,'ঋণের পরিমাণ গ্রাহক প্রতি সর্বোচ্চ ৪০,০০,০০০ টাকার মধ্যে'+(P>4000000?' - সর্বোচ্চ সীমা অতিক্রম করেছে':'')));
   if(th){const cap=th*0.8,i=r/1200,pmax=i?cap*(1-Math.pow(1+i,-n))/i:cap*n;
-    out.push(ok(e<=cap,`মাসিক কিস্তি টেক হোম পে এর ৮০% (${lfFmt(cap)} টাকা) এর মধ্যে`+(e>cap?' - বেশি':'')));
-    out.push(`<div class="muted small">এই কিস্তি সংখ্যায় ৮০% শর্তে ঋণযোগ্যতা প্রায় ${lfFmt(Math.min(2000000,Math.floor(pmax/1000)*1000))} টাকা</div>`);
+    out.push(ok(e<=cap,`মাসিক কিস্তি টেক হোম পে এর ৮০% (${lfFmt(cap)} টাকা) এর মধ্যে`+(e>cap?' - বেশি। আয়ের অন্য উৎস থাকলে সহায়ক জামানত গ্রহণ সাপেক্ষে সর্বোচ্চ ৪০ লক্ষ টাকা পর্যন্ত দেওয়া যায় (আরসিডি সার্কুলার ১২৬/২৬)':'')));
+    out.push(`<div class="muted small">এই কিস্তি সংখ্যায় ৮০% শর্তে ঋণযোগ্যতা প্রায় ${lfFmt(Math.min(4000000,Math.floor(pmax/1000)*1000))} টাকা</div>`);
   }else out.push('<div class="muted small">টেক হোম পে দিলে কিস্তি ≤ ৮০% শর্ত যাচাই হবে।</div>');
   if(d.x_ret&&d.l_date){const a=new Date(d.l_date),b=new Date(d.x_ret),m=(b.getFullYear()-a.getFullYear())*12+b.getMonth()-a.getMonth();
-    out.push(ok(m>=n,`চাকরির অবশিষ্ট মেয়াদ ${toBn(Math.max(m,0))} মাস (কিস্তির মেয়াদ চাকরির মেয়াদকাল/পিআরএল পর্যন্ত, সর্বোচ্চ ৫ বছর)`+(m<n?' - মেয়াদ কমাতে হবে বা কিস্তি পুনর্নির্ধারণ করতে হবে':'')));}
-  const auth=P<=500000?'শাখা ব্যবস্থাপক (এসও/পিও)':P<=800000?'শাখা ব্যবস্থাপক (এসপিও)':P<=1000000?'এজিএম':P<=1500000?'ডিজিএম':P<=2000000?'জিএম':'';
+    out.push(ok(m>=n,`চাকরির অবশিষ্ট মেয়াদ ${toBn(Math.max(m,0))} মাস (কিস্তির মেয়াদ চাকরির মেয়াদকাল/পিআরএল পর্যন্ত, সর্বোচ্চ ৮ বছর)`+(m<n?' - মেয়াদ কমাতে হবে বা কিস্তি পুনর্নির্ধারণ করতে হবে':'')));}
+  const auth=P<=1000000?'শাখা ব্যবস্থাপক (এসও/পিও)':P<=2000000?'শাখা ব্যবস্থাপক (এসপিও)':P<=2500000?'এজিএম':P<=3000000?'ডিজিএম':P<=4000000?'জিএম':'';
   if(auth)out.push(`<div>ঋণ মঞ্জুরির ক্ষমতা: <b>${auth}</b></div>`);
-  out.push('<div class="muted small">বেতন-ভাতাদি যে শাখায় জমা হয় শুধুমাত্র সে শাখা থেকে ঋণ প্রদান করা যাবে।</div>');
+  out.push(ok(!!n&&n<=96,'কিস্তির মেয়াদ সর্বোচ্চ ৮ বছর (৯৬ মাস)'));
+  out.push('<div class="muted small">বেতন-ভাতাদি যে শাখায় জমা হয় শুধুমাত্র সে শাখা থেকে ঋণ প্রদান করা যাবে। ঋণ পরিশোধ না হওয়া পর্যন্ত বেতন অন্য ব্যাংক/শাখায় স্থানান্তর করা হবে না মর্মে বেতন প্রদানকারী/যথাযথ কর্তৃপক্ষের নিশ্চয়তা নিতে হবে।</div>');
   return out.join('');
 }
 const lfLn=(l,v,w)=>`<div style="display:flex;gap:6px;margin:3px 0;${w?'width:'+w+';':''}"><span style="flex:0 0 auto">${l}</span><span style="flex:1;border-bottom:1px dotted #000;min-height:1.25em">${v?esc(v):''}</span></div>`;
@@ -236,7 +237,7 @@ function lfDocKha(){
 }
 function lfDocGa(){
   const d=S.lf.d;const U=(v,w)=>`<u>${v?esc(v):'.'.repeat(w||22)}</u>`;
-  const P=parseFloat(d.s_amt||d.l_amt)||0,n=parseInt(d.l_months)||0,r=d.l_rate===''||d.l_rate===undefined?13:parseFloat(d.l_rate);
+  const P=parseFloat(d.s_amt||d.l_amt)||0,n=parseInt(d.l_months)||0,r=d.l_rate===''||d.l_rate===undefined?12:parseFloat(d.l_rate);
   const e=P&&n?lfEmi(P,n,r):0,tot=e*n;
   return`<div class="r3pg"><div style="text-align:right;text-decoration:underline;font-size:12px">এ্যানেক্সার-'গ'</div>
   <div style="margin-top:12px">ব্যবস্থাপক<br>জনতা ব্যাংক পিএলসি.<br>${lfBrn()} শাখা।</div>
@@ -247,12 +248,12 @@ function lfDocGa(){
   <div style="margin-top:22px;width:62%">${lfLn('স্বাক্ষীর স্বাক্ষর ঃ','')}${lfLn('পূর্ণ নাম ঃ',d.w_name)}${lfLn('ঠিকানা ঃ',d.w_addr)}${lfLn('জাতীয় পরিচয়পত্র নম্বর ঃ',lfv(d,'w_nid'))}</div></div>`;
 }
 Object.assign(LF_TYPES.cfpersonal,{
-  ownDocs:true,calc:lfPersonalCalc,defaults:{l_rate:'13',s_cn:'5'},
-  docs:['এমপ্লয়ার্স সার্টিফিকেট (এ্যানেক্সার-খ) - প্রতিষ্ঠান প্রধান/বেতন প্রদানকারী কর্মকর্তা কর্তৃক (শিক্ষা প্রতিষ্ঠানের ক্ষেত্রে ভিসি/রেজিস্ট্রার/অধ্যক্ষ/প্রিন্সিপাল/প্রধান শিক্ষক)','সর্বশেষ বেতন বিবরণী (Salary Statement)','জাতীয় পরিচয়পত্রের সত্যায়িত ফটোকপি ও সদ্য তোলা পাসপোর্ট সাইজের ২ কপি ছবি','ঋণের কিস্তি/বকেয়া আদায়ের ক্ষমতা অর্পণপত্র (এ্যানেক্সার-গ)','অন্য কোন ব্যাংক/আর্থিক প্রতিষ্ঠানে ঋণ থাকলে পূর্বের প্রতিষ্ঠানের প্রত্যয়নপত্র','স্থায়ী ঠিকানার বিষয়ে চেয়ারম্যান/কমিশনারের সার্টিফিকেট','পারিবারিক/ব্যক্তিগত গ্যারান্টি (স্বামী/স্ত্রী/পিতা/মাতা/সাবালক সন্তান/ভাই/বোন)','তৃতীয় পক্ষীয় জামিনদার (নিয়োগকর্তা/গেজেটেড অফিসার/সহকর্মী/ব্যাংকের নিকট গ্রহণযোগ্য ব্যক্তি)','ঋণের সমপরিমাণ ১টি চেকসহ তারিখ বিহীন মোট ৫টি স্বাক্ষরযুক্ত A/C Payee চেক','Letter of Authority (প্রভিডেন্ট ফান্ড/গ্র্যাচুইটি বা অন্য আর্থিক সুবিধা থেকে বকেয়া সমন্বয়)','সন্তোষজনক সিআইবি রিপোর্ট (বিতরণের পূর্বে ও পরে)','চার্জ ডকুমেন্টস: ডিপি নোট, লেটার অব অ্যারেঞ্জমেন্ট, লেটার অব ডিসবার্সমেন্ট, লেটার অব গ্যারান্টি, লেটার অব লিয়েন (প্রযোজ্য ক্ষেত্রে)'],
+  ownDocs:true,calc:lfPersonalCalc,defaults:{l_rate:'12',s_cn:'5'},
+  docs:['এমপ্লয়ার্স সার্টিফিকেট (এ্যানেক্সার-খ) - প্রতিষ্ঠান প্রধান/বেতন প্রদানকারী কর্মকর্তা কর্তৃক (শিক্ষা প্রতিষ্ঠানের ক্ষেত্রে ভিসি/রেজিস্ট্রার/অধ্যক্ষ/প্রিন্সিপাল/প্রধান শিক্ষক)','সর্বশেষ বেতন বিবরণী (Salary Statement)','জাতীয় পরিচয়পত্রের সত্যায়িত ফটোকপি ও সদ্য তোলা পাসপোর্ট সাইজের ২ কপি ছবি','ঋণের কিস্তি/বকেয়া আদায়ের ক্ষমতা অর্পণপত্র (এ্যানেক্সার-গ)','অন্য কোন ব্যাংক/আর্থিক প্রতিষ্ঠানে ঋণ থাকলে পূর্বের প্রতিষ্ঠানের প্রত্যয়নপত্র','স্থায়ী ঠিকানার বিষয়ে চেয়ারম্যান/কমিশনারের সার্টিফিকেট','পারিবারিক/ব্যক্তিগত গ্যারান্টি (স্বামী/স্ত্রী/পিতা/মাতা/সাবালক সন্তান/ভাই/বোন)','তৃতীয় পক্ষীয় জামিনদার (নিয়োগকর্তা/গেজেটেড অফিসার/সহকর্মী/ব্যাংকের নিকট গ্রহণযোগ্য ব্যক্তি)','ঋণের সমপরিমাণ ১টি চেকসহ তারিখ বিহীন মোট ৫টি স্বাক্ষরযুক্ত A/C Payee চেক','Letter of Authority (প্রভিডেন্ট ফান্ড/গ্র্যাচুইটি বা অন্য আর্থিক সুবিধা থেকে বকেয়া সমন্বয়)','বেতন প্রদানকারী/যথাযথ কর্তৃপক্ষের নিশ্চয়তা: ঋণ পরিশোধ না হওয়া পর্যন্ত বেতন অন্য ব্যাংক/শাখায় স্থানান্তর করা হবে না (আরসিডি সার্কুলার ১২৬/২৬)','সহায়ক জামানতের কাগজপত্র (আয়ের অন্য উৎস থাকলে এবং মাসিক বেতন দ্বারা কিস্তি পরিশোধ না হলে - আরসিডি সার্কুলার ১২৬/২৬)','সন্তোষজনক সিআইবি রিপোর্ট (বিতরণের পূর্বে ও পরে)','চার্জ ডকুমেন্টস: ডিপি নোট, লেটার অব অ্যারেঞ্জমেন্ট, লেটার অব ডিসবার্সমেন্ট, লেটার অব গ্যারান্টি, লেটার অব লিয়েন (প্রযোজ্য ক্ষেত্রে)'],
   sections:[
    {h:'আবেদনকারীর ব্যক্তিগত তথ্য (এ্যানেক্সার-ক)',f:[lfT('a_name','নাম'),lfT('a_acct','হিসাব নম্বর'),lfT('a_father','পিতার নাম'),lfT('a_fpr','পিতার পেশা'),lfT('a_mother','মাতার নাম'),lfT('a_mpr','মাতার পেশা'),lfT('a_spouse','স্বামী/স্ত্রীর নাম'),lfT('a_spr','স্বামী/স্ত্রীর পেশা'),lfD('a_dob','জন্ম তারিখ'),lfT('a_edu','শিক্ষাগত যোগ্যতা'),lfT('a_nid','জাতীয় পরিচয়পত্র নম্বর'),lfT('a_mobile','ফোন/মোবাইল নম্বর'),lfA('a_pres','বর্তমান ঠিকানা'),lfA('a_perm','স্থায়ী ঠিকানা'),lfA('a_cont','যোগাযোগের ঠিকানা')]},
    {h:'চাকরির তথ্য',f:[lfA('x_employer','প্রতিষ্ঠানের নাম, ঠিকানা ও ফোন নম্বর'),lfT('x_jdesig','যোগদানের পদ'),lfT('x_desig','বর্তমান পদবী'),lfD('x_join','চাকরিতে যোগদানের তারিখ'),lfD('x_perm','চাকরিতে স্থায়ী হওয়ার তারিখ'),lfD('x_ret','চাকরি হতে অবসরের তারিখ'),lfN('x_basic','মাসিক মূল বেতন (টাকা)'),lfN('x_gross','মাসিক মোট বেতন (টাকা)'),lfN('x_takehome','মাসিক টেক হোম পে (টাকা)'),lfA('x_liab','মোট দায়-দেনার পরিমাণ (যদি থাকে)')]},
-   {h:'ঋণের তথ্য',f:[lfS('l_purpose','ঋণের উদ্দেশ্য',LF_PURPOSES),lfN('l_amt','আবেদনকৃত ঋণের পরিমাণ (টাকা)'),lfS('l_months','কিস্তির সংখ্যা (মাস)',['12','24','36','48','60']),lfT('l_rate','সুদের হার (% বার্ষিক)'),lfD('l_date','আবেদনের তারিখ'),lfA('l_purpose_note','উদ্দেশ্যের বিস্তারিত (প্রয়োজনে)')]},
+   {h:'ঋণের তথ্য',f:[lfS('l_purpose','ঋণের উদ্দেশ্য',LF_PURPOSES),lfN('l_amt','আবেদনকৃত ঋণের পরিমাণ (টাকা)'),lfS('l_months','কিস্তির সংখ্যা (মাস)',['12','24','36','48','60','72','84','96']),lfT('l_rate','সুদের হার (% বার্ষিক)'),lfD('l_date','আবেদনের তারিখ'),lfA('l_purpose_note','উদ্দেশ্যের বিস্তারিত (প্রয়োজনে)')]},
    lfGuaSec('g1','জামিনদার-১ (পারিবারিক গ্যারান্টর)'),lfGuaSec('g2','জামিনদার-২ (তৃতীয় পক্ষীয় গ্যারান্টর)'),
    {h:'নিয়োগকর্তার প্রত্যয়নকারী (এ্যানেক্সার-খ)',f:[lfT('x_cname','নাম'),lfT('x_cdesig','পদবী'),lfT('x_cmobile','ফোন/মোবাইল নম্বর'),lfA('x_caddr','ঠিকানা')]},
    {h:'মঞ্জুরি ও ক্ষমতা অর্পণপত্র (এ্যানেক্সার-গ)',f:[lfD('s_sdate','মঞ্জুরির তারিখ'),lfN('s_amt','মঞ্জুরিকৃত ঋণের পরিমাণ (টাকা) - ফাঁকা থাকলে আবেদনকৃত পরিমাণ'),lfT('s_cs','চেকের সিরিজ নং (শুরু)'),lfT('s_ce','চেকের সিরিজ নং (শেষ)'),lfT('s_cn','একাউন্ট পেয়ি চেকের সংখ্যা'),lfT('w_name','সাক্ষীর পূর্ণ নাম'),lfT('w_nid','সাক্ষীর জাতীয় পরিচয়পত্র নম্বর'),lfA('w_addr','সাক্ষীর ঠিকানা')]}
