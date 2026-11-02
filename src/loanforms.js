@@ -82,7 +82,7 @@ async function lfList(type,of){
   const box=$('#lfbox');if(!box)return;
   box.outerHTML=`<div id="lfbox" class="card">${j.forms.length?`<table><tr><th>Applicant</th><th>Account no.</th><th>Office</th><th>Last saved</th></tr>${j.forms.map(f=>`<tr class="click" onclick="go({...S.view,lfid:'${f.id}',lfoff:'${f.office}',after:null})"><td>${esc(f.name||'(no name)')}</td><td>${esc(f.acct||'')}</td><td>${esc(officeName(f.office))}</td><td>${fmtDT(f.updated)}</td></tr>`).join('')}</table>`:'No applications saved yet.'}</div>`;
 }
-A.lfNew=type=>{S.lf={id:lfNewId(),type,office:S.user.office,d:{l_date:new Date().toISOString().slice(0,10)},isNew:true};go({...S.view,lfid:S.lf.id,lfoff:S.user.office,after:null})};
+A.lfNew=type=>{S.lf={id:lfNewId(),type,office:S.user.office,d:{l_date:new Date().toISOString().slice(0,10),...(LF_TYPES[type].defaults||{})},isNew:true};go({...S.view,lfid:S.lf.id,lfoff:S.user.office,after:null})};
 async function lfOpen(type){
   const v=S.view;
   if(!(S.lf&&S.lf.id===v.lfid)){
@@ -100,20 +100,24 @@ function lfField(f,val,ro){
   else inp=`<input type="${f.t==='date'?'date':'text'}" ${f.t==='num'?'inputmode="decimal"':''} data-k="${f.k}" value="${v}" oninput="A.lfset(this)"${dis}>`;
   return `<div style="${w}"><label>${esc(f.l)}</label>${inp}${f.t==='num'&&/টাকা/.test(f.l)&&val?`<div class="muted small bn">${esc(lfTaka(val))}</div>`:''}</div>`;
 }
-function lfSections(type){const t=LF_TYPES[type];return[LF_SEC.app,t.ex,LF_SEC.loan,LF_SEC.sec,LF_SEC.g1,LF_SEC.g2]}
+const lfDocs=t=>t.ownDocs?t.docs:[...LF_COMMON_DOCS,...t.docs];
+const lfPrintList=t=>t.print||[['app','Print application',lfDocApp],['chk','Print checklist',lfDocChk],['gua',"Print guarantor's undertaking",lfDocGua],['dpn','Print demand promissory note',lfDocDpn]];
+function lfSections(type){const t=LF_TYPES[type];if(t.sections)return t.sections;return[LF_SEC.app,t.ex,LF_SEC.loan,LF_SEC.sec,LF_SEC.g1,LF_SEC.g2]}
 function lfRender(){
   const f=S.lf,t=LF_TYPES[f.type],ro=f.office!==S.user.office||!S.user.office;
   const box=$('#lfbox');if(!box)return;
-  const docs=[...LF_COMMON_DOCS,...t.docs];
+  const docs=lfDocs(t);
   box.outerHTML=`<div id="lfbox">${ro?'<div class="note n-info">View only: this application belongs to another office.</div>':''}
   ${lfSections(f.type).map(s=>`<div class="card bn" style="margin-top:12px"><h3 style="margin-top:0">${s.h}</h3><div class="row" style="flex-wrap:wrap">${s.f.map(x=>lfField(x,f.d[x.k],ro)).join('')}</div></div>`).join('')}
+  ${t.calc?`<div class="card bn" style="margin-top:12px"><h3 style="margin-top:0">স্বয়ংক্রিয় হিসাব ও নীতিমালা যাচাই (আরসিডি সার্কুলার নং-১১৯/২৫)</h3><div id="lfcalc">${t.calc(f.d)}</div></div>`:''}
   <div class="card bn" style="margin-top:12px"><h3 style="margin-top:0">প্রয়োজনীয় কাগজপত্র (চেকলিস্ট)</h3>${docs.map((x,i)=>`<label style="display:block;font-weight:400;margin:4px 0"><input type="checkbox" data-k="ck${i}" ${f.d['ck'+i]?'checked':''} onchange="A.lfset(this)" ${ro?'disabled':''}> ${esc(x)}</label>`).join('')}</div>
   <div class="bar" style="margin-top:12px">${ro?'':`<button class="pri" onclick="run(A.lfSave)">Save</button>`}
-  <button onclick="A.lfPrint('app')">Print application</button><button onclick="A.lfPrint('chk')">Print checklist</button><button onclick="A.lfPrint('gua')">Print guarantor's undertaking</button><button onclick="A.lfPrint('dpn')">Print demand promissory note</button><button onclick="A.lfPrint('all')">Print all</button>
+  ${lfPrintList(t).map(([k,l])=>`<button onclick="A.lfPrint('${k}')">${l}</button>`).join('')}<button onclick="A.lfPrint('all')">Print all</button>
   ${!ro&&!f.isNew?`<button class="dan" onclick="if(confirm('Delete this application?'))run(A.lfDel)">Delete</button>`:''}<button onclick="A.lfBack()">Back to list</button></div>
   <p class="muted small">Forms are drafts prepared in standard format. Check wording against the bank's current circulars and official forms before use.</p></div>`;
 }
 A.lfset=el=>{const k=el.dataset.k;S.lf.d[k]=el.type==='checkbox'?el.checked:el.value;S.lf.dirty=true;
+  {const t=LF_TYPES[S.lf.type];if(t.calc){const c=$('#lfcalc');if(c)c.innerHTML=t.calc(S.lf.d)}}
   if(el.tagName==='INPUT'&&el.inputMode==='decimal'){const nx=el.parentElement.querySelector('.muted.small.bn');const tk=lfTaka(el.value);if(nx)nx.textContent=tk;else if(tk&&/টাকা/.test(el.parentElement.querySelector('label').textContent)){const d=document.createElement('div');d.className='muted small bn';d.textContent=tk;el.parentElement.appendChild(d)}}};
 A.lfSave=async()=>{const f=S.lf;await api('/lf/save',{method:'PUT',body:{id:f.id,type:f.type,data:f.d}});f.dirty=false;f.isNew=false;toast('Saved.')};
 A.lfDel=async()=>{await api('/lf/delete',{method:'POST',body:{id:S.lf.id}});S.lf=null;toast('Deleted.');A.lfBack()};
@@ -136,7 +140,7 @@ function lfDocApp(){
   ${lfSign('আবেদনকারীর স্বাক্ষর ও তারিখ','ব্যবস্থাপক')}</div>`;
 }
 function lfDocChk(){
-  const f=S.lf,d=f.d,t=LF_TYPES[f.type];const docs=[...LF_COMMON_DOCS,...t.docs];
+  const f=S.lf,d=f.d,t=LF_TYPES[f.type];const docs=lfDocs(t);
   return`<div class="r3pg">${lfHead()}<div class="gtitle">${t.name} - কাগজপত্রের চেকলিস্ট</div>
   <p>আবেদনকারী: ${lfv(d,'a_name')} &nbsp; হিসাব নম্বর: ${lfv(d,'a_acct')} &nbsp; ঋণের পরিমাণ: ${lfTaka(d.l_amt)}</p>
   <table class="r3t" style="width:100%;border-collapse:collapse"><tr><th style="width:8%">ক্রমিক</th><th>কাগজপত্রের নাম</th><th style="width:14%">জমা আছে</th><th style="width:20%">মন্তব্য</th></tr>${docs.map((x,i)=>`<tr><td style="text-align:center">${toBn(i+1)}</td><td>${esc(x)}</td><td style="text-align:center">${d['ck'+i]?'✓':''}</td><td></td></tr>`).join('')}</table>
@@ -163,8 +167,95 @@ function lfDocDpn(){
   ${lfSign('কর্মকর্তা','ব্যবস্থাপক')}</div>`;
 }
 A.lfPrint=w=>{
-  const m={app:lfDocApp,chk:lfDocChk,gua:lfDocGua,dpn:lfDocDpn};
-  const parts=w==='all'?['app','chk','gua','dpn']:[w];
+  const PR=lfPrintList(LF_TYPES[S.lf.type]),m=Object.fromEntries(PR.map(x=>[x[0],x[2]]));
+  const parts=w==='all'?PR.map(x=>x[0]):[w];
   $('#printArea').innerHTML='<div class="bn r3p">'+parts.map(k=>m[k]()).join('')+'</div>';
   window.print();
 };
+
+/* ================= Personal Loan - RCD Circular 119/2025 (04/11/2025) ================= */
+const LF_PURPOSES=['চিকিৎসা','বিবাহ','প্রসূতি','শিক্ষা','বসতবাড়ি ক্রয়','গৃহ নির্মাণ','গৃহ সংস্কার','যানবাহন ক্রয় (মোটর সাইকেল ও সিএনজি চালিত অটো রিক্সা)','পুকুর খনন','মৎস্য চাষ','বৃক্ষরোপণ','কৃষিজাত পণ্য উৎপাদন','ছেলে-মেয়ের চাকরির উদ্দেশ্যে বিদেশ প্রেরণ'];
+const lfGuaSec=(g,h)=>({h,f:[lfT(g+'_name','নাম'),lfT(g+'_prof','পেশা'),lfT(g+'_father','পিতার নাম'),lfT(g+'_fpr','পিতার পেশা'),lfT(g+'_mother','মাতার নাম'),lfT(g+'_mpr','মাতার পেশা'),lfT(g+'_nid','জাতীয় পরিচয়পত্র নম্বর'),lfT(g+'_mobile','ফোন/মোবাইল নম্বর'),lfA(g+'_addr','বর্তমান ঠিকানা'),lfA(g+'_perm','স্থায়ী ঠিকানা')]});
+const lfEmi=(P,n,r)=>{P=+P;n=+n;r=+r;if(!(P>0&&n>0&&r>=0))return null;const i=r/1200;const e=i?P*i*Math.pow(1+i,n)/(Math.pow(1+i,n)-1):P/n;return Math.ceil(e/10-1e-9)*10};   // matches the circular's table (rounded up to Tk 10)
+const lfFmt=n=>toBn(Math.round(n).toLocaleString('en-IN'));
+function lfPersonalCalc(d){
+  const P=parseFloat(d.l_amt)||0,n=parseInt(d.l_months)||0,r=d.l_rate===undefined||d.l_rate===''?13:parseFloat(d.l_rate);
+  if(!P||!n)return'<span class="muted">ঋণের পরিমাণ ও কিস্তির সংখ্যা দিলে এখানে মাসিক কিস্তি ও নীতিমালা যাচাই দেখা যাবে।</span>';
+  const e=lfEmi(P,n,r),tot=e*n,th=parseFloat(d.x_takehome)||0;
+  const ok=(c,t)=>`<div style="color:${c?'#1b6e2c':'#b42318'}">${c?'✓':'✗'} ${t}</div>`;
+  const out=[`<div><b>মাসিক কিস্তি (${toBn(r)}% হারে, ${toBn(n)} কিস্তি): ${lfFmt(e)} টাকা</b> &nbsp; মোট পরিশোধ: ${lfFmt(tot)} টাকা, সুদ: ${lfFmt(tot-P)} টাকা</div>`];
+  out.push('<div class="muted small">অন্যান্য কিস্তি সংখ্যায়: '+[12,24,36,48,60].map(k=>toBn(k)+' কিস্তি '+lfFmt(lfEmi(P,k,r))).join(' | ')+'</div>');
+  out.push(ok(P>=100000&&P<=2000000,'ঋণের পরিমাণ ১,০০,০০০ থেকে ২০,০০,০০০ টাকার মধ্যে'+(P>2000000?' - সর্বোচ্চ সীমা অতিক্রম করেছে':P<100000?' - ১ লক্ষ টাকার নিচে (সারণি ১ লক্ষ থেকে)':'')));
+  if(th){const cap=th*0.8,i=r/1200,pmax=i?cap*(1-Math.pow(1+i,-n))/i:cap*n;
+    out.push(ok(e<=cap,`মাসিক কিস্তি টেক হোম পে এর ৮০% (${lfFmt(cap)} টাকা) এর মধ্যে`+(e>cap?' - বেশি':'')));
+    out.push(`<div class="muted small">এই কিস্তি সংখ্যায় ৮০% শর্তে ঋণযোগ্যতা প্রায় ${lfFmt(Math.min(2000000,Math.floor(pmax/1000)*1000))} টাকা</div>`);
+  }else out.push('<div class="muted small">টেক হোম পে দিলে কিস্তি ≤ ৮০% শর্ত যাচাই হবে।</div>');
+  if(d.x_ret&&d.l_date){const a=new Date(d.l_date),b=new Date(d.x_ret),m=(b.getFullYear()-a.getFullYear())*12+b.getMonth()-a.getMonth();
+    out.push(ok(m>=n,`চাকরির অবশিষ্ট মেয়াদ ${toBn(Math.max(m,0))} মাস (কিস্তির মেয়াদ চাকরির মেয়াদকাল/পিআরএল পর্যন্ত, সর্বোচ্চ ৫ বছর)`+(m<n?' - মেয়াদ কমাতে হবে বা কিস্তি পুনর্নির্ধারণ করতে হবে':'')));}
+  const auth=P<=500000?'শাখা ব্যবস্থাপক (এসও/পিও)':P<=800000?'শাখা ব্যবস্থাপক (এসপিও)':P<=1000000?'এজিএম':P<=1500000?'ডিজিএম':P<=2000000?'জিএম':'';
+  if(auth)out.push(`<div>ঋণ মঞ্জুরির ক্ষমতা: <b>${auth}</b></div>`);
+  out.push('<div class="muted small">বেতন-ভাতাদি যে শাখায় জমা হয় শুধুমাত্র সে শাখা থেকে ঋণ প্রদান করা যাবে।</div>');
+  return out.join('');
+}
+const lfLn=(l,v,w)=>`<div style="display:flex;gap:6px;margin:3px 0;${w?'width:'+w+';':''}"><span style="flex:0 0 auto">${l}</span><span style="flex:1;border-bottom:1px dotted #000;min-height:1.25em">${v?esc(v):''}</span></div>`;
+const lfNm=(d,a,b)=>[lfv(d,a),lfv(d,b)].filter(Boolean).join(', ');
+const lfBrn=()=>{const o=office(S.lf.office);return esc(o?(o.nameBn||o.name):'')};
+const lfWd=v=>{const w=lfWords(parseFloat(v));return w?w:''};
+function lfDocKa(){
+  const d=S.lf.d;
+  const gr=(l,a,b,c)=>`<tr><td>${l}</td><td>${c(a)}</td><td>${c(b)}</td></tr>`;
+  const G=(g,x)=>x==='n'?lfNm(d,g+'_name',g+'_prof'):x==='f'?lfNm(d,g+'_father',g+'_fpr'):x==='m'?lfNm(d,g+'_mother',g+'_mpr'):x==='p'?[esc(d[g+'_addr']||''),lfv(d,g+'_mobile')].filter(Boolean).join(', '):x==='s'?esc(d[g+'_perm']||''):lfv(d,g+'_nid');
+  return`<div class="r3pg" style="position:relative">
+  <div style="text-align:right;text-decoration:underline;font-size:12px">এ্যানেক্সার-'ক'</div>
+  <div style="position:absolute;right:0;top:22px;border:1px solid #000;width:118px;padding:8px 4px;text-align:center;font-size:11px">আবেদনকারীর পাসপোর্ট সাইজের সত্যায়িত ছবি (২ কপি)</div>
+  <div style="text-align:center;margin-top:4px"><div style="font-size:15px">জনতা ব্যাংক পিএলসি.</div><div>প্রধান কার্যালয়, ঢাকা।</div><div style="text-decoration:underline">পার্সোনাল লোনের আবেদনপত্রের নমুনা</div></div>
+  <div style="margin-top:6px">ব্যবস্থাপক<br>জনতা ব্যাংক পিএলসি.<br>${lfBrn()} শাখা।</div>
+  <p style="margin:8px 0 4px">প্রিয় মহোদয়,</p>
+  <p style="margin:0;line-height:1.7">আমি নিম্ন স্বাক্ষরকারী আপনার শাখা হতে <u>${esc([d.l_purpose,d.l_purpose_note].filter(Boolean).join(' - '))||'.............................'}</u> নিমিত্ত পার্সোনাল লোন কর্মসূচির আওতায় <u>${lfv(d,'l_amt')?lfFmt(d.l_amt):'.............'}</u> (কথায় : <u>${lfWd(d.l_amt)||'..............................................'}</u>) টাকা ঋণের জন্য আবেদন করছি। উক্ত ঋণ মঞ্জুরির জন্য বিশেষভাবে অনুরোধ জানাচ্ছি। আমার ব্যক্তিগত ও ঋণের গ্যারান্টরদ্বয়ের তথ্যাদি নিম্নে প্রদত্ত হলো ঃ</p>
+  <div style="font-weight:700;text-decoration:underline;margin:8px 0 2px">ক. ব্যক্তিগত তথ্যাদি</div>
+  ${lfLn('১. নাম ঃ',d.a_name)}${lfLn('২. পিতার নাম ও পেশা ঃ',lfNm(d,'a_father','a_fpr'))}${lfLn('৩. মাতার নাম ও পেশা ঃ',lfNm(d,'a_mother','a_mpr'))}${lfLn('৪. স্বামী/স্ত্রীর নাম ও পেশা ঃ',lfNm(d,'a_spouse','a_spr'))}${lfLn('৫. জন্ম তারিখ ঃ',lfDate(d.a_dob))}${lfLn('৬. শিক্ষাগত যোগ্যতা ঃ',d.a_edu)}${lfLn('৭. বর্তমান ঠিকানা ঃ',d.a_pres)}${lfLn('৮. স্থায়ী ঠিকানা ঃ',d.a_perm)}${lfLn('৯. যোগাযোগের ঠিকানা ঃ',d.a_cont)}${lfLn('১০. ফোন/মোবাইল নম্বর ঃ',lfv(d,'a_mobile'))}${lfLn('১১. জাতীয় পরিচয়পত্র নম্বর ঃ',lfv(d,'a_nid'))}${lfLn('১২. যে প্রতিষ্ঠানে চাকরিরত সে প্রতিষ্ঠানের নাম, ঠিকানা ও ফোন নম্বর ঃ',d.x_employer)}
+  <div style="margin-left:22px">${lfLn('পদবী ঃ',d.x_desig)}${lfLn('চাকরিতে যোগদানের তারিখ ঃ',lfDate(d.x_join))}${lfLn('চাকরিতে স্থায়ী হওয়ার তারিখ ঃ',lfDate(d.x_perm))}${lfLn('চাকরি হতে অবসরের তারিখ ঃ',lfDate(d.x_ret))}
+  <div style="display:flex;gap:10px">${lfLn('মাসিক মূল বেতন ঃ',lfv(d,'x_basic'),'33%')}${lfLn('মাসিক মোট বেতন ঃ',lfv(d,'x_gross'),'33%')}${lfLn('মাসিক টেক হোম পে ঃ',lfv(d,'x_takehome'),'33%')}</div>${lfLn('মোট দায়-দেনার পরিমাণ (যদি থাকে) ঃ',d.x_liab)}</div>
+  <div style="font-weight:700;text-decoration:underline;margin:8px 0 3px">খ. ঋণের গ্যারান্টরদ্বয়ের তথ্যাদি ঃ</div>
+  <table class="r3t" style="width:100%;border-collapse:collapse"><tr><th style="width:22%">বিবরণ</th><th>১। পারিবারিক গ্যারান্টর</th><th>২। তৃতীয় পক্ষীয় গ্যারান্টর</th></tr>
+  ${[['নাম ও পেশা ঃ','n'],['পিতার নাম ও পেশা ঃ','f'],['মাতার নাম ও পেশা ঃ','m'],['বর্তমান ঠিকানা ও ফোন/মোবাইল নম্বর ঃ','p'],['স্থায়ী ঠিকানা ঃ','s'],['জাতীয় পরিচয়পত্র নম্বর ঃ','i']].map(([l,x])=>`<tr><td>${l}</td><td style="height:30px">${G('g1',x)}</td><td>${G('g2',x)}</td></tr>`).join('')}</table>
+  <div style="font-size:11px;text-align:right;margin-top:2px">গ্যারান্টরদ্বয়ের পাসপোর্ট সাইজের সত্যায়িত ছবি (২ কপি করে)</div>
+  <div style="display:flex;gap:10px;margin-top:8px"><div style="flex:1;border:1px solid #000;padding:6px;font-size:12.5px">আমি ঋণ আবেদনকারী ${esc(d.a_name||'..............................')} এর ঋণের গ্যারান্টর হিসাবে নিশ্চয়তা প্রদান করছি।<br><br>১. পারিবারিক গ্যারান্টরের স্বাক্ষর ও তারিখঃ<br><br>২. তৃতীয় পক্ষীয় গ্যারান্টরের স্বাক্ষর ও তারিখঃ</div>
+  <div style="flex:1;border:1px solid #000;padding:6px;font-size:12.5px">আমি নিশ্চয়তা প্রদান করছি যে, উপরে বর্ণিত সকল তথ্য সত্য।<br><br><div style="text-align:center;margin-top:22px">-----------------------------------<br>ঋণ আবেদনকারীর পূর্ণ নামসহ স্বাক্ষর<br>তারিখঃ ${lfDate(d.l_date)}</div></div></div></div>`;
+}
+function lfDocKha(){
+  const d=S.lf.d;const U=(v,w)=>`<u>${v?esc(v):'.'.repeat(w||22)}</u>`;
+  return`<div class="r3pg"><div style="text-align:right;text-decoration:underline;font-size:12px">এ্যানেক্সার-'খ'</div>
+  <div style="text-align:center;text-decoration:underline;font-size:15px;margin:10px 0 16px">এমপ্লয়ার্স সার্টিফিকেট</div>
+  <p style="line-height:2">এ মর্মে প্রত্যয়ন করা যাচ্ছে যে, জনাব ${U(d.a_name,40)} পিতা/স্বামী ${U(d.a_father||d.a_spouse,30)} গত ${U(lfDate(d.x_join),12)} ইং তারিখে ${U(d.x_jdesig,14)} পদে এ প্রতিষ্ঠানে যোগদান করেন এবং ${U(lfDate(d.x_perm),12)} ইং তারিখে চাকরি স্থায়ী হয়। তার বর্তমান পদবী ${U(d.x_desig,14)}। আমি তার সর্বাঙ্গীন মঙ্গল কামনা করি।</p>
+  <p style="line-height:2">তার মাসিক মূল বেতন ${U(d.x_basic?lfFmt(d.x_basic):'',14)} (কথায় ঃ ${U(lfWd(d.x_basic),30)}) টাকা এবং সমস্ত কর্তন বাদ দেওয়ার পর বেতন (টেক হোম পে) ${U(d.x_takehome?lfFmt(d.x_takehome):'',14)} (কথায় ঃ ${U(lfWd(d.x_takehome),30)}) টাকা।</p>
+  <div style="margin-top:14px"><u>প্রত্যয়নকারী ঃ</u></div>
+  <div style="margin-left:14px;margin-top:6px;width:60%">${lfLn('নাম ঃ',d.x_cname)}${lfLn('পদবী ঃ',d.x_cdesig)}${lfLn('ঠিকানা ঃ',d.x_caddr)}${lfLn('ফোন/মোবাইল নম্বর ঃ',lfv(d,'x_cmobile'))}</div>
+  <p style="margin-top:16px">আরও প্রত্যয়ন করছি যে, উপরে বর্ণিত তথ্যাদি সত্য।</p>
+  <div style="text-align:right;margin-top:50px;margin-right:30px">স্বাক্ষর ও সিল<br>তারিখ ঃ</div></div>`;
+}
+function lfDocGa(){
+  const d=S.lf.d;const U=(v,w)=>`<u>${v?esc(v):'.'.repeat(w||22)}</u>`;
+  const P=parseFloat(d.s_amt||d.l_amt)||0,n=parseInt(d.l_months)||0,r=d.l_rate===''||d.l_rate===undefined?13:parseFloat(d.l_rate);
+  const e=P&&n?lfEmi(P,n,r):0,tot=e*n;
+  return`<div class="r3pg"><div style="text-align:right;text-decoration:underline;font-size:12px">এ্যানেক্সার-'গ'</div>
+  <div style="margin-top:12px">ব্যবস্থাপক<br>জনতা ব্যাংক পিএলসি.<br>${lfBrn()} শাখা।</div>
+  <div style="text-align:center;margin:16px 0">বিষয় ঃ <u>ক্ষমতা অর্পণ পত্র</u>।</div>
+  <p style="line-height:2.1">আমি ${U(d.a_name,36)} এর আবেদনের প্রেক্ষিতে পার্সোনাল লোন কর্মসূচির আওতায় ${U(lfDate(d.s_sdate),12)} তারিখে মঞ্জুরিকৃত ঋণাংক ${U(P?lfFmt(P):'',12)} (কথায় ঃ ${U(lfWd(P),30)}) টাকা ${U(toBn(r),5)}% সুদহারে আসল ${U(P?lfFmt(P):'',11)} সুদ ${U(P&&e?lfFmt(tot-P):'',11)} মোট ${U(P&&e?lfFmt(tot):'',11)} (কথায় ঃ ${U(P&&e?lfWd(tot):'',34)}) টাকা ঋণ পরিশোধের নিমিত্ত (সিরিজ নং ${U(lfv(d,'s_cs'),12)} হতে ${U(lfv(d,'s_ce'),12)} পর্যন্ত) একাউন্ট পেয়ি ${U(lfv(d,'s_cn'),5)} টি চেক জমা করলাম। গৃহীত ঋণের পরপর ২টি কিস্তি পরিশোধে ব্যর্থ হলে ব্যাংক আমার অনুকূলে মঞ্জুরিকৃত ঋণের হালনাগাদ সুদসহ সমুদয় বকেয়া ব্যাংকের প্রচলিত নিয়ম অনুযায়ী আদায়ের ব্যবস্থা গ্রহণ করতে পারবে। এতে আমার কোন আপত্তি থাকবে না।</p>
+  <div style="text-align:right;margin-top:6px">আপনার বিশ্বস্ত,</div>
+  <div style="display:flex;justify-content:space-between;margin-top:46px"><div>তারিখঃ ${lfDate(d.l_date)||'......................'}</div><div style="text-align:center">--------------------------<br>আবেদনকারীর পূর্ণ নামসহ স্বাক্ষর<br>জাতীয় পরিচয়পত্র নম্বর ঃ ${lfv(d,'a_nid')||'.....................'}</div></div>
+  <div style="margin-top:22px;width:62%">${lfLn('স্বাক্ষীর স্বাক্ষর ঃ','')}${lfLn('পূর্ণ নাম ঃ',d.w_name)}${lfLn('ঠিকানা ঃ',d.w_addr)}${lfLn('জাতীয় পরিচয়পত্র নম্বর ঃ',lfv(d,'w_nid'))}</div></div>`;
+}
+Object.assign(LF_TYPES.cfpersonal,{
+  ownDocs:true,calc:lfPersonalCalc,defaults:{l_rate:'13',s_cn:'5'},
+  docs:['এমপ্লয়ার্স সার্টিফিকেট (এ্যানেক্সার-খ) - প্রতিষ্ঠান প্রধান/বেতন প্রদানকারী কর্মকর্তা কর্তৃক (শিক্ষা প্রতিষ্ঠানের ক্ষেত্রে ভিসি/রেজিস্ট্রার/অধ্যক্ষ/প্রিন্সিপাল/প্রধান শিক্ষক)','সর্বশেষ বেতন বিবরণী (Salary Statement)','জাতীয় পরিচয়পত্রের সত্যায়িত ফটোকপি ও সদ্য তোলা পাসপোর্ট সাইজের ২ কপি ছবি','ঋণের কিস্তি/বকেয়া আদায়ের ক্ষমতা অর্পণপত্র (এ্যানেক্সার-গ)','অন্য কোন ব্যাংক/আর্থিক প্রতিষ্ঠানে ঋণ থাকলে পূর্বের প্রতিষ্ঠানের প্রত্যয়নপত্র','স্থায়ী ঠিকানার বিষয়ে চেয়ারম্যান/কমিশনারের সার্টিফিকেট','পারিবারিক/ব্যক্তিগত গ্যারান্টি (স্বামী/স্ত্রী/পিতা/মাতা/সাবালক সন্তান/ভাই/বোন)','তৃতীয় পক্ষীয় জামিনদার (নিয়োগকর্তা/গেজেটেড অফিসার/সহকর্মী/ব্যাংকের নিকট গ্রহণযোগ্য ব্যক্তি)','ঋণের সমপরিমাণ ১টি চেকসহ তারিখ বিহীন মোট ৫টি স্বাক্ষরযুক্ত A/C Payee চেক','Letter of Authority (প্রভিডেন্ট ফান্ড/গ্র্যাচুইটি বা অন্য আর্থিক সুবিধা থেকে বকেয়া সমন্বয়)','সন্তোষজনক সিআইবি রিপোর্ট (বিতরণের পূর্বে ও পরে)','চার্জ ডকুমেন্টস: ডিপি নোট, লেটার অব অ্যারেঞ্জমেন্ট, লেটার অব ডিসবার্সমেন্ট, লেটার অব গ্যারান্টি, লেটার অব লিয়েন (প্রযোজ্য ক্ষেত্রে)'],
+  sections:[
+   {h:'আবেদনকারীর ব্যক্তিগত তথ্য (এ্যানেক্সার-ক)',f:[lfT('a_name','নাম'),lfT('a_acct','হিসাব নম্বর'),lfT('a_father','পিতার নাম'),lfT('a_fpr','পিতার পেশা'),lfT('a_mother','মাতার নাম'),lfT('a_mpr','মাতার পেশা'),lfT('a_spouse','স্বামী/স্ত্রীর নাম'),lfT('a_spr','স্বামী/স্ত্রীর পেশা'),lfD('a_dob','জন্ম তারিখ'),lfT('a_edu','শিক্ষাগত যোগ্যতা'),lfT('a_nid','জাতীয় পরিচয়পত্র নম্বর'),lfT('a_mobile','ফোন/মোবাইল নম্বর'),lfA('a_pres','বর্তমান ঠিকানা'),lfA('a_perm','স্থায়ী ঠিকানা'),lfA('a_cont','যোগাযোগের ঠিকানা')]},
+   {h:'চাকরির তথ্য',f:[lfA('x_employer','প্রতিষ্ঠানের নাম, ঠিকানা ও ফোন নম্বর'),lfT('x_jdesig','যোগদানের পদ'),lfT('x_desig','বর্তমান পদবী'),lfD('x_join','চাকরিতে যোগদানের তারিখ'),lfD('x_perm','চাকরিতে স্থায়ী হওয়ার তারিখ'),lfD('x_ret','চাকরি হতে অবসরের তারিখ'),lfN('x_basic','মাসিক মূল বেতন (টাকা)'),lfN('x_gross','মাসিক মোট বেতন (টাকা)'),lfN('x_takehome','মাসিক টেক হোম পে (টাকা)'),lfA('x_liab','মোট দায়-দেনার পরিমাণ (যদি থাকে)')]},
+   {h:'ঋণের তথ্য',f:[lfS('l_purpose','ঋণের উদ্দেশ্য',LF_PURPOSES),lfN('l_amt','আবেদনকৃত ঋণের পরিমাণ (টাকা)'),lfS('l_months','কিস্তির সংখ্যা (মাস)',['12','24','36','48','60']),lfT('l_rate','সুদের হার (% বার্ষিক)'),lfD('l_date','আবেদনের তারিখ'),lfA('l_purpose_note','উদ্দেশ্যের বিস্তারিত (প্রয়োজনে)')]},
+   lfGuaSec('g1','জামিনদার-১ (পারিবারিক গ্যারান্টর)'),lfGuaSec('g2','জামিনদার-২ (তৃতীয় পক্ষীয় গ্যারান্টর)'),
+   {h:'নিয়োগকর্তার প্রত্যয়নকারী (এ্যানেক্সার-খ)',f:[lfT('x_cname','নাম'),lfT('x_cdesig','পদবী'),lfT('x_cmobile','ফোন/মোবাইল নম্বর'),lfA('x_caddr','ঠিকানা')]},
+   {h:'মঞ্জুরি ও ক্ষমতা অর্পণপত্র (এ্যানেক্সার-গ)',f:[lfD('s_sdate','মঞ্জুরির তারিখ'),lfN('s_amt','মঞ্জুরিকৃত ঋণের পরিমাণ (টাকা) - ফাঁকা থাকলে আবেদনকৃত পরিমাণ'),lfT('s_cs','চেকের সিরিজ নং (শুরু)'),lfT('s_ce','চেকের সিরিজ নং (শেষ)'),lfT('s_cn','একাউন্ট পেয়ি চেকের সংখ্যা'),lfT('w_name','সাক্ষীর পূর্ণ নাম'),lfT('w_nid','সাক্ষীর জাতীয় পরিচয়পত্র নম্বর'),lfA('w_addr','সাক্ষীর ঠিকানা')]}
+  ],
+  print:[['app',"Print application (Annexure-Ka)",lfDocKa],['emp',"Print employer's certificate (Annexure-Kha)",lfDocKha],['auth','Print authority letter (Annexure-Ga)',lfDocGa],['chk','Print checklist',lfDocChk],['gua',"Print guarantor's undertaking",lfDocGua],['dpn','Print demand promissory note',lfDocDpn]]
+});
