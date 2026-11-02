@@ -18,9 +18,17 @@ const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS iwc_state(office TEXT,k TEXT,v TEXT,updated TEXT,PRIMARY KEY(office,k))`,
   `CREATE TABLE IF NOT EXISTS iwc_cases(office TEXT,key TEXT,name TEXT,acct TEXT,lt TEXT,saved TEXT,item TEXT,updated TEXT,updated_by TEXT,PRIMARY KEY(office,key))`,
   `CREATE TABLE IF NOT EXISTS loan_forms(office TEXT,id TEXT,type TEXT,name TEXT,acct TEXT,data TEXT,updated TEXT,updated_by TEXT,PRIMARY KEY(office,id))`,
-  `CREATE TABLE IF NOT EXISTS loan_flow(office TEXT,id TEXT,status TEXT,out_no TEXT,out_date TEXT,in_no TEXT,in_date TEXT,ao TEXT,updated TEXT,updated_by TEXT,PRIMARY KEY(office,id))`
+  `CREATE TABLE IF NOT EXISTS loan_flow(office TEXT,id TEXT,status TEXT,out_no TEXT,out_date TEXT,in_no TEXT,in_date TEXT,ao TEXT,updated TEXT,updated_by TEXT,PRIMARY KEY(office,id))`,
+  `CREATE TABLE IF NOT EXISTS loan_dec(office TEXT,id TEXT,seq INTEGER,dec TEXT,note TEXT,dec_date TEXT,at TEXT,by TEXT,PRIMARY KEY(office,id,seq))`,
+  `CREATE TABLE IF NOT EXISTS loan_files(fid TEXT PRIMARY KEY,office TEXT,id TEXT,seq INTEGER,name TEXT,mime TEXT,size INTEGER,data TEXT,at TEXT,by TEXT)`
 ];
 const LF_SEL = "SELECT l.office,l.id,l.type,l.name,l.acct,l.updated,json_extract(l.data,'$.sa') AS sa,f.status,f.out_no,f.out_date,f.in_no,f.in_date FROM loan_forms l LEFT JOIN loan_flow f ON f.office=l.office AND f.id=l.id";
+async function lfDecInfo(db, office, id) {
+  const flow = await db.prepare('SELECT status,out_no,out_date,in_no,in_date FROM loan_flow WHERE office=? AND id=?').bind(office, id).first();
+  const decs = (await db.prepare('SELECT seq,dec,note,dec_date,at FROM loan_dec WHERE office=? AND id=? ORDER BY seq DESC').bind(office, id).all()).results;
+  const files = (await db.prepare('SELECT fid,seq,name,size FROM loan_files WHERE office=? AND id=? ORDER BY at').bind(office, id).all()).results;
+  return { flow: flow || null, decs: decs.map(d => ({ ...d, files: files.filter(f => f.seq === d.seq) })) };
+}
 const IWC_STATE_KEYS = ['exit-policy-v3', 'iw-typemap', 'iw-lang'];
 const MAX_IWC = 600000;
 let ready = false;
@@ -310,13 +318,15 @@ async function handle(req, env) {
     if (!(await canRead(db, u, office))) return err('Not allowed.', 403);
     const x = await db.prepare('SELECT office,id,type,name,acct,data,updated FROM loan_forms WHERE office=? AND id=?').bind(office, id).first();
     if (!x) return err('Not found.', 404);
-    return json({ form: { ...x, data: JSON.parse(x.data || '{}') } });
+    return json({ form: { ...x, data: JSON.parse(x.data || '{}') }, ...(await lfDecInfo(db, office, id)) });
   }
   if (p === '/lf/save' && m === 'PUT') {
     if (!u.office) return err('The admin login cannot save loan forms.', 403);
     const b = await body(req);
     if (!/^[A-Za-z0-9_-]{1,40}$/.test(String(b.id || '')) || !/^[a-z]{2,12}$/.test(String(b.type || '')) || !b.data || typeof b.data !== 'object') return err('Bad form.');
     const s = JSON.stringify(b.data); if (s.length > 60000) return err('This form is too large to save.');
+    const fl0 = await db.prepare('SELECT status FROM loan_flow WHERE office=? AND id=?').bind(u.office, b.id).first();
+    if (fl0 && fl0.status === 'declined') return err('This application was declined and can no longer be changed.');
     const isNew = !(await db.prepare('SELECT 1 AS x FROM loan_forms WHERE office=? AND id=?').bind(u.office, b.id).first());
     await db.prepare('INSERT OR REPLACE INTO loan_forms(office,id,type,name,acct,data,updated,updated_by) VALUES(?,?,?,?,?,?,?,?)')
       .bind(u.office, b.id, b.type, String(b.data.a_name || '').slice(0, 200), String(b.data.a_acct || '').slice(0, 60), s, iso(), u.id).run();
@@ -332,7 +342,7 @@ async function handle(req, env) {
     if (!x) return err('Save the application first.');
     if (!x.sa || x.sa === 'Branch') return err('Only applications that need a higher sanction authority can be sent.');
     const f = await db.prepare('SELECT status,ao FROM loan_flow WHERE office=? AND id=?').bind(u.office, b.id).first();
-    if (f && f.status) return err('This file was already sent.');
+    if (f && f.status && f.status !== 'returned') return err('This file was already sent.');
     await db.prepare("INSERT OR REPLACE INTO loan_flow(office,id,status,out_no,out_date,in_no,in_date,ao,updated,updated_by) VALUES(?,?,'sent',?,?,'','',?,?,?)").bind(u.office, b.id, out_no, out_date, f ? f.ao : null, iso(), u.id).run();
     await audit(db, u.id, 'loan file sent', String(b.id));
     return json({ ok: true });
@@ -351,9 +361,10 @@ async function handle(req, env) {
   }
   if (p === '/lf/ao' && m === 'GET') {
     const office = url.searchParams.get('office') || '', id = url.searchParams.get('id') || '';
+    if (u.role !== 'AREA' && u.role !== 'ADMIN') return err('Only the Area Office can see this.', 403);
     if (!ID_RE.test(office) || !(await canRead(db, u, office))) return err('Not allowed.', 403);
-    const f = await db.prepare('SELECT status,out_no,out_date,in_no,in_date,ao FROM loan_flow WHERE office=? AND id=?').bind(office, id).first();
-    return json({ ao: f && f.ao ? JSON.parse(f.ao) : {}, flow: f ? { status: f.status, out_no: f.out_no, out_date: f.out_date, in_no: f.in_no, in_date: f.in_date } : null });
+    const f = await db.prepare('SELECT ao FROM loan_flow WHERE office=? AND id=?').bind(office, id).first();
+    return json({ ao: f && f.ao ? JSON.parse(f.ao) : {}, ...(await lfDecInfo(db, office, id)) });
   }
   if (p === '/lf/ao' && m === 'PUT') {
     if (u.role !== 'AREA') return err('Only the Area Office can save this page.', 403);
@@ -366,6 +377,53 @@ async function handle(req, env) {
     if (f) await db.prepare('UPDATE loan_flow SET ao=?,updated=?,updated_by=? WHERE office=? AND id=?').bind(s2, iso(), u.id, office, b.id).run();
     else await db.prepare("INSERT INTO loan_flow(office,id,status,out_no,out_date,in_no,in_date,ao,updated,updated_by) VALUES(?,?,'','','','','',?,?,?)").bind(office, b.id, s2, iso(), u.id).run();
     return json({ ok: true });
+  }
+  if (p === '/lf/decide' && m === 'POST') {
+    if (u.role !== 'AREA') return err('Only the Area Office can record a decision.', 403);
+    const b = await body(req); const office = String(b.office || '');
+    const dec = String(b.dec || ''), note = String(b.note || '').trim().slice(0, 4000), dd = String(b.date || '').slice(0, 10);
+    if (!ID_RE.test(office) || !/^[A-Za-z0-9_-]{1,40}$/.test(String(b.id || '')) || !['sanctioned', 'declined', 'returned'].includes(dec) || !/^\d{4}-\d{2}-\d{2}$/.test(dd)) return err('Choose the decision and enter its date.');
+    if (dec !== 'sanctioned' && !note) return err(dec === 'declined' ? 'Write the reason for declining.' : 'Write the query for the branch.');
+    if (office === u.office || !(await canRead(db, u, office))) return err('Not allowed.', 403);
+    const f = await db.prepare('SELECT status FROM loan_flow WHERE office=? AND id=?').bind(office, b.id).first();
+    if (!f || f.status !== 'received') return err('Receive the physical file first, then record the decision.');
+    const sq = await db.prepare('SELECT COALESCE(MAX(seq),0)+1 AS n FROM loan_dec WHERE office=? AND id=?').bind(office, b.id).first();
+    await db.prepare('INSERT INTO loan_dec(office,id,seq,dec,note,dec_date,at,by) VALUES(?,?,?,?,?,?,?,?)').bind(office, b.id, sq.n, dec, note, dd, iso(), u.id).run();
+    await db.prepare('UPDATE loan_flow SET status=?,updated=?,updated_by=? WHERE office=? AND id=?').bind(dec, iso(), u.id, office, b.id).run();
+    await audit(db, u.id, 'loan decision ' + dec, office + ' ' + b.id);
+    return json({ ok: true, seq: sq.n });
+  }
+  if (p === '/lf/attach' && m === 'POST') {
+    if (u.role !== 'AREA') return err('Only the Area Office can attach files.', 403);
+    const t = await req.text(); if (t.length > 1500000) return err('The file is too large (maximum 1 MB).');
+    const b = JSON.parse(t || '{}'); const office = String(b.office || '');
+    const name = String(b.name || 'file').replace(/[\\/:*?"<>|\r\n]/g, '_').slice(0, 120);
+    if (!ID_RE.test(office) || !/^[A-Za-z0-9_-]{1,40}$/.test(String(b.id || '')) || !Number.isInteger(b.seq) || !/\.(pdf|png|jpe?g|docx?|xlsx?)$/i.test(name) || typeof b.data !== 'string' || !/^[A-Za-z0-9+/=]+$/.test(b.data)) return err('Attach a PDF, image, Word or Excel file (maximum 1 MB).');
+    if (office === u.office || !(await canRead(db, u, office))) return err('Not allowed.', 403);
+    if (!(await db.prepare('SELECT 1 AS x FROM loan_dec WHERE office=? AND id=? AND seq=?').bind(office, b.id, b.seq).first())) return err('Decision not found.');
+    const cnt = await db.prepare('SELECT COUNT(*) AS n FROM loan_files WHERE office=? AND id=? AND seq=?').bind(office, b.id, b.seq).first();
+    if (cnt.n >= 5) return err('At most 5 attachments per decision.');
+    const size = Math.floor(b.data.length * 3 / 4); if (size > 1048576) return err('The file is too large (maximum 1 MB).');
+    const fid = 'A' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    await db.prepare('INSERT INTO loan_files(fid,office,id,seq,name,mime,size,data,at,by) VALUES(?,?,?,?,?,?,?,?,?,?)').bind(fid, office, b.id, b.seq, name, String(b.mime || 'application/octet-stream').slice(0, 80), size, b.data, iso(), u.id).run();
+    return json({ ok: true, fid });
+  }
+  if (p === '/lf/file' && m === 'GET') {
+    const fid = url.searchParams.get('fid') || '';
+    const f = await db.prepare('SELECT office,name,mime,data FROM loan_files WHERE fid=?').bind(fid).first();
+    if (!f || !(await canRead(db, u, f.office))) return err('Not found.', 404);
+    const bin = Uint8Array.from(atob(f.data), c => c.charCodeAt(0));
+    return new Response(bin, { headers: { 'content-type': f.mime, 'content-disposition': "attachment; filename*=UTF-8''" + encodeURIComponent(f.name), 'x-content-type-options': 'nosniff', 'cache-control': 'no-store' } });
+  }
+  if (p === '/lf/summary' && m === 'GET') {
+    const office = url.searchParams.get('office') || u.office || 'all';
+    if (office !== 'all' && !ID_RE.test(office)) return err('Bad office.');
+    const r = await readable(db, u);
+    if (office !== 'all' && r !== null && !r.has(office)) return err('Not allowed.', 403);
+    let q = "SELECT l.office,l.type,json_extract(l.data,'$.sa') AS sa,f.status,COUNT(*) AS n FROM loan_forms l LEFT JOIN loan_flow f ON f.office=l.office AND f.id=l.id"; const a = [];
+    if (office !== 'all') { q += ' WHERE l.office=?'; a.push(office); }
+    const rows = (await db.prepare(q + ' GROUP BY l.office,l.type,sa,f.status').bind(...a).all()).results.filter(x => r === null || r.has(x.office));
+    return json({ rows });
   }
   if (p === '/lf/delete' && m === 'POST') {
     if (!u.office) return err('Not allowed.', 403);

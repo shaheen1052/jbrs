@@ -144,8 +144,9 @@ function renderApp(){
   const v=S.view,u=S.user,o=myOffice();
   const nav=(p,label)=>`<button class="nav topnav ${v.page===p?'on':''}" onclick="go({page:'${p}'})">${label}</button>`;
   const leafBtn=l=>`<button class="nav ${v.leaf===l.id?'on':''}" onclick="go({page:'leaf',leaf:'${l.id}'})">${esc(l.name)}${!l.tpl?'<span class="pend">pending</span>':''}</button>`;
-  const side=`${nav('dash','Dashboard')}
-   <button class="nav" style="font-size:12.5px;padding:4px 14px;color:var(--muted,#667)" onclick="A.collapseAll()">&#8679; Collapse all</button>
+  const side=`${nav('dash','Home')}
+   <div style="display:flex">
+   <button class="nav" style="font-size:12.5px;padding:4px 14px;color:var(--muted,#667)" onclick="A.collapseAll()">&#8679; Collapse all</button><button class="nav" style="font-size:12.5px;padding:4px 14px;color:var(--muted,#667)" onclick="A.openAll()">&#8681; Open all</button></div>
    ${isAdmin()?nav('users','Users and passwords')+nav('audit','Activity log'):''}
    ${MAINMENU().map(p=>{const c=PCOL[p.id]||PCOL._;const shut=S.open[p.id]===false;return`<div class="pillar" style="--pc:${c[0]};--pcl:${c[1]}"><button class="nav pnav" onclick="A.togglePillar('${p.id}')"><span>${esc(p.name)}</span><span class="caret" id="pc_${p.id}">${shut?'+':'&minus;'}</span></button><div class="leaves" id="pl_${p.id}" style="${shut?'display:none':''}">
    ${menuItems(p.items,leafBtn,p.lvl)}</div></div>`}).join('')}
@@ -153,7 +154,7 @@ function renderApp(){
   let main='';
   const lfm=v.page==='leaf'&&LEAVES[v.leaf]&&String(LEAVES[v.leaf].tpl||'').indexOf('lf')===0;
   try{
-    if(v.page==='dash')main=pageDash();else if(v.page==='leaf')main=pageLeaf();else if(v.page==='report')main=pageReport();
+    if(v.page==='dash')main=pageHome();else if(v.page==='leaf')main=pageLeaf();else if(v.page==='report')main=pageReport();
     else if(v.page==='view')main=pageView();else if(v.page==='users')main=pageUsers();else if(v.page==='audit')main=pageAudit();else if(v.page==='settings')main=pageSettings();
   }catch(e){main=`<div class="card">${esc(e.message)}</div>`}
   shell(`<div class="top"><button class="menubtn" onclick="A.toggleSide()" title="Show / hide menu">&#9776;</button><img class="toplogo" src="${LOGO}" alt="JB"><div><div class="t1">${APP.name} (${APP.short})</div><div class="small" style="opacity:.85">${o?esc(o.name)+' &middot; '+LEVELS[o.level]:'Administrator'}</div></div><div class="sp"></div>
@@ -166,8 +167,12 @@ function setTopH(){const t=$('.top');if(t)document.documentElement.style.setProp
 window.addEventListener('resize',setTopH);
 function MAINMENU(){
   const lp=TREE.find(p=>p.id==='loan').items.find(x=>x.group==='Loan Application');
+  const ok=it=>it.group?it.items.length>0:!((it.tpl==='lfao'&&!(isArea()||isAdmin()))||(it.tpl==='lf'&&isArea()));
+  const flt=items=>items.map(it=>it.group?{...it,items:flt(it.items)}:it).filter(ok);
   const rep=TREE.map(p=>({group:p.name,items:p.items.filter(x=>x!==lp)}));
-  return[{id:'lapp',name:'Loan Application',items:lp.items,lvl:3},{id:'rep',name:'Reports',items:rep,lvl:2}];
+  LEAVES.lf_dash=LEAVES.lf_dash||{id:'lf_dash',name:'Loan Dashboard',title:'Loan Dashboard',pillar:'Loan Application',tpl:'ldash'};
+  LEAVES.st_dash=LEAVES.st_dash||{id:'st_dash',name:'Statements Dashboard',title:'Statements Dashboard',pillar:'Statements',tpl:'sdash'};
+  return[{id:'lapp',name:'Loan Application',items:[LEAVES.lf_dash,...flt(lp.items)],lvl:3},{id:'rep',name:'Statements',items:[LEAVES.st_dash,...rep],lvl:2}];
 }
 function menuItems(items,leafBtn,top){return items.map(it=>{
   if(!it.group)return leafBtn(it);
@@ -179,15 +184,21 @@ function menuItems(items,leafBtn,top){return items.map(it=>{
 }).join('')}
 A.toggleGroup=k=>{const el=$('#gl_'+k);const hide=el.style.display!=='none';el.style.display=hide?'none':'';S.open[k]=!hide;$('#gc_'+k).innerHTML=hide?'+':'&minus;'};
 A.collapseAll=()=>{document.querySelectorAll('[id^="gl_"],[id^="pl_"]').forEach(e=>{e.style.display='none';S.open[e.id.slice(3)]=false});document.querySelectorAll('[id^="gc_"],[id^="pc_"]').forEach(e=>e.innerHTML='+')};
+A.openAll=()=>{document.querySelectorAll('[id^="gl_"],[id^="pl_"]').forEach(e=>{e.style.display='';S.open[e.id.slice(3)]=true});document.querySelectorAll('[id^="gc_"],[id^="pc_"]').forEach(e=>e.innerHTML='&minus;')};
 A.togglePillar=id=>{const el=$('#pl_'+id);const hide=el.style.display!=='none';el.style.display=hide?'none':'';S.open[id]=!hide;const c=$('#pc_'+id);if(c)c.innerHTML=hide?'+':'&minus;'};
 const PCOL={lapp:['#2e7d32','#e8f5e9'],rep:['#1d5fa8','#e7f0fb'],dep:['#1d5fa8','#e7f0fb'],loan:['#2e7d32','#e8f5e9'],acc:['#6a3fb5','#f0ebfa'],rec:['#b55400','#fdf0e2'],aud:['#b42318','#fdecea'],_:['#0a7aa6','#e2f4fb']};
 function setMain(h){const m=$('#main');if(m)m.innerHTML=h+`<div class="dev">${APP.dev}</div>`}
 
 /* ---------- dashboard ---------- */
-function pageDash(){
+function pageHome(){
+  const warn=S.user.is_default?`<div class="note n-warn">You are using the default password. Please change it now from <a class="lk" onclick="A.pwPrompt()">Change password</a>.</div>`:'';
+  S.view.after=()=>{run(A.loadDash);run(lfHomeLoad)};
+  return`<h2>Home</h2>${warn}<h3>Loan Application</h3><div class="card muted" id="hmLoan">Loading...</div><h3 style="margin-top:18px">Statements</h3><div id="dashBody" class="card muted">Loading...</div><div style="margin-top:8px"><button onclick="go({page:'leaf',leaf:'st_dash'})">Open Statements Dashboard</button></div>`;
+}
+function pageDash(title){
   const warn=S.user.is_default?`<div class="note n-warn">You are using the default password. Please change it now from <a class="lk" onclick="A.pwPrompt()">Change password</a>.</div>`:'';
   S.view.after=A.loadDash;
-  return`<h2>Dashboard</h2>${warn}<div id="dashBody" class="card muted">Loading...</div>`;
+  return`<h2>${title||'Dashboard'}</h2>${warn}<div id="dashBody" class="card muted">Loading...</div>`;
 }
 A.loadDash=async()=>{
   const p=prevMonth();
@@ -212,6 +223,8 @@ function pageLeaf(){
   const l=LEAVES[S.view.leaf];const head=`<div class="muted small">${esc(l.pillar)}</div><h2>${esc(l.title)}</h2>`;
   if(l.tpl==='iwc')return pageIwc(l);
   if(l.tpl==='iwr')return pageIwr(l);
+  if(l.tpl==='ldash')return pageLfDash();
+  if(l.tpl==='sdash')return pageDash('Statements Dashboard');
   if(l.tpl==='lf')return pageLoanForms(l);
   if(l.tpl==='lfao')return pageLfAo(l);
   if(l.tpl==='lfrp')return pageLfRp(l);

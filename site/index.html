@@ -928,7 +928,7 @@ function lfOfSel(of,slim){
   if(isBranch())return'';const kids=childBranches();
   return`<div style="flex:0 1 auto">${slim?'':'<label>Office</label>'}<select onchange="go({...S.view,lfof:this.value,lfid:null,lfoff:null,after:null})">${isAdmin()?`<option value="all" ${of==='all'?'selected':''}>All branches</option>`:`${isArea()?`<option value="all" ${of==='all'?'selected':''}>All (Area Office + branches)</option>`:''}<option value="${S.user.office}" ${of===S.user.office?'selected':''}>Area Office (own)</option>`}${kids.map(k=>`<option value="${k.code}" ${of===k.code?'selected':''}>${k.code} - ${esc(k.name)}</option>`).join('')}</select></div>`;
 }
-const lfAppSel=(forms,cur,slim)=>`<div style="flex:0 1 auto">${slim?'':'<label>Applicant</label>'}<select onchange="A.lfPickF(this)"><option value="">- Applicant -</option>${forms.map(f=>`<option value="${f.office}|${f.id}" ${cur&&cur.id===f.id?'selected':''}>${esc(f.name||'(no name)')}${f.acct?' - '+esc(f.acct):''}${f.office!==S.user.office?' ['+esc(officeName(f.office))+']':''}</option>`).join('')}</select></div>`;
+const lfAppSel=(forms,cur,slim)=>`<div style="flex:0 1 auto">${slim?'':'<label>Applicant</label>'}<select onchange="A.lfPickF(this)"><option value="">- Applicant -</option>${forms.map(f=>`<option value="${f.office}|${f.id}" ${cur&&cur.id===f.id?'selected':''}>${esc(f.name||'(no name)')}${f.acct?' - '+esc(f.acct):''}${f.office!==S.user.office?' ['+esc(officeName(f.office))+']':''}${f.status?' ('+f.status+')':''}</option>`).join('')}</select></div>`;
 A.lfPickF=el=>{const [o,i]=el.value.split('|');go({...S.view,lfid:i||null,lfoff:o||null,after:null})};
 async function lfLoadSel(forms){   // load the selected applicant into S.lf
   const v=S.view,cur=forms.find(f=>f.id===v.lfid);
@@ -945,10 +945,23 @@ function lfSaHtml(d,ro){
 }
 const lfStat=(f,bn)=>{const dt=x=>x?lfDate(x):'';
   if(!f.sa)return bn?'খসড়া':'Draft';
+  if(f.status==='sanctioned')return bn?`এরিয়া অফিস কর্তৃক মঞ্জুর`:'Sanctioned by Area Office';
+  if(f.status==='declined')return bn?'প্রত্যাখ্যাত':'Declined by Area Office';
+  if(f.status==='returned')return bn?'সংশোধনের জন্য ফেরত':'Returned for correction';
   if(f.sa==='Branch')return bn?'শাখা কর্তৃক মঞ্জুর':'Branch sanction';
   if(f.status==='received')return bn?`এরিয়া অফিস কর্তৃক গৃহীত ${dt(f.in_date)} (ইনওয়ার্ড ${f.in_no||''})`:`Received by Area Office ${dt(f.in_date)} (In ${f.in_no||''})`;
   if(f.status==='sent')return bn?`এরিয়া অফিসে প্রেরিত ${dt(f.out_date)}`:`Sent to Area Office ${dt(f.out_date)} (Out ${f.out_no||''})`;
   return bn?'প্রেরণের অপেক্ষায়':'Not sent yet'};
+const DEC_TXT={sanctioned:'Sanctioned',declined:'Declined',returned:'Returned for correction'};
+function lfDecHtml(decs){
+  if(!decs||!decs.length)return'';S.lfFiles=S.lfFiles||{};
+  return`<div class="card bn" style="margin-top:12px"><h3 style="margin-top:0">Area Office decisions</h3>${decs.map(d=>`<div style="border-top:1px solid var(--line);padding:6px 0"><b>${DEC_TXT[d.dec]||d.dec}</b> - ${d.dec_date?lfDate(d.dec_date):''}${d.note?`<div style="white-space:pre-wrap">${esc(d.note)}</div>`:''}${d.files.map(f=>{S.lfFiles[f.fid]=f.name;return`<div><a class="lk" onclick="run(()=>A.lfDl('${f.fid}'))">&#128206; ${esc(f.name)}</a></div>`}).join('')}</div>`).join('')}</div>`;
+}
+A.lfDl=async fid=>{
+  const r=await fetch('/api/lf/file?fid='+encodeURIComponent(fid),{headers:{authorization:'Bearer '+S.token}});
+  if(!r.ok)throw new Error('Could not download the file.');
+  const b=await r.blob(),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=(S.lfFiles||{})[fid]||'file';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);
+};
 function lfAsk(next){
   S.lfNext=next;
   modal(`<h2>Unsaved changes</h2><p>You have changes that are not saved. Save them before leaving?</p><div class="bar"><button class="pri" onclick="run(A.lfAskSave)">Save</button><button class="dan" onclick="A.lfAskDiscard()">Discard</button><button onclick="closeModal()">Stay</button></div>`);
@@ -970,40 +983,45 @@ function pageLoanForms(l){
 async function lfList(type,of){
   const j=await api('/lf/list?type='+type+'&office='+encodeURIComponent(of));
   const box=$('#lfbox');if(!box)return;
-  const act=f=>f.office===S.user.office&&f.sa&&f.sa!=='Branch'&&!f.status?`<button class="pri" onclick="A.lfSendAsk('${f.id}')">Send</button>`:(isArea()&&f.office!==S.user.office&&f.status==='sent'?`<button class="pri" onclick="A.lfRecvAsk('${f.office}','${f.id}')">Receive</button>`:'');
+  const act=f=>f.office===S.user.office&&f.sa&&f.sa!=='Branch'&&(!f.status||f.status==='returned')?`<button class="pri" onclick="A.lfSendAsk('${f.id}')">${f.status?'Send again':'Send'}</button>`:(isArea()&&f.office!==S.user.office&&f.status==='sent'?`<button class="pri" onclick="A.lfRecvAsk('${f.office}','${f.id}')">Receive</button>`:'');
   box.outerHTML=`<div id="lfbox" class="card" style="overflow:auto">${j.forms.length?`<table><tr><th>Applicant</th><th>Account no.</th><th>Sanction authority</th><th>Status</th><th>Office</th><th>Last saved</th><th></th></tr>${j.forms.map(f=>`<tr class="click" onclick="go({...S.view,lfid:'${f.id}',lfoff:'${f.office}',after:null})"><td>${esc(f.name||'(no name)')}</td><td>${esc(f.acct||'')}</td><td>${esc(f.sa||'')}</td><td>${esc(lfStat(f))}</td><td>${esc(officeName(f.office))}</td><td>${fmtDT(f.updated)}</td><td onclick="event.stopPropagation()">${act(f)}</td></tr>`).join('')}</table>`:'No applications saved yet.'}</div>`;
 }
-const lfToday=()=>new Date().toISOString().slice(0,10);
-A.lfSendAsk=id=>{S.lfAct={id};modal(`<h2>Send to Area Office</h2><p>Send this file to the Area Office? Enter the outward number and date.</p><div class="fld"><label>Outward number</label><input id="fl_no"></div><div class="fld"><label>Outward date</label><input id="fl_dt" type="date" value="${lfToday()}"></div><div class="bar"><button class="pri" onclick="run(A.lfSendDo)">Confirm send</button><button onclick="closeModal()">Cancel</button></div>`)};
-A.lfSendDo=async()=>{await api('/lf/send',{method:'POST',body:{id:S.lfAct.id,out_no:$('#fl_no').value,out_date:$('#fl_dt').value}});closeModal();toast('Marked as sent to Area Office.');go({...S.view,after:null})};
-A.lfRecvAsk=(o,id)=>{S.lfAct={o,id};modal(`<h2>Receive file</h2><p>Mark the physical file as received by the Area Office. Enter the inward number and date.</p><div class="fld"><label>Inward number</label><input id="fl_no"></div><div class="fld"><label>Inward date</label><input id="fl_dt" type="date" value="${lfToday()}"></div><div class="bar"><button class="pri" onclick="run(A.lfRecvDo)">Confirm received</button><button onclick="closeModal()">Cancel</button></div>`)};
-A.lfRecvDo=async()=>{await api('/lf/receive',{method:'POST',body:{office:S.lfAct.o,id:S.lfAct.id,in_no:$('#fl_no').value,in_date:$('#fl_dt').value}});closeModal();toast('Marked as received.');go({...S.view,after:null})};
+const lfToday=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+A.lfSendAsk=id=>{S.lfAct={id};modal(`<h2>Send to Area Office</h2><p>Send this file to the Area Office? Enter the outward number and date.</p><div class="fld"><label>Outward number</label><input id="fl_no"></div><div class="fld"><label>Outward date</label><input id="fl_dt" inputmode="numeric" maxlength="10" placeholder="dd/mm/yyyy" value="${lfIsoToDmy(lfToday())}" oninput="A.lfDt(this)"></div><div class="bar"><button class="pri" onclick="run(A.lfSendDo)">Confirm send</button><button onclick="closeModal()">Cancel</button></div>`)};
+A.lfSendDo=async()=>{await api('/lf/send',{method:'POST',body:{id:S.lfAct.id,out_no:$('#fl_no').value,out_date:lfDmyToIso($('#fl_dt').value)}});closeModal();toast('Marked as sent to Area Office.');go({...S.view,after:null})};
+A.lfRecvAsk=(o,id)=>{S.lfAct={o,id};modal(`<h2>Receive file</h2><p>Mark the physical file as received by the Area Office. Enter the inward number and date.</p><div class="fld"><label>Inward number</label><input id="fl_no"></div><div class="fld"><label>Inward date</label><input id="fl_dt" inputmode="numeric" maxlength="10" placeholder="dd/mm/yyyy" value="${lfIsoToDmy(lfToday())}" oninput="A.lfDt(this)"></div><div class="bar"><button class="pri" onclick="run(A.lfRecvDo)">Confirm received</button><button onclick="closeModal()">Cancel</button></div>`)};
+A.lfRecvDo=async()=>{await api('/lf/receive',{method:'POST',body:{office:S.lfAct.o,id:S.lfAct.id,in_no:$('#fl_no').value,in_date:lfDmyToIso($('#fl_dt').value)}});closeModal();toast('Marked as received.');go({...S.view,after:null})};
 A.lfNew=type=>{S.lf={id:lfNewId(),type,office:S.user.office,d:{l_date:new Date().toISOString().slice(0,10),...(LF_TYPES[type].defaults||{})},isNew:true};go({...S.view,lfid:S.lf.id,lfoff:S.user.office,after:null})};
 async function lfOpen(type){
   const v=S.view;
   if(!(S.lf&&S.lf.id===v.lfid)){
     const j=await api('/lf/get?office='+encodeURIComponent(v.lfoff)+'&id='+encodeURIComponent(v.lfid));
-    S.lf={id:j.form.id,type:j.form.type,office:j.form.office,d:j.form.data};
+    S.lf={id:j.form.id,type:j.form.type,office:j.form.office,d:j.form.data,flow:j.flow,decs:j.decs};
   }
   lfRender();
 }
+const lfIsoToDmy=v=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(v||'');return m?m[3]+'/'+m[2]+'/'+m[1]:''};
+const lfDmyToIso=v=>{const m=/^(\d{2})\/(\d{2})\/(\d{4})$/.exec(v||'');if(!m)return'';const d=new Date(+m[3],+m[2]-1,+m[1]);return d.getFullYear()===+m[3]&&d.getMonth()===+m[2]-1&&d.getDate()===+m[1]?m[3]+'-'+m[2]+'-'+m[1]:''};
+A.lfDt=(el,fn)=>{const d=el.value.replace(/\D/g,'').slice(0,8);el.value=d.length>4?d.slice(0,2)+'/'+d.slice(2,4)+'/'+d.slice(4):d.length>2?d.slice(0,2)+'/'+d.slice(2):d;el.style.borderColor=el.value.length===10&&!lfDmyToIso(el.value)?'#b42318':'';if(fn)fn(el)};
 function lfField(f,val,ro,fn){fn=fn||'A.lfset';
   const v=esc(val??'');const dis=ro?' disabled':'';
   const w=f.t==='area'?'fc ad':f.w==='full'?'fc w':'fc';
   let inp;
   if(f.t==='area')inp=`<textarea rows="2" data-k="${f.k}" oninput="${fn}(this)"${dis}>${v}</textarea>`;
   else if(f.t==='sel')inp=`<select data-k="${f.k}" onchange="${fn}(this)"${dis}><option value=""></option>${f.o.map(o=>`<option ${o===val?'selected':''}>${esc(o)}</option>`).join('')}</select>`;
-  else inp=`<input type="${f.t==='date'?'date':'text'}" ${f.t==='num'?'inputmode="decimal"':''} data-k="${f.k}" value="${v}" oninput="${fn}(this)"${dis}>`;
+  else if(f.t==='date')inp=`<input type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/yyyy" data-dt="1" data-k="${f.k}" value="${esc(lfIsoToDmy(val))}" oninput="A.lfDt(this,${fn})"${dis}>`;
+  else inp=`<input type="text" ${f.t==='num'?'inputmode="decimal"':''} data-k="${f.k}" value="${v}" oninput="${fn}(this)"${dis}>`;
   return `<div class="${w}"><label>${esc(f.l)}</label>${inp}${f.t==='num'&&/টাকা/.test(f.l)&&val?`<div class="muted small bn">${esc(lfTaka(val))}</div>`:''}</div>`;
 }
 const lfDocs=t=>t.ownDocs?t.docs:[...LF_COMMON_DOCS,...t.docs];
 const lfPrintList=t=>t.print||[['app','Print application',lfDocApp],['chk','Print checklist',lfDocChk],['gua',"Print guarantor's undertaking",lfDocGua],['dpn','Print demand promissory note',lfDocDpn]];
 function lfSections(type){const t=LF_TYPES[type];if(t.sections)return t.sections;return[LF_SEC.app,t.ex,LF_SEC.loan,LF_SEC.sec,LF_SEC.g1,LF_SEC.g2]}
 function lfRender(){
-  const f=S.lf,t=LF_TYPES[f.type],ro=f.office!==S.user.office||!S.user.office;
+  const f=S.lf,t=LF_TYPES[f.type],ro=f.office!==S.user.office||!S.user.office||!!(f.flow&&f.flow.status==='declined');
   const box=$('#lfbox');if(!box)return;
   const docs=lfDocs(t);
-  box.outerHTML=`<div id="lfbox" class="lfform">${ro?'<div class="note n-info">View only: this application belongs to another office.</div>':''}
+  box.outerHTML=`<div id="lfbox" class="lfform">${ro?`<div class="note n-info">${f.flow&&f.flow.status==='declined'?'This application was declined by the Area Office and cannot be changed.':'View only: this application belongs to another office.'}</div>`:''}
+  ${lfDecHtml(f.decs)}
   <div class="card bn" id="lfsa" style="margin-top:12px">${lfSaHtml(f.d,ro)}</div>
   ${lfSections(f.type).map(s=>`<div class="card bn" style="margin-top:12px"><h3 style="margin-top:0">${s.h}</h3><div class="row" style="flex-wrap:wrap">${s.f.map(x=>lfField(x,f.d[x.k],ro)).join('')}</div></div>`).join('')}
   ${t.calc?`<div class="card bn" style="margin-top:12px"><h3 style="margin-top:0">স্বয়ংক্রিয় হিসাব ও নীতিমালা যাচাই (আরসিডি সার্কুলার ১১৯/২৫, ১২২/২৬, ১২৬/২৬)</h3><div id="lfcalc">${t.calc(f.d)}</div></div>`:''}
@@ -1018,7 +1036,7 @@ A.lfCkTog=()=>{const f=S.lf;f.ckOpen=!f.ckOpen;const b=$('#ckbtn'),c=$('#lfck');
   if(!f.ckOpen){c.innerHTML='';return}
   const docs=lfDocs(LF_TYPES[f.type]),ro=f.office!==S.user.office||!S.user.office;
   c.innerHTML=`<h3 style="margin:10px 0 4px">${esc(lfShort(LF_TYPES[f.type]))} Check List &nbsp;<span class="muted small" id="ckcnt"></span></h3>`+docs.map((x,i)=>`<label class="ckrow"><span>${toBn(i+1)}. ${esc(x)}</span><input type="checkbox" data-k="ck${i}" ${f.d['ck'+i]?'checked':''} onchange="A.lfCk(this)" ${ro?'disabled':''}></label>`).join('');A.lfCk(null)};
-A.lfset=el=>{const k=el.dataset.k;S.lf.d[k]=el.type==='checkbox'?el.checked:el.value;S.lf.dirty=true;
+A.lfset=el=>{const k=el.dataset.k;S.lf.d[k]=el.type==='checkbox'?el.checked:el.dataset.dt?lfDmyToIso(el.value):el.value;S.lf.dirty=true;
   if(k==='sa'){const c=$('#lfsa');if(c)c.innerHTML=lfSaHtml(S.lf.d,false)}
   {const t=LF_TYPES[S.lf.type];if(t.calc){const c=$('#lfcalc');if(c)c.innerHTML=t.calc(S.lf.d)}}
   if(el.tagName==='INPUT'&&el.inputMode==='decimal'){const nx=el.parentElement.querySelector('.muted.small.bn');const tk=lfTaka(el.value);if(nx)nx.textContent=tk;else if(tk&&/টাকা/.test(el.parentElement.querySelector('label').textContent)){const d=document.createElement('div');d.className='muted small bn';d.textContent=tk;el.parentElement.appendChild(d)}}};
@@ -1305,21 +1323,56 @@ function pageLfAo(l){
 }
 async function lfAoLoad(type){
   const of=S.view.lfof||(isArea()||isAdmin()?'all':S.user.office);
-  const j=await api('/lf/list?type='+type+'&office='+encodeURIComponent(of));
+  const j=await api('/lf/list?type='+type+'&office='+encodeURIComponent(of));j.forms=j.forms.filter(f=>f.status&&f.office!==S.user.office);
   const box=$('#lfbox');if(!box)return;
   const cur=await lfLoadSel(j.forms);
   const sel=`<div class="card"><div class="row" style="align-items:flex-end">${lfOfSel(of)}${lfAppSel(j.forms,cur)}</div></div>`;
-  if(!cur){box.outerHTML=`<div id="lfbox">${sel}<p class="muted">${j.forms.length?'Select an applicant.':'No applications saved yet.'}</p></div>`;return}
+  if(!cur){box.outerHTML=`<div id="lfbox">${sel}<p class="muted">${j.forms.length?'Select an applicant.':'No files have been sent to the Area Office yet.'}</p></div>`;return}
   const r=await api('/lf/ao?office='+encodeURIComponent(cur.office)+'&id='+encodeURIComponent(cur.id));
-  const f=S.lf;f.ao=r.ao||{};f.aoDirty=false;
+  const f=S.lf;f.ao=r.ao||{};f.aoDirty=false;f.flow=r.flow;f.decs=r.decs;const stt=r.flow?r.flow.status:'';
   const ro=!isArea(),d=f.d,fc={...cur,sa:cur.sa||d.sa};
   const info=`<div class="card bn" style="margin-top:12px"><div><b>${esc(d.a_name||'')}</b> ${d.a_acct?'- '+esc(d.a_acct):''} &nbsp; ঋণের পরিমাণ: ${d.l_amt?esc(lfTaka(d.l_amt)):''}</div><div class="small">Sanction authority: <b>${esc(fc.sa||'')}</b>${d.fw_ref?' &nbsp; Forwarding letter: '+esc(d.fw_ref)+' '+(d.fw_date?lfDate(d.fw_date):''):''}</div><div class="small">Status: ${esc(lfStat(fc))}</div></div>`;
   if(fc.sa==='Branch'){box.outerHTML=`<div id="lfbox">${sel}${info}<div class="note n-info" style="margin-top:12px">This application is sanctioned by the Branch. No Area Office entry is needed.</div></div>`;return}
-  box.outerHTML=`<div id="lfbox" class="lfform">${sel}${info}${ro?'<div class="note n-info" style="margin-top:12px">View only: only the Area Office can enter this page.</div>':''}${r.flow&&r.flow.status==='received'?'':'<div class="note n-info" style="margin-top:12px">The physical file is not marked as received yet (do this from the Data Entry list).</div>'}<div class="card bn" style="margin-top:12px"><h3>Area Office entry (for Note Sheet and Sanction Letter)</h3><div class="row">${LF_AO.map(x=>lfField(x,f.ao[x.k],ro,'A.lfAoset')).join('')}</div></div></div>`;
-  const hs=$('#hdrsave');if(hs)hs.innerHTML=ro?'':`<button class="pri" onclick="run(A.lfAoSave)" style="height:28px;padding:2px 18px;font-size:13px">Save</button>`;
+  box.outerHTML=`<div id="lfbox" class="lfform">${sel}${info}${ro?'<div class="note n-info" style="margin-top:12px">View only: only the Area Office can enter this page.</div>':''}${stt==='sent'?'<div class="note n-info" style="margin-top:12px">The branch has sent this file. Press Receive (top right) when the physical file arrives.</div>':stt==='returned'?'<div class="note n-info" style="margin-top:12px">Returned to the branch for correction. Waiting for the branch to send it again.</div>':''}<div class="card bn" style="margin-top:12px"><h3>Area Office entry (for Note Sheet and Sanction Letter)</h3><div class="row">${LF_AO.map(x=>lfField(x,f.ao[x.k],ro,'A.lfAoset')).join('')}</div></div>${lfDecHtml(f.decs)}${stt==='received'&&!ro?`<div class="card bn" style="margin-top:12px"><h3>Record decision</h3><div class="row"><div class="fc"><label>Decision *</label><select id="dc_dec"><option value=""></option><option value="sanctioned">Sanctioned</option><option value="returned">Returned for correction</option><option value="declined">Declined (final)</option></select></div><div class="fc"><label>Decision date *</label><input id="dc_dt" inputmode="numeric" maxlength="10" placeholder="dd/mm/yyyy" value="${lfIsoToDmy(lfToday())}" oninput="A.lfDt(this)"></div><div class="fc ad" style="flex:1 1 100%;max-width:none"><label>Query / reason / remarks (required for Returned and Declined)</label><textarea id="dc_note" rows="3" style="height:80px"></textarea></div><div class="fc w"><label>Attachments (query letter or sanction letter; PDF, image, Word or Excel; up to 5 files, 1 MB each)</label><input type="file" id="dc_files" multiple style="height:auto"></div></div><div class="bar" style="margin-top:10px"><button class="pri" onclick="run(A.lfDecide)">Record decision</button></div></div>`:''}</div>`;
+  const hs=$('#hdrsave');if(hs)hs.innerHTML=ro?'':`${stt==='sent'?`<button class="pri" onclick="A.lfRecvAsk('${cur.office}','${cur.id}')" style="height:28px;padding:2px 14px;font-size:13px;margin-right:6px">Receive file</button>`:''}<button class="pri" onclick="run(A.lfAoSave)" style="height:28px;padding:2px 18px;font-size:13px">Save</button>`;
 }
-A.lfAoset=el=>{S.lf.ao[el.dataset.k]=el.value;S.lf.aoDirty=true};
+A.lfAoset=el=>{S.lf.ao[el.dataset.k]=el.dataset.dt?lfDmyToIso(el.value):el.value;S.lf.aoDirty=true};
 A.lfAoSave=async()=>{const f=S.lf;await api('/lf/ao',{method:'PUT',body:{office:f.office,id:f.id,data:f.ao}});f.aoDirty=false;toast('Saved.')};
+
+A.lfDecide=async()=>{
+  const f=S.lf,dec=$('#dc_dec').value,date=lfDmyToIso($('#dc_dt').value),note=$('#dc_note').value.trim(),files=[...$('#dc_files').files];
+  if(!dec)throw new Error('Choose the decision.');if(!date)throw new Error('Enter the decision date as dd/mm/yyyy.');
+  if(dec!=='sanctioned'&&!note)throw new Error(dec==='declined'?'Write the reason for declining.':'Write the query for the branch.');
+  if(files.length>5)throw new Error('Attach at most 5 files.');
+  for(const x of files)if(x.size>1048576)throw new Error(x.name+' is larger than 1 MB.');
+  if(!confirm(dec==='declined'?'Declining is final. The branch cannot reopen or change this application. Continue?':dec==='returned'?'Return this file to the branch for correction?':'Record this application as sanctioned?'))return;
+  if(f.aoDirty)await A.lfAoSave();
+  const r=await api('/lf/decide',{method:'POST',body:{office:f.office,id:f.id,dec,note,date}});
+  const b64=x=>new Promise((ok,no)=>{const fr=new FileReader();fr.onload=()=>ok(String(fr.result).split(',')[1]);fr.onerror=()=>no(new Error('Could not read '+x.name));fr.readAsDataURL(x)});
+  try{for(const x of files)await api('/lf/attach',{method:'POST',body:{office:f.office,id:f.id,seq:r.seq,name:x.name,mime:x.type,data:await b64(x)}})}
+  catch(e){toast('Decision recorded, but an attachment failed: '+e.message,true);go({...S.view,after:null});return}
+  toast('Decision recorded.');go({...S.view,after:null});
+};
+
+/* ================= Loan Dashboard and Home ================= */
+const LF_BK=['Draft','Not sent','Sent','Received','Returned','Sanctioned','Declined','Branch sanction'];
+const lfBucket=(sa,st)=>!sa?'Draft':st==='sent'?'Sent':st==='received'?'Received':st==='returned'?'Returned':st==='sanctioned'?'Sanctioned':st==='declined'?'Declined':sa==='Branch'?'Branch sanction':'Not sent';
+async function lfSummary(){
+  const j=await api('/lf/summary?office='+encodeURIComponent(isBranch()?S.user.office:'all'));const m={};
+  for(const r of j.rows){const t=m[r.type]=m[r.type]||{};const b=lfBucket(r.sa,r.status);t[b]=(t[b]||0)+r.n}
+  return m;
+}
+const lfTotals=m=>{const t={};Object.values(m).forEach(o=>Object.entries(o).forEach(([b,n])=>t[b]=(t[b]||0)+n));return t};
+const lfChips=t=>LF_BK.filter(b=>t[b]).map(b=>`<span class="badge" style="margin:2px 6px 2px 0">${b}: <b>${toBn(t[b])}</b></span>`).join('')||'<span class="muted">No applications yet.</span>';
+async function lfHomeLoad(){
+  const m=await lfSummary(),t=lfTotals(m),el=$('#hmLoan');if(!el)return;
+  const n=Object.values(t).reduce((a,b)=>a+b,0);
+  el.outerHTML=`<div class="card" id="hmLoan"><div>Total applications: <b>${toBn(n)}</b></div><div style="margin-top:6px">${lfChips(t)}</div>${isArea()&&t.Sent?`<div class="note n-warn" style="margin-top:8px">${toBn(t.Sent)} file(s) sent by branches are waiting to be received.</div>`:''}${isArea()&&t.Received?`<div class="note n-info" style="margin-top:8px">${toBn(t.Received)} received file(s) are waiting for a decision.</div>`:''}<div style="margin-top:8px"><button onclick="go({page:'leaf',leaf:'lf_dash'})">Open Loan Dashboard</button></div></div>`;
+}
+function pageLfDash(){S.view.after=async()=>{const m=await lfSummary(),box=$('#lfdash');if(!box)return;
+  const rows=Object.entries(LF_TYPES).filter(([k])=>m[k]);
+  box.outerHTML=`<div id="lfdash" class="card" style="overflow:auto">${rows.length?`<table><tr><th>Loan type</th>${LF_BK.map(b=>`<th>${b}</th>`).join('')}<th>Total</th></tr>${rows.map(([k,t])=>`<tr class="click" onclick="go({page:'leaf',leaf:'${t.leaf}'})"><td>${esc(lfShort(t))}</td>${LF_BK.map(b=>`<td>${m[k][b]?toBn(m[k][b]):''}</td>`).join('')}<td><b>${toBn(Object.values(m[k]).reduce((a,b)=>a+b,0))}</b></td></tr>`).join('')}</table>`:'No loan applications yet.'}</div>`};
+  return`<h2>Loan Dashboard</h2><div id="lfdash" class="card muted">Loading...</div>`}
 
 /* ================= JBRS ONLINE APP ================= */
 const APP={name:'JB Reporting System',short:'JBRS',version:'Online 1.0',bank:'Janata Bank PLC.',dev:'Developed by - Md. Shaheen Mahmud, Principal Officer, 024365'};
@@ -1467,8 +1520,9 @@ function renderApp(){
   const v=S.view,u=S.user,o=myOffice();
   const nav=(p,label)=>`<button class="nav topnav ${v.page===p?'on':''}" onclick="go({page:'${p}'})">${label}</button>`;
   const leafBtn=l=>`<button class="nav ${v.leaf===l.id?'on':''}" onclick="go({page:'leaf',leaf:'${l.id}'})">${esc(l.name)}${!l.tpl?'<span class="pend">pending</span>':''}</button>`;
-  const side=`${nav('dash','Dashboard')}
-   <button class="nav" style="font-size:12.5px;padding:4px 14px;color:var(--muted,#667)" onclick="A.collapseAll()">&#8679; Collapse all</button>
+  const side=`${nav('dash','Home')}
+   <div style="display:flex">
+   <button class="nav" style="font-size:12.5px;padding:4px 14px;color:var(--muted,#667)" onclick="A.collapseAll()">&#8679; Collapse all</button><button class="nav" style="font-size:12.5px;padding:4px 14px;color:var(--muted,#667)" onclick="A.openAll()">&#8681; Open all</button></div>
    ${isAdmin()?nav('users','Users and passwords')+nav('audit','Activity log'):''}
    ${MAINMENU().map(p=>{const c=PCOL[p.id]||PCOL._;const shut=S.open[p.id]===false;return`<div class="pillar" style="--pc:${c[0]};--pcl:${c[1]}"><button class="nav pnav" onclick="A.togglePillar('${p.id}')"><span>${esc(p.name)}</span><span class="caret" id="pc_${p.id}">${shut?'+':'&minus;'}</span></button><div class="leaves" id="pl_${p.id}" style="${shut?'display:none':''}">
    ${menuItems(p.items,leafBtn,p.lvl)}</div></div>`}).join('')}
@@ -1476,7 +1530,7 @@ function renderApp(){
   let main='';
   const lfm=v.page==='leaf'&&LEAVES[v.leaf]&&String(LEAVES[v.leaf].tpl||'').indexOf('lf')===0;
   try{
-    if(v.page==='dash')main=pageDash();else if(v.page==='leaf')main=pageLeaf();else if(v.page==='report')main=pageReport();
+    if(v.page==='dash')main=pageHome();else if(v.page==='leaf')main=pageLeaf();else if(v.page==='report')main=pageReport();
     else if(v.page==='view')main=pageView();else if(v.page==='users')main=pageUsers();else if(v.page==='audit')main=pageAudit();else if(v.page==='settings')main=pageSettings();
   }catch(e){main=`<div class="card">${esc(e.message)}</div>`}
   shell(`<div class="top"><button class="menubtn" onclick="A.toggleSide()" title="Show / hide menu">&#9776;</button><img class="toplogo" src="${LOGO}" alt="JB"><div><div class="t1">${APP.name} (${APP.short})</div><div class="small" style="opacity:.85">${o?esc(o.name)+' &middot; '+LEVELS[o.level]:'Administrator'}</div></div><div class="sp"></div>
@@ -1489,8 +1543,12 @@ function setTopH(){const t=$('.top');if(t)document.documentElement.style.setProp
 window.addEventListener('resize',setTopH);
 function MAINMENU(){
   const lp=TREE.find(p=>p.id==='loan').items.find(x=>x.group==='Loan Application');
+  const ok=it=>it.group?it.items.length>0:!((it.tpl==='lfao'&&!(isArea()||isAdmin()))||(it.tpl==='lf'&&isArea()));
+  const flt=items=>items.map(it=>it.group?{...it,items:flt(it.items)}:it).filter(ok);
   const rep=TREE.map(p=>({group:p.name,items:p.items.filter(x=>x!==lp)}));
-  return[{id:'lapp',name:'Loan Application',items:lp.items,lvl:3},{id:'rep',name:'Reports',items:rep,lvl:2}];
+  LEAVES.lf_dash=LEAVES.lf_dash||{id:'lf_dash',name:'Loan Dashboard',title:'Loan Dashboard',pillar:'Loan Application',tpl:'ldash'};
+  LEAVES.st_dash=LEAVES.st_dash||{id:'st_dash',name:'Statements Dashboard',title:'Statements Dashboard',pillar:'Statements',tpl:'sdash'};
+  return[{id:'lapp',name:'Loan Application',items:[LEAVES.lf_dash,...flt(lp.items)],lvl:3},{id:'rep',name:'Statements',items:[LEAVES.st_dash,...rep],lvl:2}];
 }
 function menuItems(items,leafBtn,top){return items.map(it=>{
   if(!it.group)return leafBtn(it);
@@ -1502,15 +1560,21 @@ function menuItems(items,leafBtn,top){return items.map(it=>{
 }).join('')}
 A.toggleGroup=k=>{const el=$('#gl_'+k);const hide=el.style.display!=='none';el.style.display=hide?'none':'';S.open[k]=!hide;$('#gc_'+k).innerHTML=hide?'+':'&minus;'};
 A.collapseAll=()=>{document.querySelectorAll('[id^="gl_"],[id^="pl_"]').forEach(e=>{e.style.display='none';S.open[e.id.slice(3)]=false});document.querySelectorAll('[id^="gc_"],[id^="pc_"]').forEach(e=>e.innerHTML='+')};
+A.openAll=()=>{document.querySelectorAll('[id^="gl_"],[id^="pl_"]').forEach(e=>{e.style.display='';S.open[e.id.slice(3)]=true});document.querySelectorAll('[id^="gc_"],[id^="pc_"]').forEach(e=>e.innerHTML='&minus;')};
 A.togglePillar=id=>{const el=$('#pl_'+id);const hide=el.style.display!=='none';el.style.display=hide?'none':'';S.open[id]=!hide;const c=$('#pc_'+id);if(c)c.innerHTML=hide?'+':'&minus;'};
 const PCOL={lapp:['#2e7d32','#e8f5e9'],rep:['#1d5fa8','#e7f0fb'],dep:['#1d5fa8','#e7f0fb'],loan:['#2e7d32','#e8f5e9'],acc:['#6a3fb5','#f0ebfa'],rec:['#b55400','#fdf0e2'],aud:['#b42318','#fdecea'],_:['#0a7aa6','#e2f4fb']};
 function setMain(h){const m=$('#main');if(m)m.innerHTML=h+`<div class="dev">${APP.dev}</div>`}
 
 /* ---------- dashboard ---------- */
-function pageDash(){
+function pageHome(){
+  const warn=S.user.is_default?`<div class="note n-warn">You are using the default password. Please change it now from <a class="lk" onclick="A.pwPrompt()">Change password</a>.</div>`:'';
+  S.view.after=()=>{run(A.loadDash);run(lfHomeLoad)};
+  return`<h2>Home</h2>${warn}<h3>Loan Application</h3><div class="card muted" id="hmLoan">Loading...</div><h3 style="margin-top:18px">Statements</h3><div id="dashBody" class="card muted">Loading...</div><div style="margin-top:8px"><button onclick="go({page:'leaf',leaf:'st_dash'})">Open Statements Dashboard</button></div>`;
+}
+function pageDash(title){
   const warn=S.user.is_default?`<div class="note n-warn">You are using the default password. Please change it now from <a class="lk" onclick="A.pwPrompt()">Change password</a>.</div>`:'';
   S.view.after=A.loadDash;
-  return`<h2>Dashboard</h2>${warn}<div id="dashBody" class="card muted">Loading...</div>`;
+  return`<h2>${title||'Dashboard'}</h2>${warn}<div id="dashBody" class="card muted">Loading...</div>`;
 }
 A.loadDash=async()=>{
   const p=prevMonth();
@@ -1535,6 +1599,8 @@ function pageLeaf(){
   const l=LEAVES[S.view.leaf];const head=`<div class="muted small">${esc(l.pillar)}</div><h2>${esc(l.title)}</h2>`;
   if(l.tpl==='iwc')return pageIwc(l);
   if(l.tpl==='iwr')return pageIwr(l);
+  if(l.tpl==='ldash')return pageLfDash();
+  if(l.tpl==='sdash')return pageDash('Statements Dashboard');
   if(l.tpl==='lf')return pageLoanForms(l);
   if(l.tpl==='lfao')return pageLfAo(l);
   if(l.tpl==='lfrp')return pageLfRp(l);
