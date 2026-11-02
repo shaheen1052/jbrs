@@ -420,9 +420,9 @@ async function handle(req, env) {
     if (office !== 'all' && !ID_RE.test(office)) return err('Bad office.');
     const r = await readable(db, u);
     if (office !== 'all' && r !== null && !r.has(office)) return err('Not allowed.', 403);
-    let q = "SELECT l.office,l.type,json_extract(l.data,'$.sa') AS sa,f.status,COUNT(*) AS n FROM loan_forms l LEFT JOIN loan_flow f ON f.office=l.office AND f.id=l.id"; const a = [];
+    let q = "SELECT l.office,l.type,json_extract(l.data,'$.sa') AS sa,json_extract(l.data,'$.sl_ref') AS sl_ref,f.status,COUNT(*) AS n FROM loan_forms l LEFT JOIN loan_flow f ON f.office=l.office AND f.id=l.id"; const a = [];
     if (office !== 'all') { q += ' WHERE l.office=?'; a.push(office); }
-    const rows = (await db.prepare(q + ' GROUP BY l.office,l.type,sa,f.status').bind(...a).all()).results.filter(x => r === null || r.has(x.office));
+    const rows = (await db.prepare(q + ' GROUP BY l.office,l.type,sa,sl_ref,f.status').bind(...a).all()).results.filter(x => r === null || r.has(x.office));
     return json({ rows });
   }
   if (p === '/lf/delete' && m === 'POST') {
