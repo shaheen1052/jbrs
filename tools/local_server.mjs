@@ -19,7 +19,7 @@ const DB = {
   async batch(list) { sq.exec('BEGIN'); try { const out = []; for (const s of list) out.push(await s.run()); sq.exec('COMMIT'); return out; } catch (e) { sq.exec('ROLLBACK'); throw e; } }
 };
 const index = fs.readFileSync(new URL('../site/index.html', import.meta.url));
-const ASSETS = { fetch: async () => new Response(index, { headers: { 'content-type': 'text/html; charset=utf-8' } }) };
+const ASSETS = { fetch: async (req) => { const p = new URL(req.url).pathname; if (p.startsWith('/vendor/')) { try { return new Response(fs.readFileSync(new URL('../site' + p, import.meta.url)), { headers: { 'content-type': 'application/javascript' } }); } catch (e) { return new Response('Not found', { status: 404 }); } } return new Response(index, { headers: { 'content-type': 'text/html; charset=utf-8' } }); } };
 const env = { DB, ASSETS };
 
 http.createServer(async (req, res) => {

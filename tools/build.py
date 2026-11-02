@@ -38,7 +38,19 @@ cons=g[g.index('function consolidateGlance'):]
 cons=cons[:cons.index('\n}\n')+3]
 app=open(APPJS,encoding='utf-8').read()
 rcd='\n'.join(open(f,encoding='utf-8').read() for f in RCD)
-extra_css=""".menubtn{background:transparent;border:1px solid rgba(255,255,255,.7);color:#fff;font-size:20px;line-height:1;padding:5px 11px;margin-right:6px}
+extra_css=""".lfpage{width:210mm;height:297mm;box-sizing:border-box;background:#fff;color:#000;font-family:'KalpurushJB','Kalpurush',sans-serif;font-size:12pt;line-height:1.4;position:relative;overflow:hidden;break-after:page;page-break-after:always;break-inside:avoid}
+.lfpage:last-child{break-after:auto;page-break-after:auto}.lfpage .u{text-decoration:underline}
+.lfpage .lff{display:inline-block;border-bottom:1px dotted #000;text-align:center;padding:0 1mm;line-height:1.25;vertical-align:bottom;box-sizing:border-box}
+.lfpage .kl{display:flex;width:161mm;min-height:5.9mm;line-height:5.9mm;align-items:flex-end}.lfpage .kb{flex:0 0 47mm;white-space:nowrap}.lfpage .kc{flex:0 0 2.5mm}.lfpage .kn{flex:0 0 auto;white-space:nowrap;margin-right:1.5mm}.lfpage .kf{flex:1;border-bottom:1px dotted #000;margin-left:1mm;margin-right:2mm;min-height:5.2mm;line-height:5.2mm;font-size:11.5pt;overflow-wrap:anywhere}
+.lfpage .kr .kn:not(:first-child){margin-left:1mm}.lfpage .kh{margin:3mm 0 0}.lfpage .kp{text-align:justify;margin:1mm 0 0;line-height:6.6mm}
+.lfpage .kph{position:absolute;right:0;top:11mm;width:33mm;height:28mm;border:1px solid #000;text-align:center;font-size:12pt;line-height:1.5;padding-top:3.2mm;box-sizing:border-box}
+.lfpage .ka{position:relative}.lfpage .kgn{position:absolute;right:0;margin-top:-5mm;width:23mm;border:1px solid #000;font-size:8pt;line-height:1.4;text-align:center;padding:1mm;box-sizing:border-box;height:25mm}
+.lfpage .kt{width:161.5mm;margin:1mm 0 0 -2mm;border-collapse:collapse}.lfpage .kt th,.lfpage .kt td{border:1px solid #333;padding:0 1.5mm;font-weight:400;font-size:11pt;line-height:1.3;vertical-align:top;background:#fff;color:#000}.lfpage .kt th{font-size:12pt;text-align:center}.lfpage .kt td:first-child{font-size:11.5pt}
+.lfpage .kbx{display:flex;margin-top:2.5mm;margin-left:-2mm;width:186mm}.lfpage .kb1,.lfpage .kb2{flex:1;border:1px solid #333;padding:2mm 2.5mm;min-height:38mm;box-sizing:border-box;line-height:1.5;font-size:12pt}.lfpage .kb2{margin-left:-1px}
+.lfpage .kz{text-align:left;margin:0;line-height:7mm}.lfpage .kg{text-align:justify;margin:9mm 0 0;line-height:8.1mm}.lfpage .kq .kl{width:100mm;min-height:7mm;line-height:7mm}.lfpage .kb2k{flex:0 0 30mm}.lfpage .kc2{flex:0 0 4mm}
+.lfpdfhost{position:fixed;left:-400mm;top:0;z-index:-1}
+@media print{#printArea.lf0{padding:0}#printArea .lfpad{padding:10mm 11mm}#printArea .lfpage .kt th,#printArea .lfpage .kt td{border:1px solid #333;padding:0 1.5mm;background:#fff}}
+.menubtn{background:transparent;border:1px solid rgba(255,255,255,.7);color:#fff;font-size:20px;line-height:1;padding:5px 11px;margin-right:6px}
 .sidebg{display:none}.layout.noside .side{display:none}
 @media (max-width:760px){.side{position:fixed;top:0;left:0;bottom:0;width:84%;max-width:330px;max-height:none;z-index:50;border-right:1px solid var(--line);border-bottom:none;box-shadow:0 0 30px rgba(0,0,0,.3);padding-top:16px}.layout:not(.noside) .sidebg{display:block;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:40}}
 .b-NONE{background:#f1f1f1;color:#666}.b-NEW{background:#eef0ef;color:#4a5752}
@@ -98,5 +110,8 @@ import os
 os.makedirs(os.path.dirname(OUT),exist_ok=True)
 open(OUT,'w',encoding='utf-8').write(html)
 print('built',len(html))
+os.makedirs(os.path.join(ROOT,'site','vendor'),exist_ok=True)
+for _f in os.listdir(os.path.join(ROOT,'src','vendor')):
+    shutil.copyfile(os.path.join(ROOT,'src','vendor',_f),os.path.join(ROOT,'site','vendor',_f))
 shutil.copyfile(os.path.join(ROOT,'src','_worker.js'),os.path.join(ROOT,'site','_worker.js'))
 print('copied _worker.js')
