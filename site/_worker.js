@@ -290,6 +290,18 @@ async function handle(req, env) {
     const rows = (await db.prepare(q + ' ORDER BY updated DESC LIMIT 500').bind(...a).all()).results.filter(x => r === null || r.has(x.office));
     return json({ forms: rows });
   }
+  if (p === '/lf/items' && m === 'GET') {
+    const type = url.searchParams.get('type') || '';
+    const office = url.searchParams.get('office') || u.office || 'all';
+    if (office !== 'all' && !ID_RE.test(office)) return err('Bad office.');
+    if (!/^[a-z]{2,12}$/.test(type)) return err('Bad type.');
+    const r = await readable(db, u);
+    if (office !== 'all' && r !== null && !r.has(office)) return err('Not allowed.', 403);
+    let q = 'SELECT office,id,type,name,acct,data,updated FROM loan_forms WHERE type=?'; const a = [type];
+    if (office !== 'all') { q += ' AND office=?'; a.push(office); }
+    const rows = (await db.prepare(q + ' ORDER BY updated DESC LIMIT 500').bind(...a).all()).results.filter(x => r === null || r.has(x.office));
+    return json({ forms: rows.map(x => ({ ...x, data: JSON.parse(x.data || '{}') })) });
+  }
   if (p === '/lf/get' && m === 'GET') {
     const office = url.searchParams.get('office') || u.office, id = url.searchParams.get('id') || '';
     if (!office || !ID_RE.test(office) || !/^[A-Za-z0-9_-]{1,40}$/.test(id)) return err('Bad request.');

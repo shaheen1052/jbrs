@@ -65,17 +65,30 @@ const LF_TYPES={
 };
 const LF_TYPE_BY_LEAF=Object.fromEntries(Object.entries(LF_TYPES).map(([k,v])=>[v.leaf,k]));
 
+const lfTypeOfLeaf=id=>LF_TYPE_BY_LEAF[String(id).replace(/_(cl|rp)$/,'')];
+const lfShort=t=>t.en.split(' - ').pop();
+const lfOf=()=>S.view.lfof||(isBranch()||isArea()?S.user.office:'all');
+function lfOfSel(of){
+  if(isBranch())return'';const kids=childBranches();
+  return`<div style="flex:1 1 220px;max-width:340px"><label>Office</label><select onchange="go({...S.view,lfof:this.value,lfid:null,lfoff:null,after:null})">${isAdmin()?`<option value="all" ${of==='all'?'selected':''}>All branches</option>`:`<option value="${S.user.office}" ${of===S.user.office?'selected':''}>Area Office (own)</option>`}${kids.map(k=>`<option value="${k.code}" ${of===k.code?'selected':''}>${k.code} - ${esc(k.name)}</option>`).join('')}</select></div>`;
+}
+const lfAppSel=(forms,cur)=>`<div style="flex:1 1 260px;max-width:420px"><label>Applicant</label><select onchange="A.lfPickF(this)"><option value="">- select -</option>${forms.map(f=>`<option value="${f.office}|${f.id}" ${cur&&cur.id===f.id?'selected':''}>${esc(f.name||'(no name)')}${f.acct?' - '+esc(f.acct):''}</option>`).join('')}</select></div>`;
+A.lfPickF=el=>{const [o,i]=el.value.split('|');go({...S.view,lfid:i||null,lfoff:o||null,after:null})};
+async function lfLoadSel(forms){   // load the selected applicant into S.lf
+  const v=S.view,cur=forms.find(f=>f.id===v.lfid);
+  if(cur&&!(S.lf&&S.lf.id===cur.id)){const g=await api('/lf/get?office='+encodeURIComponent(cur.office)+'&id='+encodeURIComponent(cur.id));S.lf={id:g.form.id,type:g.form.type,office:g.form.office,d:g.form.data}}
+  return cur;
+}
+
 /* ---------- page ---------- */
 function lfNewId(){return 'F'+Date.now().toString(36)+Math.random().toString(36).slice(2,5)}
 function pageLoanForms(l){
-  const type=LF_TYPE_BY_LEAF[l.id];const T0=LF_TYPES[type];
-  const head=`<div class="muted small">Loan Application</div><h2>${esc(T0.en)} - application and documents</h2>`;
+  const type=lfTypeOfLeaf(l.id);const T0=LF_TYPES[type];
+  const head=`<div class="pghead"><h2>${esc(lfShort(T0))} data entry</h2></div>`;
   if(S.view.lfid){S.view.after=()=>lfOpen(type);return head+`<div id="lfbox" class="muted" style="margin-top:12px">Loading...</div>`}
-  const kids=isBranch()?[]:childBranches();
-  const of=S.view.lfof||(isBranch()||isArea()?S.user.office:'all');
-  const sel=isBranch()?'':`<div style="flex:2"><label>Office</label><select onchange="go({...S.view,lfof:this.value,after:null})">${isAdmin()?`<option value="all" ${of==='all'?'selected':''}>All branches</option>`:`<option value="${S.user.office}" ${of===S.user.office?'selected':''}>Area Office (own)</option>`}${kids.map(k=>`<option value="${k.code}" ${of===k.code?'selected':''}>${k.code} - ${esc(k.name)}</option>`).join('')}</select></div>`;
+  const of=lfOf();
   S.view.after=()=>lfList(type,of);
-  return head+`<div class="card"><div class="row">${sel}<div style="flex:0;align-self:flex-end">${S.user.office?`<button class="pri" onclick="A.lfNew('${type}')">New application</button>`:''}</div></div></div><div id="lfbox" class="card muted" style="margin-top:12px">Loading...</div>`;
+  return head+`<div class="card"><div class="row" style="align-items:flex-end">${lfOfSel(of)}<div style="flex:0 0 auto">${S.user.office?`<button class="pri" onclick="A.lfNew('${type}')">New application</button>`:''}</div></div></div><div id="lfbox" class="card muted" style="margin-top:12px">Loading...</div>`;
 }
 async function lfList(type,of){
   const j=await api('/lf/list?type='+type+'&office='+encodeURIComponent(of));
@@ -93,12 +106,12 @@ async function lfOpen(type){
 }
 function lfField(f,val,ro){
   const v=esc(val??'');const dis=ro?' disabled':'';
-  const w=f.w==='full'?'flex:1 1 100%':'flex:1 1 240px';
+  const w=f.w==='full'?'fc w':f.t==='area'?'fc w2':'fc';
   let inp;
-  if(f.t==='area')inp=`<textarea rows="2" data-k="${f.k}" oninput="A.lfset(this)"${dis}>${v}</textarea>`;
+  if(f.t==='area')inp=`<textarea rows="1" data-k="${f.k}" oninput="A.lfset(this)"${dis}>${v}</textarea>`;
   else if(f.t==='sel')inp=`<select data-k="${f.k}" onchange="A.lfset(this)"${dis}><option value=""></option>${f.o.map(o=>`<option ${o===val?'selected':''}>${esc(o)}</option>`).join('')}</select>`;
   else inp=`<input type="${f.t==='date'?'date':'text'}" ${f.t==='num'?'inputmode="decimal"':''} data-k="${f.k}" value="${v}" oninput="A.lfset(this)"${dis}>`;
-  return `<div style="${w}"><label>${esc(f.l)}</label>${inp}${f.t==='num'&&/টাকা/.test(f.l)&&val?`<div class="muted small bn">${esc(lfTaka(val))}</div>`:''}</div>`;
+  return `<div class="${w}"><label>${esc(f.l)}</label>${inp}${f.t==='num'&&/টাকা/.test(f.l)&&val?`<div class="muted small bn">${esc(lfTaka(val))}</div>`:''}</div>`;
 }
 const lfDocs=t=>t.ownDocs?t.docs:[...LF_COMMON_DOCS,...t.docs];
 const lfPrintList=t=>t.print||[['app','Print application',lfDocApp],['chk','Print checklist',lfDocChk],['gua',"Print guarantor's undertaking",lfDocGua],['dpn','Print demand promissory note',lfDocDpn]];
@@ -107,21 +120,19 @@ function lfRender(){
   const f=S.lf,t=LF_TYPES[f.type],ro=f.office!==S.user.office||!S.user.office;
   const box=$('#lfbox');if(!box)return;
   const docs=lfDocs(t);
-  box.outerHTML=`<div id="lfbox">${ro?'<div class="note n-info">View only: this application belongs to another office.</div>':''}
+  box.outerHTML=`<div id="lfbox" class="lfform">${ro?'<div class="note n-info">View only: this application belongs to another office.</div>':''}
   ${lfSections(f.type).map(s=>`<div class="card bn" style="margin-top:12px"><h3 style="margin-top:0">${s.h}</h3><div class="row" style="flex-wrap:wrap">${s.f.map(x=>lfField(x,f.d[x.k],ro)).join('')}</div></div>`).join('')}
   ${t.calc?`<div class="card bn" style="margin-top:12px"><h3 style="margin-top:0">স্বয়ংক্রিয় হিসাব ও নীতিমালা যাচাই (আরসিডি সার্কুলার ১১৯/২৫, ১২২/২৬, ১২৬/২৬)</h3><div id="lfcalc">${t.calc(f.d)}</div></div>`:''}
-  <div class="card bn" style="margin-top:12px"><h3 style="margin-top:0">প্রয়োজনীয় কাগজপত্র (চেকলিস্ট)</h3>${docs.map((x,i)=>`<label style="display:block;font-weight:400;margin:4px 0"><input type="checkbox" data-k="ck${i}" ${f.d['ck'+i]?'checked':''} onchange="A.lfset(this)" ${ro?'disabled':''}> ${esc(x)}</label>`).join('')}</div>
   <div class="bar" style="margin-top:12px">${ro?'':`<button class="pri" onclick="run(A.lfSave)">Save</button>`}
-  ${lfPrintList(t).map(([k,l])=>`<button onclick="A.lfPrint('${k}')">${l}</button>`).join('')}${t.pdf?`<span style="flex-basis:100%"></span>${t.pdf.map(([ks,l,fn])=>`<button class="pri" onclick="run(()=>A.lfPdf(${JSON.stringify(ks).replace(/"/g,'&quot;')},'${fn}'))">${l}</button>`).join('')}`:''}<button onclick="A.lfPrint('all')">Print all</button>
   ${!ro&&!f.isNew?`<button class="dan" onclick="if(confirm('Delete this application?'))run(A.lfDel)">Delete</button>`:''}<button onclick="A.lfBack()">Back to list</button></div>
-  <p class="muted small">Forms are drafts prepared in standard format. Check wording against the bank's current circulars and official forms before use.</p></div>`;
+  <p class="muted small">Check List and printing are under Check List and Report in the menu.</p></div>`;
 }
 A.lfset=el=>{const k=el.dataset.k;S.lf.d[k]=el.type==='checkbox'?el.checked:el.value;S.lf.dirty=true;
   {const t=LF_TYPES[S.lf.type];if(t.calc){const c=$('#lfcalc');if(c)c.innerHTML=t.calc(S.lf.d)}}
   if(el.tagName==='INPUT'&&el.inputMode==='decimal'){const nx=el.parentElement.querySelector('.muted.small.bn');const tk=lfTaka(el.value);if(nx)nx.textContent=tk;else if(tk&&/টাকা/.test(el.parentElement.querySelector('label').textContent)){const d=document.createElement('div');d.className='muted small bn';d.textContent=tk;el.parentElement.appendChild(d)}}};
 A.lfSave=async()=>{const f=S.lf;await api('/lf/save',{method:'PUT',body:{id:f.id,type:f.type,data:f.d}});f.dirty=false;f.isNew=false;toast('Saved.')};
 A.lfDel=async()=>{await api('/lf/delete',{method:'POST',body:{id:S.lf.id}});S.lf=null;toast('Deleted.');A.lfBack()};
-A.lfBack=()=>{if(S.lf&&S.lf.dirty&&!confirm('Leave without saving?'))return;S.lf=null;S.side=undefined;go({page:'leaf',leaf:S.view.leaf})};
+A.lfBack=()=>{if(S.lf&&S.lf.dirty&&!confirm('Leave without saving?'))return;S.lf=null;go({page:'leaf',leaf:S.view.leaf})};
 
 /* ---------- printing ---------- */
 function lfHead(){const o=office(S.lf.office);return`<div class="p-h"><img src="${LOGO}" alt=""><div class="tx"><div class="b">জনতা ব্যাংক পিএলসি.</div><div>${esc(o?(o.nameBn||o.name):'')}</div></div></div>`}
@@ -141,9 +152,9 @@ function lfDocApp(){
 }
 function lfDocChk(){
   const f=S.lf,d=f.d,t=LF_TYPES[f.type];const docs=lfDocs(t);
-  return`<div class="r3pg">${lfHead()}<div class="gtitle">${t.name} - কাগজপত্রের চেকলিস্ট</div>
+  return`<div class="r3pg">${lfHead()}<div class="gtitle">${esc(lfShort(t))} Check List - কাগজপত্রের চেকলিস্ট</div>
   <p>আবেদনকারী: ${lfv(d,'a_name')} &nbsp; হিসাব নম্বর: ${lfv(d,'a_acct')} &nbsp; ঋণের পরিমাণ: ${lfTaka(d.l_amt)}</p>
-  <table class="r3t" style="width:100%;border-collapse:collapse"><tr><th style="width:8%">ক্রমিক</th><th>কাগজপত্রের নাম</th><th style="width:14%">জমা আছে</th><th style="width:20%">মন্তব্য</th></tr>${docs.map((x,i)=>`<tr><td style="text-align:center">${toBn(i+1)}</td><td>${esc(x)}</td><td style="text-align:center">${d['ck'+i]?'✓':''}</td><td></td></tr>`).join('')}</table>
+  <table class="r3t" style="width:100%;border-collapse:collapse"><tr><th style="width:7%">টিক</th><th style="width:7%">ক্রমিক</th><th>কাগজপত্রের নাম</th></tr>${docs.map((x,i)=>`<tr><td style="text-align:center;font-size:15px">${d['ck'+i]?'☑':'☐'}</td><td style="text-align:center">${toBn(i+1)}</td><td>${esc(x)}</td></tr>`).join('')}</table>
   ${lfSign('কর্মকর্তা','ব্যবস্থাপক')}</div>`;
 }
 function lfDocGua(){
@@ -166,13 +177,15 @@ function lfDocDpn(){
   <p class="muted small">দ্রষ্টব্য: এই নোট ব্যাংকের নির্ধারিত মূল্যের নন-জুডিশিয়াল স্ট্যাম্পে/রাজস্ব স্ট্যাম্প যুক্ত করে সম্পাদন করতে হবে।</p>
   ${lfSign('কর্মকর্তা','ব্যবস্থাপক')}</div>`;
 }
+function lfPagesOf(fn){
+  const r=fn();if(r.indexOf('class="lfpage"')>=0)return r;
+  return lfFit(r.split('<div class="r3pg">').slice(1).map(x=>lfPage('<div class="bn r3p"><div class="r3pg">'+x+'</div>','10mm 12mm 0 12mm')).join(''));
+}
+A.lfPrintHtml=html=>{const pa=$('#printArea');pa.innerHTML=html;pa.classList.add('lf0');window.addEventListener('afterprint',()=>pa.classList.remove('lf0'),{once:true});window.print()};
 A.lfPrint=w=>{
   const PR=lfPrintList(LF_TYPES[S.lf.type]),m=Object.fromEntries(PR.map(x=>[x[0],x[2]]));
   const parts=w==='all'?PR.map(x=>x[0]):[w];
-  const pa=$('#printArea');
-  pa.innerHTML=parts.map(k=>{const r=m[k]();return r.indexOf('class="lfpage"')>=0?r:'<div class="bn r3p lfpad">'+r+'</div>'}).join('');
-  pa.classList.add('lf0');window.addEventListener('afterprint',()=>pa.classList.remove('lf0'),{once:true});
-  window.print();
+  A.lfPrintHtml(parts.map(k=>lfPagesOf(m[k])).join(''));
 };
 /* ---------- PDF download (A4, one page per annexure) ---------- */
 function lfLoadPdf(){
@@ -183,10 +196,10 @@ A.lfPdf=async(keys,fname)=>{
   toast('Preparing PDF...');
   await lfLoadPdf();if(document.fonts&&document.fonts.ready)await document.fonts.ready;
   const PR=lfPrintList(LF_TYPES[S.lf.type]),m=Object.fromEntries(PR.map(x=>[x[0],x[2]]));
-  const host=document.createElement('div');host.className='lfpdfhost';host.innerHTML=keys.map(k=>m[k]()).join('');document.body.appendChild(host);
+  const host=document.createElement('div');host.className='lfpdfhost';host.innerHTML=keys.map(k=>lfPagesOf(m[k])).join('');document.body.appendChild(host);
   try{
     const {jsPDF}=window.jspdf;const pdf=new jsPDF({unit:'mm',format:'a4',orientation:'portrait',compress:true});
-    const pgs=[...host.querySelectorAll('.lfpage')];
+    const pgs=[...host.querySelectorAll('.lfpage')];if(!pgs.length)throw new Error('Nothing to download.');
     for(let i=0;i<pgs.length;i++){const c=await html2canvas(pgs[i],{scale:2.2,backgroundColor:'#ffffff',logging:false});if(i)pdf.addPage();pdf.addImage(c.toDataURL('image/jpeg',0.93),'JPEG',0,0,210,297,undefined,'FAST')}
     const acct=String(S.lf.d.a_acct||'').replace(/[^0-9A-Za-z-]/g,'');
     pdf.save('JBRS_'+fname+(acct?'_'+acct:'')+'.pdf');
@@ -219,22 +232,22 @@ function lfPersonalCalc(d){
   out.push('<div class="muted small">বেতন-ভাতাদি যে শাখায় জমা হয় শুধুমাত্র সে শাখা থেকে ঋণ প্রদান করা যাবে। ঋণ পরিশোধ না হওয়া পর্যন্ত বেতন অন্য ব্যাংক/শাখায় স্থানান্তর করা হবে না মর্মে বেতন প্রদানকারী/যথাযথ কর্তৃপক্ষের নিশ্চয়তা নিতে হবে।</div>');
   return out.join('');
 }
-const lfLn=(l,v,w)=>`<div style="display:flex;gap:6px;margin:3px 0;${w?'width:'+w+';':''}"><span style="flex:0 0 auto">${l}</span><span style="flex:1;border-bottom:1px dotted #000;min-height:1.25em">${v?esc(v):''}</span></div>`;
+const lfLn=(l,v,w)=>`<div style="display:flex;gap:6px;margin:3px 0;${w?'width:'+w+';':''}"><span style="flex:0 0 auto">${l}</span><span style="flex:1;${v?'':'border-bottom:1px dotted #000;'}min-height:1.25em">${v?esc(v):''}</span></div>`;
 const lfNm=(d,a,b)=>[lfv(d,a),lfv(d,b)].filter(Boolean).join(', ');
 const lfBrn=()=>{const o=office(S.lf.office);return esc(o?(o.nameBn||o.name):'')};
 const lfWd=v=>{const w=lfWords(parseFloat(v));return w?w:''};
 /* ---- Annexure-Ka / Kha / Ga: exact A4 layouts (one page each) following the circular's forms ---- */
-const lfFf=(v,w)=>`<span class="lff" style="min-width:${w}mm">${v?esc(v):'&nbsp;'}</span>`;
+const lfFf=(v,w)=>v?`<span class="lff has">${esc(v)}</span>`:`<span class="lff" style="min-width:${w}mm">&nbsp;</span>`;
 function lfBr(){const o=office(S.lf.office),n=o?(o.nameBn||o.name):'';const m=n.match(/^(.*?)\s*শাখা(?:\s*,\s*(.*))?$/);return m?{b:m[1],a:m[2]||''}:{b:n,a:''}}
 const lfPage=(inner,pad)=>`<div class="lfpage" style="padding:${pad}"><div class="lfin">${inner}</div></div>`;
-function lfFit(html){   // shrink a page slightly if a long entry would push it past one A4 page
+function lfFit(html){   // shrink pages slightly if a long entry would push past one A4 page
   const h=document.createElement('div');h.className='lfpdfhost';h.innerHTML=html;document.body.appendChild(h);
-  const pg=h.firstElementChild,inn=pg.querySelector('.lfin');const avail=pg.clientHeight-parseFloat(getComputedStyle(pg).paddingTop)-4;
-  let z=1;while(inn.offsetHeight*z>avail&&z>0.55){z-=0.02;inn.style.transform='scale('+z.toFixed(2)+')';inn.style.width=(100/z).toFixed(2)+'%';inn.style.transformOrigin='top left';inn.style.height=(inn.scrollHeight)+'px'}
-  const out=pg.outerHTML;h.remove();return out;
+  [...h.children].forEach(pg=>{const inn=pg.querySelector('.lfin');if(!inn)return;const avail=pg.clientHeight-parseFloat(getComputedStyle(pg).paddingTop)-4;
+    let z=1;while(inn.offsetHeight*z>avail&&z>0.5){z-=0.02;inn.style.transform='scale('+z.toFixed(2)+')';inn.style.width=(100/z).toFixed(2)+'%';inn.style.transformOrigin='top left';inn.style.height=(inn.scrollHeight)+'px'}});
+  const out=h.innerHTML;h.remove();return out;
 }
-const lfK=(lab,val)=>`<div class="kl"><span class="kb">${lab}</span><span class="kc">:</span><span class="kf">${val?esc(val):''}</span></div>`;
-const lfKR=(a,b)=>`<div class="kl kr">${a.map(([l,v,g])=>`<span class="kn" style="${g?'flex:0 0 '+g+'mm':''}">${l} :</span><span class="kf">${v?esc(v):''}</span>`).join('')}</div>`;
+const lfK=(lab,val)=>`<div class="kl"><span class="kb">${lab}</span><span class="kc">:</span><span class="kf${val?' has':''}">${val?esc(val):''}</span></div>`;
+const lfKR=(a,b)=>`<div class="kl kr">${a.map(([l,v,g])=>`<span class="kn" style="${g?'flex:0 0 '+g+'mm':''}">${l} :</span><span class="kf${v?' has':''}">${v?esc(v):''}</span>`).join('')}</div>`;
 function lfDocKa(){
   const d=S.lf.d,br=lfBr();
   const G=(g,x)=>x==='n'?lfNm(d,g+'_name',g+'_prof'):x==='f'?lfNm(d,g+'_father',g+'_fpr'):x==='m'?lfNm(d,g+'_mother',g+'_mpr'):x==='p'?[esc(d[g+'_addr']||''),lfv(d,g+'_mobile')].filter(Boolean).join(', '):x==='s'?esc(d[g+'_perm']||''):lfv(d,g+'_nid');
@@ -302,3 +315,93 @@ Object.assign(LF_TYPES.cfpersonal,{
   ],
   print:[['app',"Print application (Annexure-Ka)",lfDocKa],['emp',"Print employer's certificate (Annexure-Kha)",lfDocKha],['auth','Print authority letter (Annexure-Ga)',lfDocGa],['chk','Print checklist',lfDocChk],['gua',"Print guarantor's undertaking",lfDocGua],['dpn','Print demand promissory note',lfDocDpn]]
 });
+
+/* ================= Check List page and Report page ================= */
+function pageLfCl(l){
+  const type=lfTypeOfLeaf(l.id),T0=LF_TYPES[type];
+  S.view.after=()=>lfClLoad(type);
+  return`<div class="pghead"><h2>${esc(lfShort(T0))} Check List</h2></div><div id="lfbox" class="muted">Loading...</div>`;
+}
+async function lfClLoad(type){
+  const of=lfOf(),j=await api('/lf/list?type='+type+'&office='+encodeURIComponent(of));
+  const box=$('#lfbox');if(!box)return;
+  const cur=await lfLoadSel(j.forms);
+  const sel=`<div class="card"><div class="row" style="align-items:flex-end">${lfOfSel(of)}${lfAppSel(j.forms,cur)}</div></div>`;
+  if(!cur){box.outerHTML=`<div id="lfbox">${sel}<p class="muted">${j.forms.length?'Select an applicant to tick the documents received.':'No applications saved yet. Use Data Entry first.'}</p></div>`;return}
+  const f=S.lf,docs=lfDocs(LF_TYPES[type]),ro=f.office!==S.user.office||!S.user.office;
+  box.outerHTML=`<div id="lfbox">${sel}<div class="card bn" style="margin-top:12px">${ro?'<div class="note n-info">View only: this application belongs to another office.</div>':''}
+  <div class="muted small" style="margin-bottom:4px">${esc(f.d.a_name||'')} ${f.d.a_acct?'- '+esc(f.d.a_acct):''} &nbsp; <b id="ckcnt"></b></div>
+  ${docs.map((x,i)=>`<label class="ckrow"><input type="checkbox" data-k="ck${i}" ${f.d['ck'+i]?'checked':''} onchange="A.lfCk(this)" ${ro?'disabled':''}><span>${toBn(i+1)}. ${esc(x)}</span></label>`).join('')}
+  <div class="bar" style="margin-top:12px">${ro?'':`<button class="pri" onclick="run(A.lfSave)">Save</button>`}</div></div></div>`;
+  A.lfCk(null);
+}
+A.lfCk=el=>{if(el){S.lf.d[el.dataset.k]=el.checked;S.lf.dirty=true}
+  const n=lfDocs(LF_TYPES[S.lf.type]).filter((x,i)=>S.lf.d['ck'+i]).length,c=$('#ckcnt');if(c)c.textContent='Received: '+n+' / '+lfDocs(LF_TYPES[S.lf.type]).length};
+
+function pageLfRp(l){
+  const type=lfTypeOfLeaf(l.id),T0=LF_TYPES[type],tab=S.view.rtab||'all';
+  S.view.after=()=>tab==='all'?lfRpAll(type):lfRpOne(type);
+  const tb=(k,t)=>`<button class="${tab===k?'pri':''}" onclick="go({...S.view,rtab:'${k}',lfid:null,lfoff:null,after:null})">${t}</button>`;
+  return`<div class="pghead"><h2>${esc(lfShort(T0))} Report</h2><div class="bar" style="margin-top:6px">${tb('all','All report')}${tb('one','Individual report')}</div></div><div id="lfbox" class="muted">Loading...</div>`;
+}
+const lfCsv=rows=>'\ufeff'+rows.map(r=>r.map(c=>'"'+String(c??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
+async function lfRpAll(type){
+  const of=lfOf(),t=LF_TYPES[type],n=lfDocs(t).length;
+  const j=await api('/lf/items?type='+type+'&office='+encodeURIComponent(of));
+  const box=$('#lfbox');if(!box)return;
+  const rows=j.forms.map((f,i)=>{const d=f.data||{};return[toBn(i+1),f.name||d.a_name||'',f.acct||d.a_acct||'',d.l_amt?lfFmt(d.l_amt):'',d.l_months?toBn(d.l_months):'',d.l_date?lfDate(d.l_date):'',officeName(f.office),toBn(lfDocs(t).filter((x,k)=>d['ck'+k]).length)+'/'+toBn(n)]});
+  const hd=['ক্রমিক','আবেদনকারী','হিসাব নম্বর','ঋণের পরিমাণ (টাকা)','কিস্তি (মাস)','আবেদনের তারিখ','অফিস/শাখা','কাগজপত্র জমা'];
+  S.lfrp={rows,hd,type};
+  const tbl=`<table class="r3t" style="width:100%;border-collapse:collapse"><tr>${hd.map(h=>`<th>${h}</th>`).join('')}</tr>${rows.map(r=>`<tr>${r.map((c,k)=>`<td${k===3?' style="text-align:right"':''}>${esc(c)}</td>`).join('')}</tr>`).join('')}</table>`;
+  box.outerHTML=`<div id="lfbox"><div class="card"><div class="row" style="align-items:flex-end">${lfOfSel(of)}<div style="flex:0 0 auto" class="bar"><button class="pri" onclick="A.lfRpPrint()">Print</button><button onclick="A.lfRpCsv()">Download (Excel)</button></div></div></div>
+  <div class="card bn" style="margin-top:12px;overflow:auto">${rows.length?tbl:'No applications saved yet.'}</div></div>`;
+}
+A.lfRpPrint=()=>{const r=S.lfrp,t=LF_TYPES[r.type],o=office(S.user.office);
+  const tbl=`<table class="r3t" style="width:100%;border-collapse:collapse"><tr>${r.hd.map(h=>`<th>${h}</th>`).join('')}</tr>${r.rows.map(x=>`<tr>${x.map((c,k)=>`<td${k===3?' style="text-align:right"':''}>${esc(c)}</td>`).join('')}</tr>`).join('')}</table>`;
+  A.lfPrintHtml(`<div class="bn r3p lfpad"><div class="p-h"><img src="${LOGO}" alt=""><div class="tx"><div class="b">জনতা ব্যাংক পিএলসি.</div><div>${esc(o?(o.nameBn||o.name):'')}</div></div></div><div class="gtitle">${t.name} - আবেদনের তালিকা</div>${tbl}${lfSign('কর্মকর্তা',isArea()?'অফিস প্রধান':'ব্যবস্থাপক')}</div>`)};
+A.lfRpCsv=()=>{const r=S.lfrp;const b=new Blob([lfCsv([r.hd,...r.rows])],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='JBRS_'+r.type+'_report.csv';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)};
+
+async function lfRpOne(type){
+  const of=lfOf(),t=LF_TYPES[type],j=await api('/lf/list?type='+type+'&office='+encodeURIComponent(of));
+  const box=$('#lfbox');if(!box)return;
+  const cur=await lfLoadSel(j.forms),PR=lfPrintList(t),dk=S.view.lfdoc||PR[0][0];
+  box.outerHTML=`<div id="lfbox"><div class="card"><div class="row" style="align-items:flex-end">${lfOfSel(of)}${lfAppSel(j.forms,cur)}
+  <div style="flex:1 1 260px;max-width:380px"><label>Document</label><select id="lfdoc" onchange="S.view.lfdoc=this.value;A.lfRpView()">${PR.map(x=>`<option value="${x[0]}" ${x[0]===dk?'selected':''}>${x[1].replace(/^Print /,'')}</option>`).join('')}<option value="all" ${dk==='all'?'selected':''}>All documents</option></select></div>
+  <div class="bar" style="flex:0 0 auto"><button class="pri" onclick="A.lfRpView()">View</button><button onclick="A.lfRpDo('print')">Print</button><button onclick="run(()=>A.lfRpDo('pdf'))">Download PDF</button></div></div></div>
+  <div id="lfview" class="lfsc" style="margin-top:12px;overflow:auto">${cur?'':'<p class="muted">Select an applicant, then choose a document.</p>'}</div></div>`;
+  if(cur)A.lfRpView();
+}
+const lfRpKeys=()=>{const v=$('#lfdoc').value,PR=lfPrintList(LF_TYPES[S.lf.type]);return v==='all'?PR.map(x=>x[0]):[v]};
+A.lfRpView=()=>{if(!S.lf||!$('#lfview'))return;const m=Object.fromEntries(lfPrintList(LF_TYPES[S.lf.type]).map(x=>[x[0],x[2]]));$('#lfview').innerHTML=lfRpKeys().map(k=>lfPagesOf(m[k])).join('')};
+A.lfRpDo=async w=>{if(!S.lf)return toast('Select an applicant first.');const ks=lfRpKeys();if(w==='print')return A.lfPrint(ks.length>1?'all':ks[0]);await A.lfPdf(ks,LF_TYPES[S.lf.type].en.replace(/[^A-Za-z]+/g,'')+'_'+(ks.length>1?'All':ks[0]))};
+
+/* ---- Personal Loan checklist: exactly as supplied ---- */
+Object.assign(LF_TYPES.cfpersonal,{ownDocs:true,docs:[
+'ঋণের আবেদনপত্র',
+'ঋণগ্রহীতার জাতীয় পরিচয়পত্রের ফটোকপি',
+'ঋণগ্রহীতার অফিস আইডি কার্ডের ফটোকপি (প্রতিষ্ঠান প্রধান কর্তৃক সত্যায়িত)',
+'ঋণগ্রহীতার নিয়োগপত্র ও স্থায়ীকরণপত্রের ফটোকপি (প্রতিষ্ঠান প্রধান কর্তৃক সত্যায়িত)',
+'স্থায়ী ঠিকানার বিষয়ে চেয়ারম্যান/কমিশনারের সার্টিফিকেট',
+'ঋণগ্রহীতার সদ্য তোলা পাসপোর্ট সাইজের ২ কপি ছবি',
+'ঋণগ্রহীতার অঙ্গীকারনামা ও দায়-দেনা সংক্রান্ত ঘোষণাপত্র',
+'লেটার অব অথোরিটি (প্রভিডেন্ট ফান্ড/গ্র্যাচুইটি বা অন্য আর্থিক সুবিধা থেকে বকেয়া সমন্বয়)',
+'সর্বশেষ বেতন বিবরণী (বেতন প্রদানকারী কর্মকর্তা কর্তৃক স্বাক্ষরিত)',
+'এমপ্লয়ার্স সার্টিফিকেট (এ্যানেক্সার-খ) - প্রতিষ্ঠান প্রধান/বেতন প্রদানকারী কর্মকর্তা কর্তৃক (শিক্ষা প্রতিষ্ঠানের ক্ষেত্রে ভিসি/রেজিস্ট্রার/অধ্যক্ষ/প্রিন্সিপাল/প্রধান শিক্ষক)',
+'বেতন প্রদানকারী/যথাযথ কর্তৃপক্ষের নিশ্চয়তা: ঋণ পরিশোধ না হওয়া পর্যন্ত বেতন অন্য ব্যাংক/শাখায় স্থানান্তর করা হবে না (আরসিডি সার্কুলার ১২৬/২৬)',
+'পারিবারিক/ব্যক্তিগত গ্যারান্টর (স্বামী/স্ত্রী/পিতা/মাতা/সাবালক সন্তান/ভাই/বোন) এর জাতীয় পরিচয়পত্রের ফটোকপি ও ২ কপি ছবি',
+'তৃতীয় পক্ষীয় জামিনদার (নিয়োগকর্তা/গেজেটেড অফিসার/সহকর্মী/ব্যাংকের নিকট গ্রহণযোগ্য ব্যক্তি) এর জাতীয় পরিচয়পত্রের ফটোকপি ও ২ কপি ছবি',
+'অন্য কোন ব্যাংক/আর্থিক প্রতিষ্ঠানে ঋণ থাকলে পূর্বের প্রতিষ্ঠানের প্রত্যয়নপত্র',
+'সহায়ক জামানতের কাগজপত্র (আয়ের অন্য উৎস থাকলে এবং মাসিক বেতন দ্বারা কিস্তি পরিশোধ না হলে - আরসিডি সার্কুলার ১২৬/২৬)',
+'ঋণগ্রহীতা ও গ্যারান্টর কর্তৃক স্বাক্ষরিত সিআইবি ইনকোয়ারী ফরম (সকল ঋণের তথ্য উল্লেখ করে)',
+'সন্তোষজনক সিআইবি রিপোর্ট (ঋণগ্রহীতা, পারিবারিক গ্যারান্টর ও তৃতীয় পক্ষীয় জামিনদার) এবং সিআইবি রিপোর্টে উল্লেখিত সকল ঋণের মঞ্জুরীপত্র ও হিসাব বিবরণী',
+'ঋণের সমপরিমাণ ১টি চেকসহ তারিখ বিহীন মোট ৫টি স্বাক্ষরযুক্ত A/C Payee চেক',
+'লেটার অব অ্যাকসেপটেন্স',
+'ঋণের মঞ্জুরীপত্র',
+'চার্জ ডকুমেন্টস: ডিপি নোট, লেটার অব অ্যারেঞ্জমেন্ট, লেটার অব ডিসবার্সমেন্ট, লেটার অব গ্যারান্টি, লেটার অব লিয়েন (প্রযোজ্য ক্ষেত্রে)',
+'ঋণের কিস্তি/বকেয়া আদায়ের ক্ষমতা অর্পণপত্র (এ্যানেক্সার-গ)',
+'বেতন হিসাব হতে স্বয়ংক্রিয় মাসিক কিস্তি কর্তনের ক্ষমতা অর্পণপত্র',
+'এলডিসিএল',
+'ঋণের ডকুমেন্টেশন সংক্রান্ত ছাড়পত্র',
+'ঋণ হিসাবের তথ্যের প্রিন্টেড কপি (AOF)',
+'ঋণগ্রহীতার বেতন হিসাব (সঞ্চয়ী হিসাব) এর প্রিন্ট কপি'
+]});

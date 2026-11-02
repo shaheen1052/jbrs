@@ -19,7 +19,15 @@ assert _ag in tree
 tree=tree.replace(_ag,"G('Agricultural and rural credit',[G('RCD-3',[L('ln_rcd3','Data entry','rcd3'),L('ln_rcd3s1','Statement-1 (Accumulated)','rcd3s1'),L('ln_rcd3s2','Statement-2 (Product-wise)','rcd3s2')]),G('RCD-4',[L('ln_rcd4','Data entry','rcd4'),L('ln_rcd4s1','Statement-1 (ছক-ক)','rcd4s1'),L('ln_rcd4s2','Statement-2 (Accumulated)','rcd4s2'),L('ln_rcd4s3','Statement-3 (Product-wise)','rcd4s3')]),G('RCD-4 Consumer Financing',[L('ln_rcd4cf','Data entry','rcd4cf'),L('ln_rcd4cfs1','Statement-1 (ছক-খ)','rcd4cfs1'),L('ln_rcd4cfs2','Statement-2 (Accumulated)','rcd4cfs2'),L('ln_rcd4cfs3','Statement-3 (Product-wise)','rcd4cfs3')])])")
 _ln="L('ln_sod','Secured overdraft'),L('ln_staff','Staff loan')]}"
 assert _ln in tree
-tree=tree.replace(_ln,"L('ln_sod','Secured overdraft'),L('ln_staff','Staff loan'),G('Loan Application',[L('lf_cmsme','CMSME','lf'),G('Agricultural & Rural Credit',[G('RCD-3',[L('lf_crop','Crop Loan','lf'),L('lf_dairy','Dairy cow rearing (RCD Cir. 66/17)','lf'),L('lf_bullfat','Bull Fattening (RCD Cir. 75/19)','lf')]),G('RCD-4',[L('lf_mpsc','Multipurpose Supervisory Credit','lf'),L('lf_gnkr','Grameen Nari Kormosngsthan Rin','lf'),L('lf_youth','Loan for Trained Youth','lf')])]),G('Consumer financing',[L('lf_cfpersonal','Personal Loan','lf'),L('lf_cfcredit','Consumer Credit','lf'),L('lf_cfhealth','Janata Support Health Care Loan','lf'),L('lf_cfpension','Janata Support Loan for Pensioner','lf')]),L('lf_sod','Secured overdraft','lf'),G('Staff loan',[L('lf_stfhouse','Staff House Building Loan','lf'),L('lf_stfmoto','Staff Motor Cycle Loan','lf'),L('lf_stfcomp','Staff Computer Loan','lf'),L('lf_execcar','Executive Car Loan','lf')])])]}")
+def _LN(i,n): return "G('%s',[L('%s','Data Entry','lf'),L('%s_cl','Check List','lfcl'),L('%s_rp','Report','lfrp')])"%(n,i,i,i)
+_LFM="G('Loan Application',["+",".join([
+ _LN('lf_cmsme','CMSME'),
+ "G('Agricultural & Rural Credit',[G('RCD-3 Loans',["+",".join([_LN('lf_crop','Crop Loan'),_LN('lf_dairy','Dairy cow rearing (RCD Cir. 66/17)'),_LN('lf_bullfat','Bull Fattening (RCD Cir. 75/19)')])+"]),G('RCD-4 Loans',["+",".join([_LN('lf_mpsc','Multipurpose Supervisory Credit'),_LN('lf_gnkr','Grameen Nari Kormosngsthan Rin'),_LN('lf_youth','Loan for Trained Youth')])+"])])",
+ "G('Consumer financing',["+",".join([_LN('lf_cfpersonal','Personal Loan'),_LN('lf_cfcredit','Consumer Credit'),_LN('lf_cfhealth','Janata Support Health Care Loan'),_LN('lf_cfpension','Janata Support Loan for Pensioner')])+"])",
+ _LN('lf_sod','Secured overdraft'),
+ "G('Staff loan',["+",".join([_LN('lf_stfhouse','Staff House Building Loan'),_LN('lf_stfmoto','Staff Motor Cycle Loan'),_LN('lf_stfcomp','Staff Computer Loan'),_LN('lf_execcar','Executive Car Loan')])+"])"
+])+"])"
+tree=tree.replace(_ln,"L('ln_sod','Secured overdraft'),L('ln_staff','Staff loan'),"+_LFM+"]}")
 tree=tree.replace(_old,"G('Interest waiver calculator',[L('rc_iwc','Data entry','iwc'),G('Report',[L('rc_iwga','Annexure-Ga','iwr'),L('rc_iwgha','Annexure-Gha','iwr')])])")
 _lb=tree.index('const LEAVES={};')
 tree=tree[:_lb]+"""const LEAVES={};
@@ -38,7 +46,19 @@ cons=g[g.index('function consolidateGlance'):]
 cons=cons[:cons.index('\n}\n')+3]
 app=open(APPJS,encoding='utf-8').read()
 rcd='\n'.join(open(f,encoding='utf-8').read() for f in RCD)
-extra_css=""".lfpage{width:210mm;height:297mm;box-sizing:border-box;background:#fff;color:#000;font-family:'KalpurushJB','Kalpurush',sans-serif;font-size:12pt;line-height:1.4;position:relative;overflow:hidden;break-after:page;page-break-after:always;break-inside:avoid}
+extra_css=""".top{position:sticky;top:0;z-index:60}
+.side{position:sticky;top:var(--topH,58px);height:calc(100vh - var(--topH,58px));align-self:flex-start}
+.lfmain{overflow:visible}
+.pghead{position:sticky;top:var(--topH,58px);z-index:20;background:var(--bg);padding:8px 0 6px;margin:-6px 0 10px;border-bottom:1px solid var(--line)}.pghead h2{margin:0;font-size:20px}
+.lfform label{font-size:12px;margin:0 0 2px}.lfform input,.lfform select,.lfform textarea{padding:2px 7px;font-size:13px;height:28px;min-height:0;line-height:1.2}.lfform textarea{resize:vertical}
+.lfform .row{gap:6px 10px}.lfform .fc{flex:1 1 140px;max-width:210px}.lfform .fc.w{flex:1 1 100%;max-width:none}.lfform .fc.w2{flex:1 1 240px;max-width:330px}.lfform h3{font-size:14px;margin:0 0 6px}.lfform .card{padding:10px 12px}
+.ckrow{display:flex;gap:10px;align-items:flex-start;padding:7px 4px;border-bottom:1px solid var(--line);font-size:13.5px;color:var(--text);margin:0;cursor:pointer}.ckrow input{width:18px;height:18px;margin:2px 0 0;flex:0 0 auto;padding:0}
+.lfsc .lfpage{margin:0 0 10px;box-shadow:0 1px 6px rgba(0,0,0,.28);break-after:auto;page-break-after:auto}
+.lfpage .has{border-bottom:none!important}
+.lfpage .p-h{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px}.lfpage .p-h img{width:44px;height:auto}.lfpage .p-h .tx{text-align:left;line-height:1.3}.lfpage .p-h .b{font-size:17px;font-weight:700}
+.lfpage .gtitle{font-size:14px;font-weight:700;margin:4px 0 10px}.lfpage .p-sign{display:flex;justify-content:space-between;margin:40px 8mm 0;gap:40px}.lfpage .p-sign div{flex:0 0 42mm;border-top:1px solid #000;padding-top:4px;font-size:11.5px;text-align:center}
+.lfpage .r3t th,.lfpage .r3t td{border:1px solid #444;padding:1px 3px;font-size:12px;color:#000;background:#fff}
+.lfpage{width:210mm;height:297mm;box-sizing:border-box;background:#fff;color:#000;font-family:'KalpurushJB','Kalpurush',sans-serif;font-size:12pt;line-height:1.4;position:relative;overflow:hidden;break-after:page;page-break-after:always;break-inside:avoid}
 .lfpage:last-child{break-after:auto;page-break-after:auto}.lfpage .u{text-decoration:underline}
 .lfpage .lff{display:inline-block;border-bottom:1px dotted #000;text-align:center;padding:0 1mm;line-height:1.25;vertical-align:bottom;box-sizing:border-box}
 .lfpage .kl{display:flex;width:161mm;min-height:5.9mm;line-height:5.9mm;align-items:flex-end}.lfpage .kb{flex:0 0 47mm;white-space:nowrap}.lfpage .kc{flex:0 0 2.5mm}.lfpage .kn{flex:0 0 auto;white-space:nowrap;margin-right:1.5mm}.lfpage .kf{flex:1;border-bottom:1px dotted #000;margin-left:1mm;margin-right:2mm;min-height:5.2mm;line-height:5.2mm;font-size:11.5pt;overflow-wrap:anywhere}
@@ -52,7 +72,7 @@ extra_css=""".lfpage{width:210mm;height:297mm;box-sizing:border-box;background:#
 @media print{#printArea.lf0{padding:0}#printArea .lfpad{padding:10mm 11mm}#printArea .lfpage .kt th,#printArea .lfpage .kt td{border:1px solid #333;padding:0 1.5mm;background:#fff}}
 .menubtn{background:transparent;border:1px solid rgba(255,255,255,.7);color:#fff;font-size:20px;line-height:1;padding:5px 11px;margin-right:6px}
 .sidebg{display:none}.layout.noside .side{display:none}
-@media (max-width:760px){.side{position:fixed;top:0;left:0;bottom:0;width:84%;max-width:330px;max-height:none;z-index:50;border-right:1px solid var(--line);border-bottom:none;box-shadow:0 0 30px rgba(0,0,0,.3);padding-top:16px}.layout:not(.noside) .sidebg{display:block;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:40}}
+@media (max-width:760px){.side{position:fixed;top:var(--topH,0px);left:0;bottom:0;height:auto;width:84%;max-width:330px;max-height:none;z-index:50;border-right:1px solid var(--line);border-bottom:none;box-shadow:0 0 30px rgba(0,0,0,.3);padding-top:16px}.layout:not(.noside) .sidebg{display:block;position:fixed;inset:var(--topH,0px) 0 0 0;background:rgba(0,0,0,.35);z-index:40}}
 .b-NONE{background:#f1f1f1;color:#666}.b-NEW{background:#eef0ef;color:#4a5752}
 .stats .stat .n{font-size:28px}
 .side{padding:12px 10px}

@@ -134,7 +134,7 @@ function go(v){
   if(IWC.pending.size&&!confirm('Calculator changes are still being saved online. Leave anyway?'))return;
   if(S.dirty&&!confirm('You have unsaved changes on this report. Leave without saving?'))return;
   S.dirty=false;clearInterval(S.autoTimer);S.view=v;
-  if(v.lfid||innerWidth<=760)S.side=false;   // forms open full screen; on phones the menu closes after a choice
+  if(innerWidth<=760)S.side=false;   // on phones the menu closes after a choice
   renderApp();window.scrollTo(0,0);
 }
 const sideOn=()=>S.side===undefined?innerWidth>760:S.side;
@@ -149,19 +149,23 @@ function renderApp(){
    ${menuItems(p.items,leafBtn,p.lvl)}</div></div>`}).join('')}
    <div style="margin-top:12px;border-top:1px solid var(--line);padding-top:8px">${nav('settings','Settings')}</div>`;
   let main='';
+  const lfm=v.page==='leaf'&&LEAVES[v.leaf]&&String(LEAVES[v.leaf].tpl||'').indexOf('lf')===0;
   try{
     if(v.page==='dash')main=pageDash();else if(v.page==='leaf')main=pageLeaf();else if(v.page==='report')main=pageReport();
     else if(v.page==='view')main=pageView();else if(v.page==='users')main=pageUsers();else if(v.page==='audit')main=pageAudit();else if(v.page==='settings')main=pageSettings();
   }catch(e){main=`<div class="card">${esc(e.message)}</div>`}
   shell(`<div class="top"><button class="menubtn" onclick="A.toggleSide()" title="Show / hide menu">&#9776;</button><img class="toplogo" src="${LOGO}" alt="JB"><div><div class="t1">${APP.name} (${APP.short})</div><div class="small" style="opacity:.85">${o?esc(o.name)+' &middot; '+LEVELS[o.level]:'Administrator'}</div></div><div class="sp"></div>
   <div class="who">${esc(u.name)} (${esc(u.id)})<br><b>${ROLES[u.role]}</b></div><button onclick="run(A.logout)">Log out</button></div>
-  <div class="layout ${sideOn()?'':'noside'}"><div class="sidebg" onclick="A.toggleSide()"></div><div class="side">${side}</div><div class="main" id="main">${main}<div class="dev">${APP.dev}</div></div></div>`);
+  <div class="layout ${sideOn()?'':'noside'}"><div class="sidebg" onclick="A.toggleSide()"></div><div class="side">${side}</div><div class="main${lfm?' lfmain':''}" id="main">${main}<div class="dev">${APP.dev}</div></div></div>`);
+  setTopH();
   if(v.after){const f=v.after;v.after=null;run(f)}
 }
+function setTopH(){const t=$('.top');if(t)document.documentElement.style.setProperty('--topH',t.offsetHeight+'px')}
+window.addEventListener('resize',setTopH);
 function MAINMENU(){
   const lp=TREE.find(p=>p.id==='loan').items.find(x=>x.group==='Loan Application');
   const rep=TREE.map(p=>({group:p.name,items:p.items.filter(x=>x!==lp)}));
-  return[{id:'lapp',name:'Loan Application',items:lp.items,lvl:1},{id:'rep',name:'Reports',items:rep,lvl:2}];
+  return[{id:'lapp',name:'Loan Application',items:lp.items,lvl:3},{id:'rep',name:'Reports',items:rep,lvl:2}];
 }
 function menuItems(items,leafBtn,top){return items.map(it=>{
   if(!it.group)return leafBtn(it);
@@ -206,6 +210,8 @@ function pageLeaf(){
   if(l.tpl==='iwc')return pageIwc(l);
   if(l.tpl==='iwr')return pageIwr(l);
   if(l.tpl==='lf')return pageLoanForms(l);
+  if(l.tpl==='lfcl')return pageLfCl(l);
+  if(l.tpl==='lfrp')return pageLfRp(l);
   if(l.tpl&&l.tpl.startsWith('rcd3'))return pageRcd3(l);
   if(l.tpl&&l.tpl.startsWith('rcd4'))return pageRcd4(l);
   if(!l.tpl)return head+`<div class="card"><p><b>Format pending.</b> This report will be added when its format is digitised.</p></div>`;
