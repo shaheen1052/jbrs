@@ -87,7 +87,7 @@ function lfSaHtml(d,ro){
   else if(d.sa)fs.push(lfT('fw_ref','Forwarding Letter Reference'),lfD('fw_date','Forwarding Letter Date'));
   return`<h3 style="margin-top:0">Sanction Authority</h3><div class="row">${fs.map(x=>lfField(x,d[x.k],ro)).join('')}</div>${d.sa==='Branch'&&d.sl_ref&&!ro&&!S.lf.isNew&&!(S.lf.flow&&S.lf.flow.status)?`<div style="margin-top:8px"><button class="pri" onclick="run(()=>A.lfBSanc('${S.lf.id}'))">Mark as sanctioned by Branch</button></div>`:''}${d.sa&&d.sa!=='Branch'?'<div class="muted small" style="margin-top:6px">This file will be sent to the Area Office. The forwarding letter reference is used by the Area Office at sanction.</div>':''}`;
 }
-const lfStat=(f,bn)=>{const dt=x=>x?lfDate(x):'';
+const lfStat=(f,bn)=>{const dt=x=>x?(bn?lfDate(x):lfIsoToDmy(x)):'';
   if(!f.sa)return bn?'খসড়া':'Draft';
   if(f.status==='sanctioned')return bn?`${f.sa||''} কর্তৃক মঞ্জুর`:'Sanctioned by '+(f.sa||'Area Office');
   if(f.status==='declined')return bn?'প্রত্যাখ্যাত':'Declined by Area Office';
@@ -107,7 +107,7 @@ A.lfDl=async fid=>{
   const b=await r.blob(),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=(S.lfFiles||{})[fid]||'file';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);
 };
 const lfWho=f=>{const sa=f.sa;if(!sa)return'(not selected)';
-  if(sa==='Branch')return'Branch'+(f.sl_ref?` - Ref ${f.sl_ref}${f.sl_date?', '+lfDate(f.sl_date):''}`:' (letter pending)');
+  if(sa==='Branch')return'Branch'+(f.sl_ref?` - Ref ${f.sl_ref}${f.sl_date?', '+lfIsoToDmy(f.sl_date):''}`:' (letter pending)');
   return sa+(f.status==='sanctioned'?' - sanctioned':f.status==='declined'?' - declined':' (to sanction)')};
 function lfAsk(next){
   S.lfNext=next;
@@ -488,11 +488,11 @@ async function lfSummary(){
   return m;
 }
 const lfTotals=m=>{const t={};Object.values(m).forEach(o=>Object.entries(o).forEach(([b,n])=>t[b]=(t[b]||0)+n));return t};
-const lfChips=t=>LF_BK.filter(b=>t[b]).map(b=>`<span class="badge" style="margin:2px 6px 2px 0">${b}: <b>${toBn(t[b])}</b></span>`).join('')||'<span class="muted">No applications yet.</span>';
+const lfChips=t=>LF_BK.filter(b=>t[b]).map(b=>`<span class="badge" style="margin:2px 6px 2px 0">${b}: <b>${String(t[b])}</b></span>`).join('')||'<span class="muted">No applications yet.</span>';
 async function lfHomeLoad(){
   const m=await lfSummary(),t=lfTotals(m),el=$('#hmLoan');if(!el)return;
   const n=Object.values(t).reduce((a,b)=>a+b,0);
-  el.outerHTML=`<div class="card" id="hmLoan"><div>Total applications: <b>${toBn(n)}</b></div><div style="margin-top:6px">${lfChips(t)}</div>${isArea()&&t.Sent?`<div class="note n-warn" style="margin-top:8px">${toBn(t.Sent)} file(s) sent by branches are waiting to be received.</div>`:''}${isArea()&&t.Received?`<div class="note n-info" style="margin-top:8px">${toBn(t.Received)} received file(s) are waiting for a decision.</div>`:''}<div style="margin-top:8px"><button onclick="go({page:'leaf',leaf:'lf_dash'})">Open Loan Dashboard</button></div></div>`;
+  el.outerHTML=`<div class="card" id="hmLoan"><div>Total applications: <b>${String(n)}</b></div><div style="margin-top:6px">${lfChips(t)}</div>${isArea()&&t.Sent?`<div class="note n-warn" style="margin-top:8px">${String(t.Sent)} file(s) sent by branches are waiting to be received.</div>`:''}${isArea()&&t.Received?`<div class="note n-info" style="margin-top:8px">${String(t.Received)} received file(s) are waiting for a decision.</div>`:''}<div style="margin-top:8px"><button onclick="go({page:'leaf',leaf:'lf_dash'})">Open Loan Dashboard</button></div></div>`;
 }
 
 /* ================= Loan Reports (common page) ================= */
@@ -512,7 +512,7 @@ async function lfRptLoad(tab,of){
   const rows=j.forms.filter(f=>{const d=f.data||{},sa=f.sa||d.sa||'',ld=d.l_date||'';return(!v.rst||lfBucket(sa,f.status,f.sl_ref||d.sl_ref)===v.rst)&&(!v.rfrom||ld>=v.rfrom)&&(!v.rto||ld<=v.rto)});
   const rc=$('#rpctl');
   if(tab==='all'){
-    const out=rows.map((f,i)=>{const d=f.data||{},t=LF_TYPES[f.type];return[toBn(i+1),t?lfShort(t):f.type,f.name||d.a_name||'',f.acct||d.a_acct||'',d.l_amt?lfFmt(d.l_amt):'',d.l_months?toBn(d.l_months):'',d.l_date?lfDate(d.l_date):'',officeName(f.office),f.sa||d.sa||'',lfStat({...f,sa:f.sa||d.sa},true),t?toBn(lfDocs(t).filter((x,k)=>d['ck'+k]).length)+'/'+toBn(lfDocs(t).length):'']});
+    const out=rows.map((f,i)=>{const d=f.data||{},t=LF_TYPES[f.type];return[String(i+1),t?lfShort(t):f.type,f.name||d.a_name||'',f.acct||d.a_acct||'',d.l_amt?lfFmt(d.l_amt):'',d.l_months?String(d.l_months):'',d.l_date?lfDate(d.l_date):'',officeName(f.office),f.sa||d.sa||'',lfStat({...f,sa:f.sa||d.sa},true),t?String(lfDocs(t).filter((x,k)=>d['ck'+k]).length)+'/'+String(lfDocs(t).length):'']});
     const hd=['ক্রমিক','ঋণের ধরন','আবেদনকারী','হিসাব নম্বর','ঋণের পরিমাণ (টাকা)','কিস্তি (মাস)','আবেদনের তারিখ','অফিস/শাখা','মঞ্জুরি কর্তৃপক্ষ','অবস্থা','কাগজপত্র জমা'];
     S.lfrp={rows:out,hd,type:ty};
     if(rc)rc.innerHTML=`<div class="bar"><button class="pri" onclick="A.lfRpPrint()">Print</button><button onclick="A.lfRpCsv()">Download (Excel)</button></div>`;
@@ -534,13 +534,13 @@ function pageLfDash(){S.view.after=async()=>{
     const [m,j]=await Promise.all([lfSummary(),api('/lf/items?type=all&office='+encodeURIComponent(isBranch()?S.user.office:'all'))]);
     const box=$('#lfdash');if(!box)return;
     const sum=o=>Object.values(o||{}).reduce((a,b)=>a+b,0);
-    const cell=(k,b,n)=>n?`<td class="click" onclick="go({page:'leaf',leaf:'${LF_TYPES[k].leaf}',rst:'${b}',after:null})">${toBn(n)}</td>`:'<td></td>';
+    const cell=(k,b,n)=>n?`<td class="click" onclick="go({page:'leaf',leaf:'${LF_TYPES[k].leaf}',rst:'${b}',after:null})">${String(n)}</td>`:'<td></td>';
     const tot=lfTotals(m),BK=LF_BK.filter(b=>tot[b]);
     let body='';
     for(const [cn,ks] of LF_CATS){const have=ks.filter(k=>m[k]);if(!have.length)continue;
       const ct={};have.forEach(k=>Object.entries(m[k]).forEach(([b,n])=>ct[b]=(ct[b]||0)+n));
-      body+=`<tr style="background:var(--bg)"><td><b>${esc(cn)}</b></td>${BK.map(b=>`<td><b>${ct[b]?toBn(ct[b]):''}</b></td>`).join('')}<td><b>${toBn(sum(ct))}</b></td></tr>`;
-      body+=have.map(k=>`<tr><td style="padding-left:22px"><a class="lk" onclick="go({page:'leaf',leaf:'${LF_TYPES[k].leaf}',after:null})">${esc(lfShort(LF_TYPES[k]))}</a></td>${BK.map(b=>cell(k,b,m[k][b])).join('')}<td>${toBn(sum(m[k]))}</td></tr>`).join('')}
+      body+=`<tr style="background:var(--bg)"><td><b>${esc(cn)}</b></td>${BK.map(b=>`<td><b>${ct[b]?String(ct[b]):''}</b></td>`).join('')}<td><b>${String(sum(ct))}</b></td></tr>`;
+      body+=have.map(k=>`<tr><td style="padding-left:22px"><a class="lk" onclick="go({page:'leaf',leaf:'${LF_TYPES[k].leaf}',after:null})">${esc(lfShort(LF_TYPES[k]))}</a></td>${BK.map(b=>cell(k,b,m[k][b])).join('')}<td>${String(sum(m[k]))}</td></tr>`).join('')}
     const rec=j.forms.slice(0,15),sa=f=>({...f,sa:f.sa||(f.data||{}).sa});
     box.outerHTML=`<div id="lfdash"><div class="card" style="overflow:auto">${body?`<table><tr><th>Loan category / type</th>${BK.map(b=>`<th>${b.replace('Sanctioned: ','Sanctioned by ')}</th>`).join('')}<th>Total</th></tr>${body}</table><div class="muted small" style="margin-top:6px">Click a number to open that list.</div>`:'No loan applications yet.'}</div>
     <h3 style="margin-top:16px">Recent movement</h3><div class="card" style="overflow:auto">${rec.length?`<table><tr><th>Last saved</th><th>Applicant</th><th>Loan type</th><th>Branch</th><th>Sanctioned by / authority</th><th>Status</th></tr>${rec.map(f=>`<tr class="click" onclick="go({page:'leaf',leaf:'${(LF_TYPES[f.type]||{}).leaf}',lfid:'${f.id}',lfoff:'${f.office}',after:null})"><td>${fmtDT(f.updated)}</td><td>${esc(f.name||'(no name)')}</td><td>${esc(LF_TYPES[f.type]?lfShort(LF_TYPES[f.type]):f.type)}</td><td>${esc(officeName(f.office))}</td><td>${esc(lfWho(sa(f)))}</td><td>${esc(lfStat(sa(f)))}</td></tr>`).join('')}</table>`:'Nothing yet.'}</div></div>`};
