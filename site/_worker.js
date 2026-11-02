@@ -425,6 +425,22 @@ async function handle(req, env) {
     const rows = (await db.prepare(q + ' GROUP BY l.office,l.type,sa,sl_ref,f.status').bind(...a).all()).results.filter(x => r === null || r.has(x.office));
     return json({ rows });
   }
+  if (p === '/lf/bsanction' && m === 'POST') {
+    if (!u.office) return err('Not allowed.', 403);
+    const b = await body(req);
+    if (!/^[A-Za-z0-9_-]{1,40}$/.test(String(b.id || ''))) return err('Bad request.');
+    const x = await db.prepare("SELECT json_extract(data,'$.sa') AS sa,json_extract(data,'$.sl_ref') AS ref,json_extract(data,'$.sl_date') AS dt FROM loan_forms WHERE office=? AND id=?").bind(u.office, b.id).first();
+    if (!x) return err('Save the application first.');
+    if (x.sa !== 'Branch') return err('Only applications with Branch as the sanction authority can be marked here.');
+    if (!x.ref) return err('Enter the sanction letter reference and save before marking as sanctioned.');
+    const f = await db.prepare('SELECT status,ao FROM loan_flow WHERE office=? AND id=?').bind(u.office, b.id).first();
+    if (f && f.status) return err('This application already has a status.');
+    await db.prepare("INSERT OR REPLACE INTO loan_flow(office,id,status,out_no,out_date,in_no,in_date,ao,updated,updated_by) VALUES(?,?,'sanctioned','','','','',?,?,?)").bind(u.office, b.id, f ? f.ao : null, iso(), u.id).run();
+    const sq = await db.prepare('SELECT COALESCE(MAX(seq),0)+1 AS n FROM loan_dec WHERE office=? AND id=?').bind(u.office, b.id).first();
+    await db.prepare('INSERT INTO loan_dec(office,id,seq,dec,note,dec_date,at,by) VALUES(?,?,?,?,?,?,?,?)').bind(u.office, b.id, sq.n, 'sanctioned', 'Sanctioned by Branch. Sanction letter ref: ' + x.ref, x.dt || iso().slice(0, 10), iso(), u.id).run();
+    await audit(db, u.id, 'loan branch sanctioned', String(b.id));
+    return json({ ok: true });
+  }
   if (p === '/lf/delete' && m === 'POST') {
     if (!u.office) return err('Not allowed.', 403);
     const b = await body(req);

@@ -941,14 +941,14 @@ function lfSaHtml(d,ro){
   const fs=[lfS('sa','Sanction Authority *',LF_SA)];
   if(d.sa==='Branch')fs.push(lfT('sl_ref','Sanction Letter Reference'),lfD('sl_date','Sanction Letter Date'));
   else if(d.sa)fs.push(lfT('fw_ref','Forwarding Letter Reference'),lfD('fw_date','Forwarding Letter Date'));
-  return`<h3 style="margin-top:0">Sanction Authority</h3><div class="row">${fs.map(x=>lfField(x,d[x.k],ro)).join('')}</div>${d.sa&&d.sa!=='Branch'?'<div class="muted small" style="margin-top:6px">This file will be sent to the Area Office. The forwarding letter reference is used by the Area Office at sanction.</div>':''}`;
+  return`<h3 style="margin-top:0">Sanction Authority</h3><div class="row">${fs.map(x=>lfField(x,d[x.k],ro)).join('')}</div>${d.sa==='Branch'&&d.sl_ref&&!ro&&!S.lf.isNew&&!(S.lf.flow&&S.lf.flow.status)?`<div style="margin-top:8px"><button class="pri" onclick="run(()=>A.lfBSanc('${S.lf.id}'))">Mark as sanctioned by Branch</button></div>`:''}${d.sa&&d.sa!=='Branch'?'<div class="muted small" style="margin-top:6px">This file will be sent to the Area Office. The forwarding letter reference is used by the Area Office at sanction.</div>':''}`;
 }
 const lfStat=(f,bn)=>{const dt=x=>x?lfDate(x):'';
   if(!f.sa)return bn?'খসড়া':'Draft';
   if(f.status==='sanctioned')return bn?`${f.sa||''} কর্তৃক মঞ্জুর`:'Sanctioned by '+(f.sa||'Area Office');
   if(f.status==='declined')return bn?'প্রত্যাখ্যাত':'Declined by Area Office';
   if(f.status==='returned')return bn?'সংশোধনের জন্য ফেরত':'Returned for correction';
-  if(f.sa==='Branch')return f.sl_ref?(bn?'শাখা কর্তৃক মঞ্জুর':'Sanctioned by Branch'):(bn?'মঞ্জুরির অপেক্ষায় (শাখা)':'Pending sanction (Branch)');
+  if(f.sa==='Branch')return bn?'মঞ্জুরির অপেক্ষায় (শাখা)':'Pending sanction (Branch)';
   if(f.status==='received')return bn?`এরিয়া অফিস কর্তৃক গৃহীত ${dt(f.in_date)} (ইনওয়ার্ড ${f.in_no||''})`:`Received by Area Office ${dt(f.in_date)} (In ${f.in_no||''})`;
   if(f.status==='sent')return bn?`এরিয়া অফিসে প্রেরিত ${dt(f.out_date)}`:`Sent to Area Office ${dt(f.out_date)} (Out ${f.out_no||''})`;
   return bn?'প্রেরণের অপেক্ষায়':'Not sent yet'};
@@ -987,10 +987,11 @@ async function lfList(type,of){
   const j=await api('/lf/list?type='+type+'&office='+encodeURIComponent(of));
   const box=$('#lfbox');if(!box)return;
   const rst=S.view.rst;if(rst)j.forms=j.forms.filter(f=>lfBucket(f.sa||'',f.status,f.sl_ref)===rst);
-  const act=f=>f.office===S.user.office&&f.sa&&f.sa!=='Branch'&&(!f.status||f.status==='returned')?`<button class="pri" onclick="A.lfSendAsk('${f.id}')">${f.status?'Send again':'Send'}</button>`:(isArea()&&f.office!==S.user.office&&f.status==='sent'?`<button class="pri" onclick="A.lfRecvAsk('${f.office}','${f.id}')">Receive</button>`:'');
+  const act=f=>f.office===S.user.office&&f.sa==='Branch'&&!f.status?`<button class="pri" ${f.sl_ref?'':'disabled title="Enter the sanction letter reference first"'} onclick="run(()=>A.lfBSanc(\'${f.id}\'))">Mark sanctioned</button>`:f.office===S.user.office&&f.sa&&f.sa!=='Branch'&&(!f.status||f.status==='returned')?`<button class="pri" onclick="A.lfSendAsk('${f.id}')">${f.status?'Send again':'Send'}</button>`:(isArea()&&f.office!==S.user.office&&f.status==='sent'?`<button class="pri" onclick="A.lfRecvAsk('${f.office}','${f.id}')">Receive</button>`:'');
   box.outerHTML=`<div id="lfbox" class="card" style="overflow:auto">${rst?`<div class="note n-info">Showing: ${rst} &nbsp; <a class="lk" onclick="go({...S.view,rst:null,after:null})">Show all</a></div>`:''}${j.forms.length?`<table><tr><th>Applicant</th><th>Account no.</th><th>Sanction authority</th><th>Status</th><th>Office</th><th>Last saved</th><th></th></tr>${j.forms.map(f=>`<tr class="click" onclick="go({...S.view,lfid:'${f.id}',lfoff:'${f.office}',after:null})"><td>${esc(f.name||'(no name)')}</td><td>${esc(f.acct||'')}</td><td>${esc(f.sa||'')}</td><td>${esc(lfStat(f))}</td><td>${esc(officeName(f.office))}</td><td>${fmtDT(f.updated)}</td><td onclick="event.stopPropagation()">${act(f)}</td></tr>`).join('')}</table>`:'No applications saved yet.'}</div>`;
 }
 const lfToday=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+A.lfBSanc=async id=>{if(S.lf&&S.lf.dirty&&S.lf.id===id)throw new Error('Save the application first.');if(!confirm('Mark this application as sanctioned by the Branch?'))return;await api('/lf/bsanction',{method:'POST',body:{id}});toast('Marked as sanctioned by Branch.');S.lf=null;go({...S.view,after:null})};
 A.lfSendAsk=id=>{S.lfAct={id};modal(`<h2>Send to Area Office</h2><p>Send this file to the Area Office? Enter the outward number and date.</p><div class="fld"><label>Outward number</label><input id="fl_no"></div><div class="fld"><label>Outward date</label><input id="fl_dt" inputmode="numeric" maxlength="10" placeholder="dd/mm/yyyy" value="${lfIsoToDmy(lfToday())}" oninput="A.lfDt(this)"></div><div class="bar"><button class="pri" onclick="run(A.lfSendDo)">Confirm send</button><button onclick="closeModal()">Cancel</button></div>`)};
 A.lfSendDo=async()=>{await api('/lf/send',{method:'POST',body:{id:S.lfAct.id,out_no:$('#fl_no').value,out_date:lfDmyToIso($('#fl_dt').value)}});closeModal();toast('Marked as sent to Area Office.');go({...S.view,after:null})};
 A.lfRecvAsk=(o,id)=>{S.lfAct={o,id};modal(`<h2>Receive file</h2><p>Mark the physical file as received by the Area Office. Enter the inward number and date.</p><div class="fld"><label>Inward number</label><input id="fl_no"></div><div class="fld"><label>Inward date</label><input id="fl_dt" inputmode="numeric" maxlength="10" placeholder="dd/mm/yyyy" value="${lfIsoToDmy(lfToday())}" oninput="A.lfDt(this)"></div><div class="bar"><button class="pri" onclick="run(A.lfRecvDo)">Confirm received</button><button onclick="closeModal()">Cancel</button></div>`)};
@@ -1336,7 +1337,7 @@ A.lfDecide=async()=>{
 
 /* ================= Loan Dashboard and Home ================= */
 const LF_BK=['Draft','Not sent','Pending sanction','Sent','Received','Returned','Declined','Sanctioned: Branch','Sanctioned: Area Office','Sanctioned: Divisional Office','Sanctioned: Head Office'];
-const lfBucket=(sa,st,ref)=>!sa?'Draft':st==='sent'?'Sent':st==='received'?'Received':st==='returned'?'Returned':st==='declined'?'Declined':st==='sanctioned'?'Sanctioned: '+sa:sa==='Branch'?(ref?'Sanctioned: Branch':'Pending sanction'):'Not sent';
+const lfBucket=(sa,st,ref)=>!sa?'Draft':st==='sent'?'Sent':st==='received'?'Received':st==='returned'?'Returned':st==='declined'?'Declined':st==='sanctioned'?'Sanctioned: '+sa:sa==='Branch'?'Pending sanction':'Not sent';
 async function lfSummary(){
   const j=await api('/lf/summary?office='+encodeURIComponent(isBranch()?S.user.office:'all'));const m={};
   for(const r of j.rows){const t=m[r.type]=m[r.type]||{};const b=lfBucket(r.sa,r.status,r.sl_ref);t[b]=(t[b]||0)+r.n}
