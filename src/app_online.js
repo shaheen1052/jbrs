@@ -144,6 +144,7 @@ function renderApp(){
   const nav=(p,label)=>`<button class="nav topnav ${v.page===p?'on':''}" onclick="go({page:'${p}'})">${label}</button>`;
   const leafBtn=l=>`<button class="nav ${v.leaf===l.id?'on':''}" onclick="go({page:'leaf',leaf:'${l.id}'})">${esc(l.name)}${!l.tpl?'<span class="pend">pending</span>':''}</button>`;
   const side=`${nav('dash','Dashboard')}
+   <button class="nav" style="font-size:12.5px;padding:4px 14px;color:var(--muted,#667)" onclick="A.collapseAll()">&#8679; Collapse all</button>
    ${isAdmin()?nav('users','Users and passwords')+nav('audit','Activity log'):''}
    ${MAINMENU().map(p=>{const c=PCOL[p.id]||PCOL._;const shut=S.open[p.id]===false;return`<div class="pillar" style="--pc:${c[0]};--pcl:${c[1]}"><button class="nav pnav" onclick="A.togglePillar('${p.id}')"><span>${esc(p.name)}</span><span class="caret" id="pc_${p.id}">${shut?'+':'&minus;'}</span></button><div class="leaves" id="pl_${p.id}" style="${shut?'display:none':''}">
    ${menuItems(p.items,leafBtn,p.lvl)}</div></div>`}).join('')}
@@ -176,6 +177,7 @@ function menuItems(items,leafBtn,top){return items.map(it=>{
   return`<button class="nav gnav" onclick="A.toggleGroup('${k}')"><span>${esc(it.group)}</span><span class="caret" id="gc_${k}">${open?'&minus;':'+'}</span></button><div class="subleaves" id="gl_${k}" style="${open?'':'display:none'}">${menuItems(it.items,leafBtn,sub)}</div>`;
 }).join('')}
 A.toggleGroup=k=>{const el=$('#gl_'+k);const hide=el.style.display!=='none';el.style.display=hide?'none':'';S.open[k]=!hide;$('#gc_'+k).innerHTML=hide?'+':'&minus;'};
+A.collapseAll=()=>{document.querySelectorAll('[id^="gl_"],[id^="pl_"]').forEach(e=>{e.style.display='none';S.open[e.id.slice(3)]=false});document.querySelectorAll('[id^="gc_"],[id^="pc_"]').forEach(e=>e.innerHTML='+')};
 A.togglePillar=id=>{const el=$('#pl_'+id);const hide=el.style.display!=='none';el.style.display=hide?'none':'';S.open[id]=!hide;const c=$('#pc_'+id);if(c)c.innerHTML=hide?'+':'&minus;'};
 const PCOL={lapp:['#2e7d32','#e8f5e9'],rep:['#1d5fa8','#e7f0fb'],dep:['#1d5fa8','#e7f0fb'],loan:['#2e7d32','#e8f5e9'],acc:['#6a3fb5','#f0ebfa'],rec:['#b55400','#fdf0e2'],aud:['#b42318','#fdecea'],_:['#0a7aa6','#e2f4fb']};
 function setMain(h){const m=$('#main');if(m)m.innerHTML=h+`<div class="dev">${APP.dev}</div>`}

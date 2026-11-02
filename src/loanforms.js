@@ -68,11 +68,11 @@ const LF_TYPE_BY_LEAF=Object.fromEntries(Object.entries(LF_TYPES).map(([k,v])=>[
 const lfTypeOfLeaf=id=>LF_TYPE_BY_LEAF[String(id).replace(/_(cl|rp)$/,'')];
 const lfShort=t=>t.en.split(' - ').pop();
 const lfOf=()=>S.view.lfof||(isBranch()||isArea()?S.user.office:'all');
-function lfOfSel(of){
+function lfOfSel(of,slim){
   if(isBranch())return'';const kids=childBranches();
-  return`<div style="flex:1 1 220px;max-width:340px"><label>Office</label><select onchange="go({...S.view,lfof:this.value,lfid:null,lfoff:null,after:null})">${isAdmin()?`<option value="all" ${of==='all'?'selected':''}>All branches</option>`:`<option value="${S.user.office}" ${of===S.user.office?'selected':''}>Area Office (own)</option>`}${kids.map(k=>`<option value="${k.code}" ${of===k.code?'selected':''}>${k.code} - ${esc(k.name)}</option>`).join('')}</select></div>`;
+  return`<div style="flex:0 1 auto">${slim?'':'<label>Office</label>'}<select onchange="go({...S.view,lfof:this.value,lfid:null,lfoff:null,after:null})">${isAdmin()?`<option value="all" ${of==='all'?'selected':''}>All branches</option>`:`<option value="${S.user.office}" ${of===S.user.office?'selected':''}>Area Office (own)</option>`}${kids.map(k=>`<option value="${k.code}" ${of===k.code?'selected':''}>${k.code} - ${esc(k.name)}</option>`).join('')}</select></div>`;
 }
-const lfAppSel=(forms,cur)=>`<div style="flex:1 1 260px;max-width:420px"><label>Applicant</label><select onchange="A.lfPickF(this)"><option value="">- select -</option>${forms.map(f=>`<option value="${f.office}|${f.id}" ${cur&&cur.id===f.id?'selected':''}>${esc(f.name||'(no name)')}${f.acct?' - '+esc(f.acct):''}</option>`).join('')}</select></div>`;
+const lfAppSel=(forms,cur,slim)=>`<div style="flex:0 1 auto">${slim?'':'<label>Applicant</label>'}<select onchange="A.lfPickF(this)"><option value="">- Applicant -</option>${forms.map(f=>`<option value="${f.office}|${f.id}" ${cur&&cur.id===f.id?'selected':''}>${esc(f.name||'(no name)')}${f.acct?' - '+esc(f.acct):''}</option>`).join('')}</select></div>`;
 A.lfPickF=el=>{const [o,i]=el.value.split('|');go({...S.view,lfid:i||null,lfoff:o||null,after:null})};
 async function lfLoadSel(forms){   // load the selected applicant into S.lf
   const v=S.view,cur=forms.find(f=>f.id===v.lfid);
@@ -84,7 +84,7 @@ async function lfLoadSel(forms){   // load the selected applicant into S.lf
 function lfNewId(){return 'F'+Date.now().toString(36)+Math.random().toString(36).slice(2,5)}
 function pageLoanForms(l){
   const type=lfTypeOfLeaf(l.id);const T0=LF_TYPES[type];
-  const head=`<div class="pghead"><h2>${esc(lfShort(T0))} data entry</h2></div>`;
+  const head=`<div class="pghead"><div class="hrow"><h2>${esc(lfShort(T0))} data entry</h2><span id="hdrsave"></span></div></div>`;
   if(S.view.lfid){S.view.after=()=>lfOpen(type);return head+`<div id="lfbox" class="muted" style="margin-top:12px">Loading...</div>`}
   const of=lfOf();
   S.view.after=()=>lfList(type,of);
@@ -123,10 +123,17 @@ function lfRender(){
   box.outerHTML=`<div id="lfbox" class="lfform">${ro?'<div class="note n-info">View only: this application belongs to another office.</div>':''}
   ${lfSections(f.type).map(s=>`<div class="card bn" style="margin-top:12px"><h3 style="margin-top:0">${s.h}</h3><div class="row" style="flex-wrap:wrap">${s.f.map(x=>lfField(x,f.d[x.k],ro)).join('')}</div></div>`).join('')}
   ${t.calc?`<div class="card bn" style="margin-top:12px"><h3 style="margin-top:0">স্বয়ংক্রিয় হিসাব ও নীতিমালা যাচাই (আরসিডি সার্কুলার ১১৯/২৫, ১২২/২৬, ১২৬/২৬)</h3><div id="lfcalc">${t.calc(f.d)}</div></div>`:''}
+  <div class="card bn" style="margin-top:12px"><button onclick="A.lfCkTog()" id="ckbtn">Open Check List</button><div id="lfck"></div></div>
   <div class="bar" style="margin-top:12px">${ro?'':`<button class="pri" onclick="run(A.lfSave)">Save</button>`}
   ${!ro&&!f.isNew?`<button class="dan" onclick="if(confirm('Delete this application?'))run(A.lfDel)">Delete</button>`:''}<button onclick="A.lfBack()">Back to list</button></div>
-  <p class="muted small">Check List and printing are under Check List and Report in the menu.</p></div>`;
+  <p class="muted small">Printing and downloads are under Report in the menu.</p></div>`;
+  const hs=$('#hdrsave');if(hs)hs.innerHTML=ro?'':`<button class="pri" onclick="run(A.lfSave)" style="height:28px;padding:2px 18px;font-size:13px">Save</button>`;
+  f.ckOpen=false;
 }
+A.lfCkTog=()=>{const f=S.lf;f.ckOpen=!f.ckOpen;const b=$('#ckbtn'),c=$('#lfck');b.textContent=f.ckOpen?'Close Check List':'Open Check List';
+  if(!f.ckOpen){c.innerHTML='';return}
+  const docs=lfDocs(LF_TYPES[f.type]),ro=f.office!==S.user.office||!S.user.office;
+  c.innerHTML=`<h3 style="margin:10px 0 4px">${esc(lfShort(LF_TYPES[f.type]))} Check List &nbsp;<span class="muted small" id="ckcnt"></span></h3>`+docs.map((x,i)=>`<label class="ckrow"><input type="checkbox" data-k="ck${i}" ${f.d['ck'+i]?'checked':''} onchange="A.lfCk(this)" ${ro?'disabled':''}><span>${toBn(i+1)}. ${esc(x)}</span></label>`).join('');A.lfCk(null)};
 A.lfset=el=>{const k=el.dataset.k;S.lf.d[k]=el.type==='checkbox'?el.checked:el.value;S.lf.dirty=true;
   {const t=LF_TYPES[S.lf.type];if(t.calc){const c=$('#lfcalc');if(c)c.innerHTML=t.calc(S.lf.d)}}
   if(el.tagName==='INPUT'&&el.inputMode==='decimal'){const nx=el.parentElement.querySelector('.muted.small.bn');const tk=lfTaka(el.value);if(nx)nx.textContent=tk;else if(tk&&/টাকা/.test(el.parentElement.querySelector('label').textContent)){const d=document.createElement('div');d.className='muted small bn';d.textContent=tk;el.parentElement.appendChild(d)}}};
@@ -339,10 +346,10 @@ A.lfCk=el=>{if(el){S.lf.d[el.dataset.k]=el.checked;S.lf.dirty=true}
   const n=lfDocs(LF_TYPES[S.lf.type]).filter((x,i)=>S.lf.d['ck'+i]).length,c=$('#ckcnt');if(c)c.textContent='Received: '+n+' / '+lfDocs(LF_TYPES[S.lf.type]).length};
 
 function pageLfRp(l){
-  const type=lfTypeOfLeaf(l.id),T0=LF_TYPES[type],tab=S.view.rtab||'all';
+  const type=lfTypeOfLeaf(l.id),tab=S.view.rtab||'all';
   S.view.after=()=>tab==='all'?lfRpAll(type):lfRpOne(type);
   const tb=(k,t)=>`<button class="${tab===k?'pri':''}" onclick="go({...S.view,rtab:'${k}',lfid:null,lfoff:null,after:null})">${t}</button>`;
-  return`<div class="pghead"><h2>${esc(lfShort(T0))} Report</h2><div class="bar" style="margin-top:6px">${tb('all','All report')}${tb('one','Individual report')}</div></div><div id="lfbox" class="muted">Loading...</div>`;
+  return`<div class="pghead"><div class="hrow"><div class="bar">${tb('all','All report')}${tb('one','Individual report')}</div><div class="hrow" id="rpctl" style="flex:1 1 auto"></div></div></div><div id="lfbox" class="muted" style="margin-top:12px">Loading...</div>`;
 }
 const lfCsv=rows=>'\ufeff'+rows.map(r=>r.map(c=>'"'+String(c??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
 async function lfRpAll(type){
@@ -353,8 +360,8 @@ async function lfRpAll(type){
   const hd=['ক্রমিক','আবেদনকারী','হিসাব নম্বর','ঋণের পরিমাণ (টাকা)','কিস্তি (মাস)','আবেদনের তারিখ','অফিস/শাখা','কাগজপত্র জমা'];
   S.lfrp={rows,hd,type};
   const tbl=`<table class="r3t" style="width:100%;border-collapse:collapse"><tr>${hd.map(h=>`<th>${h}</th>`).join('')}</tr>${rows.map(r=>`<tr>${r.map((c,k)=>`<td${k===3?' style="text-align:right"':''}>${esc(c)}</td>`).join('')}</tr>`).join('')}</table>`;
-  box.outerHTML=`<div id="lfbox"><div class="card"><div class="row" style="align-items:flex-end">${lfOfSel(of)}<div style="flex:0 0 auto" class="bar"><button class="pri" onclick="A.lfRpPrint()">Print</button><button onclick="A.lfRpCsv()">Download (Excel)</button></div></div></div>
-  <div class="card bn" style="margin-top:12px;overflow:auto">${rows.length?tbl:'No applications saved yet.'}</div></div>`;
+  const rc=$('#rpctl');if(rc)rc.innerHTML=lfOfSel(of,1)+`<div class="bar"><button class="pri" onclick="A.lfRpPrint()">Print</button><button onclick="A.lfRpCsv()">Download (Excel)</button></div>`;
+  box.outerHTML=`<div id="lfbox"><div class="card bn" style="overflow:auto">${rows.length?tbl:'No applications saved yet.'}</div></div>`;
 }
 A.lfRpPrint=()=>{const r=S.lfrp,t=LF_TYPES[r.type],o=office(S.user.office);
   const tbl=`<table class="r3t" style="width:100%;border-collapse:collapse"><tr>${r.hd.map(h=>`<th>${h}</th>`).join('')}</tr>${r.rows.map(x=>`<tr>${x.map((c,k)=>`<td${k===3?' style="text-align:right"':''}>${esc(c)}</td>`).join('')}</tr>`).join('')}</table>`;
@@ -365,10 +372,8 @@ async function lfRpOne(type){
   const of=lfOf(),t=LF_TYPES[type],j=await api('/lf/list?type='+type+'&office='+encodeURIComponent(of));
   const box=$('#lfbox');if(!box)return;
   const cur=await lfLoadSel(j.forms),PR=lfPrintList(t),dk=S.view.lfdoc||PR[0][0];
-  box.outerHTML=`<div id="lfbox"><div class="card"><div class="row" style="align-items:flex-end">${lfOfSel(of)}${lfAppSel(j.forms,cur)}
-  <div style="flex:1 1 260px;max-width:380px"><label>Document</label><select id="lfdoc" onchange="S.view.lfdoc=this.value;A.lfRpView()">${PR.map(x=>`<option value="${x[0]}" ${x[0]===dk?'selected':''}>${x[1].replace(/^Print /,'')}</option>`).join('')}<option value="all" ${dk==='all'?'selected':''}>All documents</option></select></div>
-  <div class="bar" style="flex:0 0 auto"><button class="pri" onclick="A.lfRpView()">View</button><button onclick="A.lfRpDo('print')">Print</button><button onclick="run(()=>A.lfRpDo('pdf'))">Download PDF</button></div></div></div>
-  <div id="lfview" class="lfsc" style="margin-top:12px;overflow:auto">${cur?'':'<p class="muted">Select an applicant, then choose a document.</p>'}</div></div>`;
+  const rc=$('#rpctl');if(rc)rc.innerHTML=lfOfSel(of,1)+lfAppSel(j.forms,cur,1)+`<select id="lfdoc" onchange="S.view.lfdoc=this.value;A.lfRpView()">${PR.map(x=>`<option value="${x[0]}" ${x[0]===dk?'selected':''}>${x[1].replace(/^Print /,'')}</option>`).join('')}<option value="all" ${dk==='all'?'selected':''}>All documents</option></select><div class="bar"><button class="pri" onclick="A.lfRpView()">View</button><button onclick="A.lfRpDo('print')">Print</button><button onclick="run(()=>A.lfRpDo('pdf'))">Download PDF</button></div>`;
+  box.outerHTML=`<div id="lfbox"><div id="lfview" class="lfsc" style="overflow:auto">${cur?'':'<p class="muted">Select an applicant, then choose a document.</p>'}</div></div>`;
   if(cur)A.lfRpView();
 }
 const lfRpKeys=()=>{const v=$('#lfdoc').value,PR=lfPrintList(LF_TYPES[S.lf.type]);return v==='all'?PR.map(x=>x[0]):[v]};

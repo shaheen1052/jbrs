@@ -19,7 +19,7 @@ assert _ag in tree
 tree=tree.replace(_ag,"G('Agricultural and rural credit',[G('RCD-3',[L('ln_rcd3','Data entry','rcd3'),L('ln_rcd3s1','Statement-1 (Accumulated)','rcd3s1'),L('ln_rcd3s2','Statement-2 (Product-wise)','rcd3s2')]),G('RCD-4',[L('ln_rcd4','Data entry','rcd4'),L('ln_rcd4s1','Statement-1 (ছক-ক)','rcd4s1'),L('ln_rcd4s2','Statement-2 (Accumulated)','rcd4s2'),L('ln_rcd4s3','Statement-3 (Product-wise)','rcd4s3')]),G('RCD-4 Consumer Financing',[L('ln_rcd4cf','Data entry','rcd4cf'),L('ln_rcd4cfs1','Statement-1 (ছক-খ)','rcd4cfs1'),L('ln_rcd4cfs2','Statement-2 (Accumulated)','rcd4cfs2'),L('ln_rcd4cfs3','Statement-3 (Product-wise)','rcd4cfs3')])])")
 _ln="L('ln_sod','Secured overdraft'),L('ln_staff','Staff loan')]}"
 assert _ln in tree
-def _LN(i,n): return "G('%s',[L('%s','Data Entry','lf'),L('%s_cl','Check List','lfcl'),L('%s_rp','Report','lfrp')])"%(n,i,i,i)
+def _LN(i,n): return "G('%s',[L('%s','Data Entry','lf'),L('%s_rp','Report','lfrp')])"%(n,i,i)
 _LFM="G('Loan Application',["+",".join([
  _LN('lf_cmsme','CMSME'),
  "G('Agricultural & Rural Credit',[G('RCD-3 Loans',["+",".join([_LN('lf_crop','Crop Loan'),_LN('lf_dairy','Dairy cow rearing (RCD Cir. 66/17)'),_LN('lf_bullfat','Bull Fattening (RCD Cir. 75/19)')])+"]),G('RCD-4 Loans',["+",".join([_LN('lf_mpsc','Multipurpose Supervisory Credit'),_LN('lf_gnkr','Grameen Nari Kormosngsthan Rin'),_LN('lf_youth','Loan for Trained Youth')])+"])])",
@@ -49,7 +49,7 @@ rcd='\n'.join(open(f,encoding='utf-8').read() for f in RCD)
 extra_css=""".top{position:sticky;top:0;z-index:60}
 .side{position:sticky;top:var(--topH,58px);height:calc(100vh - var(--topH,58px));align-self:flex-start}
 .lfmain{overflow:visible}
-.pghead{position:sticky;top:var(--topH,58px);z-index:20;background:var(--bg);padding:8px 0 6px;margin:-6px 0 10px;border-bottom:1px solid var(--line)}.pghead h2{margin:0;font-size:20px}
+.pghead{position:sticky;top:var(--topH,58px);z-index:20;background:var(--bg);padding:8px 0 6px;margin:-6px 0 10px;border-bottom:1px solid var(--line)}.pghead h2{margin:0;font-size:20px}.pghead .hrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.pghead .hrow h2{flex:1 1 auto}.pghead .bar{margin:0;gap:6px}.pghead button,.pghead select{height:28px;padding:2px 12px;font-size:13px;line-height:1.2;width:auto;min-width:0;max-width:240px}.pghead select{padding:2px 6px}
 .lfform label{font-size:12px;margin:0 0 2px}.lfform input,.lfform select,.lfform textarea{padding:2px 7px;font-size:13px;height:28px;min-height:0;line-height:1.2}.lfform textarea{resize:vertical}
 .lfform .row{gap:6px 10px}.lfform .fc{flex:1 1 140px;max-width:210px}.lfform .fc.w{flex:1 1 100%;max-width:none}.lfform .fc.w2{flex:1 1 240px;max-width:330px}.lfform h3{font-size:14px;margin:0 0 6px}.lfform .card{padding:10px 12px}
 .ckrow{display:flex;gap:10px;align-items:flex-start;padding:7px 4px;border-bottom:1px solid var(--line);font-size:13.5px;color:var(--text);margin:0;cursor:pointer}.ckrow input{width:18px;height:18px;margin:2px 0 0;flex:0 0 auto;padding:0}
