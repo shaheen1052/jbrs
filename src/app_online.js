@@ -167,7 +167,7 @@ function setTopH(){const t=$('.top');if(t)document.documentElement.style.setProp
 window.addEventListener('resize',setTopH);
 function MAINMENU(){
   const lp=TREE.find(p=>p.id==='loan').items.find(x=>x.group==='Loan Application');
-  const ok=it=>it.group?it.items.length>0:!((it.tpl==='lfao'&&!(isArea()||isAdmin()))||(it.tpl==='lf'&&isArea()));
+  const ok=it=>it.group?it.items.length>0:true;
   const flt=items=>items.map(it=>it.group?{...it,items:flt(it.items)}:it).filter(ok);
   const rep=TREE.map(p=>({group:p.name,items:p.items.filter(x=>x!==lp)}));
   LEAVES.lf_dash=LEAVES.lf_dash||{id:'lf_dash',name:'Loan Dashboard',title:'Loan Dashboard',pillar:'Loan Application',tpl:'ldash'};
@@ -225,7 +225,8 @@ function pageLeaf(){
   if(l.tpl==='iwr')return pageIwr(l);
   if(l.tpl==='ldash')return pageLfDash();
   if(l.tpl==='sdash')return pageDash('Statements Dashboard');
-  if(l.tpl==='lf')return pageLoanForms(l);
+  if(l.tpl==='lf')return isArea()?pageLfAo(l):pageLoanForms(l);
+  if(l.tpl==='lfrpt')return pageLfRpt(l);
   if(l.tpl==='lfao')return pageLfAo(l);
   if(l.tpl==='lfrp')return pageLfRp(l);
   if(l.tpl&&l.tpl.startsWith('rcd3'))return pageRcd3(l);

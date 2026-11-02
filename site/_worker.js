@@ -22,7 +22,7 @@ const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS loan_dec(office TEXT,id TEXT,seq INTEGER,dec TEXT,note TEXT,dec_date TEXT,at TEXT,by TEXT,PRIMARY KEY(office,id,seq))`,
   `CREATE TABLE IF NOT EXISTS loan_files(fid TEXT PRIMARY KEY,office TEXT,id TEXT,seq INTEGER,name TEXT,mime TEXT,size INTEGER,data TEXT,at TEXT,by TEXT)`
 ];
-const LF_SEL = "SELECT l.office,l.id,l.type,l.name,l.acct,l.updated,json_extract(l.data,'$.sa') AS sa,f.status,f.out_no,f.out_date,f.in_no,f.in_date FROM loan_forms l LEFT JOIN loan_flow f ON f.office=l.office AND f.id=l.id";
+const LF_SEL = "SELECT l.office,l.id,l.type,l.name,l.acct,l.updated,json_extract(l.data,'$.sa') AS sa,json_extract(l.data,'$.sl_ref') AS sl_ref,json_extract(l.data,'$.sl_date') AS sl_date,f.status,f.out_no,f.out_date,f.in_no,f.in_date FROM loan_forms l LEFT JOIN loan_flow f ON f.office=l.office AND f.id=l.id";
 async function lfDecInfo(db, office, id) {
   const flow = await db.prepare('SELECT status,out_no,out_date,in_no,in_date FROM loan_flow WHERE office=? AND id=?').bind(office, id).first();
   const decs = (await db.prepare('SELECT seq,dec,note,dec_date,at FROM loan_dec WHERE office=? AND id=? ORDER BY seq DESC').bind(office, id).all()).results;
@@ -307,7 +307,7 @@ async function handle(req, env) {
     if (!/^[a-z]{2,12}$/.test(type)) return err('Bad type.');
     const r = await readable(db, u);
     if (office !== 'all' && r !== null && !r.has(office)) return err('Not allowed.', 403);
-    let q = LF_SEL.replace('l.updated,', 'l.data,l.updated,') + " WHERE l.type=?"; const a = [type];
+    let q = LF_SEL.replace('l.updated,', 'l.data,l.updated,') + " WHERE (?='all' OR l.type=?)"; const a = [type, type];
     if (office !== 'all') { q += ' AND l.office=?'; a.push(office); }
     const rows = (await db.prepare(q + ' ORDER BY l.updated DESC LIMIT 500').bind(...a).all()).results.filter(x => r === null || r.has(x.office));
     return json({ forms: rows.map(x => ({ ...x, data: JSON.parse(x.data || '{}') })) });

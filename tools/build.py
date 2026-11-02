@@ -19,13 +19,14 @@ assert _ag in tree
 tree=tree.replace(_ag,"G('Agricultural and rural credit',[G('RCD-3',[L('ln_rcd3','Data entry','rcd3'),L('ln_rcd3s1','Statement-1 (Accumulated)','rcd3s1'),L('ln_rcd3s2','Statement-2 (Product-wise)','rcd3s2')]),G('RCD-4',[L('ln_rcd4','Data entry','rcd4'),L('ln_rcd4s1','Statement-1 (ছক-ক)','rcd4s1'),L('ln_rcd4s2','Statement-2 (Accumulated)','rcd4s2'),L('ln_rcd4s3','Statement-3 (Product-wise)','rcd4s3')]),G('RCD-4 Consumer Financing',[L('ln_rcd4cf','Data entry','rcd4cf'),L('ln_rcd4cfs1','Statement-1 (ছক-খ)','rcd4cfs1'),L('ln_rcd4cfs2','Statement-2 (Accumulated)','rcd4cfs2'),L('ln_rcd4cfs3','Statement-3 (Product-wise)','rcd4cfs3')])])")
 _ln="L('ln_sod','Secured overdraft'),L('ln_staff','Staff loan')]}"
 assert _ln in tree
-def _LN(i,n): return "G('%s',[L('%s','Data Entry','lf'),L('%s_ao','Data Entry (Area Office)','lfao'),L('%s_rp','Report','lfrp')])"%(n,i,i,i)
+def _LN(i,n): return "L('%s','%s','lf')"%(i,n)
 _LFM="G('Loan Application',["+",".join([
  _LN('lf_cmsme','CMSME'),
  "G('Agricultural & Rural Credit',[G('RCD-3 Loans',["+",".join([_LN('lf_crop','Crop Loan'),_LN('lf_dairy','Dairy cow rearing (RCD Cir. 66/17)'),_LN('lf_bullfat','Bull Fattening (RCD Cir. 75/19)')])+"]),G('RCD-4 Loans',["+",".join([_LN('lf_mpsc','Multipurpose Supervisory Credit'),_LN('lf_gnkr','Grameen Nari Kormosngsthan Rin'),_LN('lf_youth','Loan for Trained Youth')])+"])])",
  "G('Consumer financing',["+",".join([_LN('lf_cfpersonal','Personal Loan'),_LN('lf_cfcredit','Consumer Credit'),_LN('lf_cfhealth','Janata Support Health Care Loan'),_LN('lf_cfpension','Janata Support Loan for Pensioner')])+"])",
  _LN('lf_sod','Secured overdraft'),
- "G('Staff loan',["+",".join([_LN('lf_stfhouse','Staff House Building Loan'),_LN('lf_stfmoto','Staff Motor Cycle Loan'),_LN('lf_stfcomp','Staff Computer Loan'),_LN('lf_execcar','Executive Car Loan')])+"])"
+ "G('Staff loan',["+",".join([_LN('lf_stfhouse','Staff House Building Loan'),_LN('lf_stfmoto','Staff Motor Cycle Loan'),_LN('lf_stfcomp','Staff Computer Loan'),_LN('lf_execcar','Executive Car Loan')])+"])",
+ "L('lf_reports','Loan Reports','lfrpt')"
 ])+"])"
 tree=tree.replace(_ln,"L('ln_sod','Secured overdraft'),L('ln_staff','Staff loan'),"+_LFM+"]}")
 tree=tree.replace(_old,"G('Interest waiver calculator',[L('rc_iwc','Data entry','iwc'),G('Report',[L('rc_iwga','Annexure-Ga','iwr'),L('rc_iwgha','Annexure-Gha','iwr')])])")
