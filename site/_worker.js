@@ -17,8 +17,10 @@ const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS fails(k TEXT PRIMARY KEY,n INTEGER,until INTEGER)`,
   `CREATE TABLE IF NOT EXISTS iwc_state(office TEXT,k TEXT,v TEXT,updated TEXT,PRIMARY KEY(office,k))`,
   `CREATE TABLE IF NOT EXISTS iwc_cases(office TEXT,key TEXT,name TEXT,acct TEXT,lt TEXT,saved TEXT,item TEXT,updated TEXT,updated_by TEXT,PRIMARY KEY(office,key))`,
-  `CREATE TABLE IF NOT EXISTS loan_forms(office TEXT,id TEXT,type TEXT,name TEXT,acct TEXT,data TEXT,updated TEXT,updated_by TEXT,PRIMARY KEY(office,id))`
+  `CREATE TABLE IF NOT EXISTS loan_forms(office TEXT,id TEXT,type TEXT,name TEXT,acct TEXT,data TEXT,updated TEXT,updated_by TEXT,PRIMARY KEY(office,id))`,
+  `CREATE TABLE IF NOT EXISTS loan_flow(office TEXT,id TEXT,status TEXT,out_no TEXT,out_date TEXT,in_no TEXT,in_date TEXT,ao TEXT,updated TEXT,updated_by TEXT,PRIMARY KEY(office,id))`
 ];
+const LF_SEL = "SELECT l.office,l.id,l.type,l.name,l.acct,l.updated,json_extract(l.data,'$.sa') AS sa,f.status,f.out_no,f.out_date,f.in_no,f.in_date FROM loan_forms l LEFT JOIN loan_flow f ON f.office=l.office AND f.id=l.id";
 const IWC_STATE_KEYS = ['exit-policy-v3', 'iw-typemap', 'iw-lang'];
 const MAX_IWC = 600000;
 let ready = false;
@@ -285,9 +287,9 @@ async function handle(req, env) {
     if (!/^[a-z]{2,12}$/.test(type)) return err('Bad type.');
     const r = await readable(db, u);
     if (office !== 'all' && r !== null && !r.has(office)) return err('Not allowed.', 403);
-    let q = 'SELECT office,id,type,name,acct,updated FROM loan_forms WHERE type=?'; const a = [type];
-    if (office !== 'all') { q += ' AND office=?'; a.push(office); }
-    const rows = (await db.prepare(q + ' ORDER BY updated DESC LIMIT 500').bind(...a).all()).results.filter(x => r === null || r.has(x.office));
+    let q = LF_SEL + " WHERE l.type=?"; const a = [type];
+    if (office !== 'all') { q += ' AND l.office=?'; a.push(office); }
+    const rows = (await db.prepare(q + ' ORDER BY l.updated DESC LIMIT 500').bind(...a).all()).results.filter(x => r === null || r.has(x.office));
     return json({ forms: rows });
   }
   if (p === '/lf/items' && m === 'GET') {
@@ -297,9 +299,9 @@ async function handle(req, env) {
     if (!/^[a-z]{2,12}$/.test(type)) return err('Bad type.');
     const r = await readable(db, u);
     if (office !== 'all' && r !== null && !r.has(office)) return err('Not allowed.', 403);
-    let q = 'SELECT office,id,type,name,acct,data,updated FROM loan_forms WHERE type=?'; const a = [type];
-    if (office !== 'all') { q += ' AND office=?'; a.push(office); }
-    const rows = (await db.prepare(q + ' ORDER BY updated DESC LIMIT 500').bind(...a).all()).results.filter(x => r === null || r.has(x.office));
+    let q = LF_SEL.replace('l.updated,', 'l.data,l.updated,') + " WHERE l.type=?"; const a = [type];
+    if (office !== 'all') { q += ' AND l.office=?'; a.push(office); }
+    const rows = (await db.prepare(q + ' ORDER BY l.updated DESC LIMIT 500').bind(...a).all()).results.filter(x => r === null || r.has(x.office));
     return json({ forms: rows.map(x => ({ ...x, data: JSON.parse(x.data || '{}') })) });
   }
   if (p === '/lf/get' && m === 'GET') {
@@ -321,11 +323,58 @@ async function handle(req, env) {
     if (isNew) await audit(db, u.id, 'loan form added', b.type);
     return json({ ok: true });
   }
+  if (p === '/lf/send' && m === 'POST') {
+    if (!u.office) return err('Not allowed.', 403);
+    const b = await body(req);
+    const out_no = String(b.out_no || '').trim().slice(0, 60), out_date = String(b.out_date || '').slice(0, 10);
+    if (!/^[A-Za-z0-9_-]{1,40}$/.test(String(b.id || '')) || !out_no || !/^\d{4}-\d{2}-\d{2}$/.test(out_date)) return err('Enter the outward number and date.');
+    const x = await db.prepare("SELECT json_extract(data,'$.sa') AS sa FROM loan_forms WHERE office=? AND id=?").bind(u.office, b.id).first();
+    if (!x) return err('Save the application first.');
+    if (!x.sa || x.sa === 'Branch') return err('Only applications that need a higher sanction authority can be sent.');
+    const f = await db.prepare('SELECT status,ao FROM loan_flow WHERE office=? AND id=?').bind(u.office, b.id).first();
+    if (f && f.status) return err('This file was already sent.');
+    await db.prepare("INSERT OR REPLACE INTO loan_flow(office,id,status,out_no,out_date,in_no,in_date,ao,updated,updated_by) VALUES(?,?,'sent',?,?,'','',?,?,?)").bind(u.office, b.id, out_no, out_date, f ? f.ao : null, iso(), u.id).run();
+    await audit(db, u.id, 'loan file sent', String(b.id));
+    return json({ ok: true });
+  }
+  if (p === '/lf/receive' && m === 'POST') {
+    if (u.role !== 'AREA') return err('Only the Area Office can receive files.', 403);
+    const b = await body(req);
+    const in_no = String(b.in_no || '').trim().slice(0, 60), in_date = String(b.in_date || '').slice(0, 10), office = String(b.office || '');
+    if (!ID_RE.test(office) || !/^[A-Za-z0-9_-]{1,40}$/.test(String(b.id || '')) || !in_no || !/^\d{4}-\d{2}-\d{2}$/.test(in_date)) return err('Enter the inward number and date.');
+    if (office === u.office || !(await canRead(db, u, office))) return err('Not allowed.', 403);
+    const f = await db.prepare('SELECT status,out_no,out_date,ao FROM loan_flow WHERE office=? AND id=?').bind(office, b.id).first();
+    if (!f || f.status !== 'sent') return err('This file is not waiting to be received.');
+    await db.prepare("UPDATE loan_flow SET status='received',in_no=?,in_date=?,updated=?,updated_by=? WHERE office=? AND id=?").bind(in_no, in_date, iso(), u.id, office, b.id).run();
+    await audit(db, u.id, 'loan file received', office + ' ' + b.id);
+    return json({ ok: true });
+  }
+  if (p === '/lf/ao' && m === 'GET') {
+    const office = url.searchParams.get('office') || '', id = url.searchParams.get('id') || '';
+    if (!ID_RE.test(office) || !(await canRead(db, u, office))) return err('Not allowed.', 403);
+    const f = await db.prepare('SELECT status,out_no,out_date,in_no,in_date,ao FROM loan_flow WHERE office=? AND id=?').bind(office, id).first();
+    return json({ ao: f && f.ao ? JSON.parse(f.ao) : {}, flow: f ? { status: f.status, out_no: f.out_no, out_date: f.out_date, in_no: f.in_no, in_date: f.in_date } : null });
+  }
+  if (p === '/lf/ao' && m === 'PUT') {
+    if (u.role !== 'AREA') return err('Only the Area Office can save this page.', 403);
+    const b = await body(req); const office = String(b.office || '');
+    if (!ID_RE.test(office) || !/^[A-Za-z0-9_-]{1,40}$/.test(String(b.id || '')) || !b.data || typeof b.data !== 'object') return err('Bad request.');
+    if (!(await canRead(db, u, office))) return err('Not allowed.', 403);
+    if (!(await db.prepare('SELECT 1 AS x FROM loan_forms WHERE office=? AND id=?').bind(office, b.id).first())) return err('Application not found.');
+    const s2 = JSON.stringify(b.data); if (s2.length > 30000) return err('Too large.');
+    const f = await db.prepare('SELECT 1 AS x FROM loan_flow WHERE office=? AND id=?').bind(office, b.id).first();
+    if (f) await db.prepare('UPDATE loan_flow SET ao=?,updated=?,updated_by=? WHERE office=? AND id=?').bind(s2, iso(), u.id, office, b.id).run();
+    else await db.prepare("INSERT INTO loan_flow(office,id,status,out_no,out_date,in_no,in_date,ao,updated,updated_by) VALUES(?,?,'','','','','',?,?,?)").bind(office, b.id, s2, iso(), u.id).run();
+    return json({ ok: true });
+  }
   if (p === '/lf/delete' && m === 'POST') {
     if (!u.office) return err('Not allowed.', 403);
     const b = await body(req);
     if (!/^[A-Za-z0-9_-]{1,40}$/.test(String(b.id || ''))) return err('Bad request.');
+    const fl = await db.prepare('SELECT status FROM loan_flow WHERE office=? AND id=?').bind(u.office, b.id).first();
+    if (fl && fl.status) return err('This file has already been sent to the Area Office and cannot be deleted.');
     await db.prepare('DELETE FROM loan_forms WHERE office=? AND id=?').bind(u.office, b.id).run();
+    await db.prepare('DELETE FROM loan_flow WHERE office=? AND id=?').bind(u.office, b.id).run();
     await audit(db, u.id, 'loan form removed', String(b.id));
     return json({ ok: true });
   }

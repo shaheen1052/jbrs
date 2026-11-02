@@ -65,14 +65,14 @@ const LF_TYPES={
 };
 const LF_TYPE_BY_LEAF=Object.fromEntries(Object.entries(LF_TYPES).map(([k,v])=>[v.leaf,k]));
 
-const lfTypeOfLeaf=id=>LF_TYPE_BY_LEAF[String(id).replace(/_(cl|rp)$/,'')];
+const lfTypeOfLeaf=id=>LF_TYPE_BY_LEAF[String(id).replace(/_(cl|rp|ao)$/,'')];
 const lfShort=t=>t.en.split(' - ').pop();
 const lfOf=()=>S.view.lfof||(isBranch()||isArea()?S.user.office:'all');
 function lfOfSel(of,slim){
   if(isBranch())return'';const kids=childBranches();
-  return`<div style="flex:0 1 auto">${slim?'':'<label>Office</label>'}<select onchange="go({...S.view,lfof:this.value,lfid:null,lfoff:null,after:null})">${isAdmin()?`<option value="all" ${of==='all'?'selected':''}>All branches</option>`:`<option value="${S.user.office}" ${of===S.user.office?'selected':''}>Area Office (own)</option>`}${kids.map(k=>`<option value="${k.code}" ${of===k.code?'selected':''}>${k.code} - ${esc(k.name)}</option>`).join('')}</select></div>`;
+  return`<div style="flex:0 1 auto">${slim?'':'<label>Office</label>'}<select onchange="go({...S.view,lfof:this.value,lfid:null,lfoff:null,after:null})">${isAdmin()?`<option value="all" ${of==='all'?'selected':''}>All branches</option>`:`${isArea()?`<option value="all" ${of==='all'?'selected':''}>All (Area Office + branches)</option>`:''}<option value="${S.user.office}" ${of===S.user.office?'selected':''}>Area Office (own)</option>`}${kids.map(k=>`<option value="${k.code}" ${of===k.code?'selected':''}>${k.code} - ${esc(k.name)}</option>`).join('')}</select></div>`;
 }
-const lfAppSel=(forms,cur,slim)=>`<div style="flex:0 1 auto">${slim?'':'<label>Applicant</label>'}<select onchange="A.lfPickF(this)"><option value="">- Applicant -</option>${forms.map(f=>`<option value="${f.office}|${f.id}" ${cur&&cur.id===f.id?'selected':''}>${esc(f.name||'(no name)')}${f.acct?' - '+esc(f.acct):''}</option>`).join('')}</select></div>`;
+const lfAppSel=(forms,cur,slim)=>`<div style="flex:0 1 auto">${slim?'':'<label>Applicant</label>'}<select onchange="A.lfPickF(this)"><option value="">- Applicant -</option>${forms.map(f=>`<option value="${f.office}|${f.id}" ${cur&&cur.id===f.id?'selected':''}>${esc(f.name||'(no name)')}${f.acct?' - '+esc(f.acct):''}${f.office!==S.user.office?' ['+esc(officeName(f.office))+']':''}</option>`).join('')}</select></div>`;
 A.lfPickF=el=>{const [o,i]=el.value.split('|');go({...S.view,lfid:i||null,lfoff:o||null,after:null})};
 async function lfLoadSel(forms){   // load the selected applicant into S.lf
   const v=S.view,cur=forms.find(f=>f.id===v.lfid);
@@ -80,10 +80,31 @@ async function lfLoadSel(forms){   // load the selected applicant into S.lf
   return cur;
 }
 
+const LF_SA=['Branch','Area Office','Divisional Office','Head Office'];
+function lfSaHtml(d,ro){
+  const fs=[lfS('sa','Sanction Authority *',LF_SA)];
+  if(d.sa==='Branch')fs.push(lfT('sl_ref','Sanction Letter Reference'),lfD('sl_date','Sanction Letter Date'));
+  else if(d.sa)fs.push(lfT('fw_ref','Forwarding Letter Reference'),lfD('fw_date','Forwarding Letter Date'));
+  return`<h3 style="margin-top:0">Sanction Authority</h3><div class="row">${fs.map(x=>lfField(x,d[x.k],ro)).join('')}</div>${d.sa&&d.sa!=='Branch'?'<div class="muted small" style="margin-top:6px">This file will be sent to the Area Office. The forwarding letter reference is used by the Area Office at sanction.</div>':''}`;
+}
+const lfStat=(f,bn)=>{const dt=x=>x?lfDate(x):'';
+  if(!f.sa)return bn?'খসড়া':'Draft';
+  if(f.sa==='Branch')return bn?'শাখা কর্তৃক মঞ্জুর':'Branch sanction';
+  if(f.status==='received')return bn?`এরিয়া অফিস কর্তৃক গৃহীত ${dt(f.in_date)} (ইনওয়ার্ড ${f.in_no||''})`:`Received by Area Office ${dt(f.in_date)} (In ${f.in_no||''})`;
+  if(f.status==='sent')return bn?`এরিয়া অফিসে প্রেরিত ${dt(f.out_date)}`:`Sent to Area Office ${dt(f.out_date)} (Out ${f.out_no||''})`;
+  return bn?'প্রেরণের অপেক্ষায়':'Not sent yet'};
+function lfAsk(next){
+  S.lfNext=next;
+  modal(`<h2>Unsaved changes</h2><p>You have changes that are not saved. Save them before leaving?</p><div class="bar"><button class="pri" onclick="run(A.lfAskSave)">Save</button><button class="dan" onclick="A.lfAskDiscard()">Discard</button><button onclick="closeModal()">Stay</button></div>`);
+}
+A.lfAskSave=async()=>{if(S.lf.aoDirty)await A.lfAoSave();if(S.lf.dirty)await A.lfSave();closeModal();const n=S.lfNext;S.lfNext=null;if(n)n()};
+A.lfAskDiscard=()=>{closeModal();S.lf.dirty=false;S.lf.aoDirty=false;const n=S.lfNext;S.lfNext=null;if(n)n()};
+window.addEventListener('beforeunload',e=>{if(S.lf&&(S.lf.dirty||S.lf.aoDirty)){e.preventDefault();e.returnValue=''}});
+
 /* ---------- page ---------- */
 function lfNewId(){return 'F'+Date.now().toString(36)+Math.random().toString(36).slice(2,5)}
 function pageLoanForms(l){
-  const type=lfTypeOfLeaf(l.id);const T0=LF_TYPES[type];
+  const type=lfTypeOfLeaf(l.id);if(!S.view.lfid&&S.lf&&!S.lf.dirty)S.lf=null;const T0=LF_TYPES[type];
   const head=`<div class="pghead"><div class="hrow"><h2>${esc(lfShort(T0))} data entry</h2><span id="hdrsave"></span></div></div>`;
   if(S.view.lfid){S.view.after=()=>lfOpen(type);return head+`<div id="lfbox" class="muted" style="margin-top:12px">Loading...</div>`}
   const of=lfOf();
@@ -93,8 +114,14 @@ function pageLoanForms(l){
 async function lfList(type,of){
   const j=await api('/lf/list?type='+type+'&office='+encodeURIComponent(of));
   const box=$('#lfbox');if(!box)return;
-  box.outerHTML=`<div id="lfbox" class="card">${j.forms.length?`<table><tr><th>Applicant</th><th>Account no.</th><th>Office</th><th>Last saved</th></tr>${j.forms.map(f=>`<tr class="click" onclick="go({...S.view,lfid:'${f.id}',lfoff:'${f.office}',after:null})"><td>${esc(f.name||'(no name)')}</td><td>${esc(f.acct||'')}</td><td>${esc(officeName(f.office))}</td><td>${fmtDT(f.updated)}</td></tr>`).join('')}</table>`:'No applications saved yet.'}</div>`;
+  const act=f=>f.office===S.user.office&&f.sa&&f.sa!=='Branch'&&!f.status?`<button class="pri" onclick="A.lfSendAsk('${f.id}')">Send</button>`:(isArea()&&f.office!==S.user.office&&f.status==='sent'?`<button class="pri" onclick="A.lfRecvAsk('${f.office}','${f.id}')">Receive</button>`:'');
+  box.outerHTML=`<div id="lfbox" class="card" style="overflow:auto">${j.forms.length?`<table><tr><th>Applicant</th><th>Account no.</th><th>Sanction authority</th><th>Status</th><th>Office</th><th>Last saved</th><th></th></tr>${j.forms.map(f=>`<tr class="click" onclick="go({...S.view,lfid:'${f.id}',lfoff:'${f.office}',after:null})"><td>${esc(f.name||'(no name)')}</td><td>${esc(f.acct||'')}</td><td>${esc(f.sa||'')}</td><td>${esc(lfStat(f))}</td><td>${esc(officeName(f.office))}</td><td>${fmtDT(f.updated)}</td><td onclick="event.stopPropagation()">${act(f)}</td></tr>`).join('')}</table>`:'No applications saved yet.'}</div>`;
 }
+const lfToday=()=>new Date().toISOString().slice(0,10);
+A.lfSendAsk=id=>{S.lfAct={id};modal(`<h2>Send to Area Office</h2><p>Send this file to the Area Office? Enter the outward number and date.</p><div class="fld"><label>Outward number</label><input id="fl_no"></div><div class="fld"><label>Outward date</label><input id="fl_dt" type="date" value="${lfToday()}"></div><div class="bar"><button class="pri" onclick="run(A.lfSendDo)">Confirm send</button><button onclick="closeModal()">Cancel</button></div>`)};
+A.lfSendDo=async()=>{await api('/lf/send',{method:'POST',body:{id:S.lfAct.id,out_no:$('#fl_no').value,out_date:$('#fl_dt').value}});closeModal();toast('Marked as sent to Area Office.');go({...S.view,after:null})};
+A.lfRecvAsk=(o,id)=>{S.lfAct={o,id};modal(`<h2>Receive file</h2><p>Mark the physical file as received by the Area Office. Enter the inward number and date.</p><div class="fld"><label>Inward number</label><input id="fl_no"></div><div class="fld"><label>Inward date</label><input id="fl_dt" type="date" value="${lfToday()}"></div><div class="bar"><button class="pri" onclick="run(A.lfRecvDo)">Confirm received</button><button onclick="closeModal()">Cancel</button></div>`)};
+A.lfRecvDo=async()=>{await api('/lf/receive',{method:'POST',body:{office:S.lfAct.o,id:S.lfAct.id,in_no:$('#fl_no').value,in_date:$('#fl_dt').value}});closeModal();toast('Marked as received.');go({...S.view,after:null})};
 A.lfNew=type=>{S.lf={id:lfNewId(),type,office:S.user.office,d:{l_date:new Date().toISOString().slice(0,10),...(LF_TYPES[type].defaults||{})},isNew:true};go({...S.view,lfid:S.lf.id,lfoff:S.user.office,after:null})};
 async function lfOpen(type){
   const v=S.view;
@@ -104,13 +131,13 @@ async function lfOpen(type){
   }
   lfRender();
 }
-function lfField(f,val,ro){
+function lfField(f,val,ro,fn){fn=fn||'A.lfset';
   const v=esc(val??'');const dis=ro?' disabled':'';
-  const w=f.w==='full'?'fc w':f.t==='area'?'fc w2':'fc';
+  const w=f.t==='area'?'fc ad':f.w==='full'?'fc w':'fc';
   let inp;
-  if(f.t==='area')inp=`<textarea rows="1" data-k="${f.k}" oninput="A.lfset(this)"${dis}>${v}</textarea>`;
-  else if(f.t==='sel')inp=`<select data-k="${f.k}" onchange="A.lfset(this)"${dis}><option value=""></option>${f.o.map(o=>`<option ${o===val?'selected':''}>${esc(o)}</option>`).join('')}</select>`;
-  else inp=`<input type="${f.t==='date'?'date':'text'}" ${f.t==='num'?'inputmode="decimal"':''} data-k="${f.k}" value="${v}" oninput="A.lfset(this)"${dis}>`;
+  if(f.t==='area')inp=`<textarea rows="2" data-k="${f.k}" oninput="${fn}(this)"${dis}>${v}</textarea>`;
+  else if(f.t==='sel')inp=`<select data-k="${f.k}" onchange="${fn}(this)"${dis}><option value=""></option>${f.o.map(o=>`<option ${o===val?'selected':''}>${esc(o)}</option>`).join('')}</select>`;
+  else inp=`<input type="${f.t==='date'?'date':'text'}" ${f.t==='num'?'inputmode="decimal"':''} data-k="${f.k}" value="${v}" oninput="${fn}(this)"${dis}>`;
   return `<div class="${w}"><label>${esc(f.l)}</label>${inp}${f.t==='num'&&/টাকা/.test(f.l)&&val?`<div class="muted small bn">${esc(lfTaka(val))}</div>`:''}</div>`;
 }
 const lfDocs=t=>t.ownDocs?t.docs:[...LF_COMMON_DOCS,...t.docs];
@@ -121,6 +148,7 @@ function lfRender(){
   const box=$('#lfbox');if(!box)return;
   const docs=lfDocs(t);
   box.outerHTML=`<div id="lfbox" class="lfform">${ro?'<div class="note n-info">View only: this application belongs to another office.</div>':''}
+  <div class="card bn" id="lfsa" style="margin-top:12px">${lfSaHtml(f.d,ro)}</div>
   ${lfSections(f.type).map(s=>`<div class="card bn" style="margin-top:12px"><h3 style="margin-top:0">${s.h}</h3><div class="row" style="flex-wrap:wrap">${s.f.map(x=>lfField(x,f.d[x.k],ro)).join('')}</div></div>`).join('')}
   ${t.calc?`<div class="card bn" style="margin-top:12px"><h3 style="margin-top:0">স্বয়ংক্রিয় হিসাব ও নীতিমালা যাচাই (আরসিডি সার্কুলার ১১৯/২৫, ১২২/২৬, ১২৬/২৬)</h3><div id="lfcalc">${t.calc(f.d)}</div></div>`:''}
   <div class="card bn" style="margin-top:12px"><button onclick="A.lfCkTog()" id="ckbtn">Open Check List</button><div id="lfck"></div></div>
@@ -133,13 +161,14 @@ function lfRender(){
 A.lfCkTog=()=>{const f=S.lf;f.ckOpen=!f.ckOpen;const b=$('#ckbtn'),c=$('#lfck');b.textContent=f.ckOpen?'Close Check List':'Open Check List';
   if(!f.ckOpen){c.innerHTML='';return}
   const docs=lfDocs(LF_TYPES[f.type]),ro=f.office!==S.user.office||!S.user.office;
-  c.innerHTML=`<h3 style="margin:10px 0 4px">${esc(lfShort(LF_TYPES[f.type]))} Check List &nbsp;<span class="muted small" id="ckcnt"></span></h3>`+docs.map((x,i)=>`<label class="ckrow"><input type="checkbox" data-k="ck${i}" ${f.d['ck'+i]?'checked':''} onchange="A.lfCk(this)" ${ro?'disabled':''}><span>${toBn(i+1)}. ${esc(x)}</span></label>`).join('');A.lfCk(null)};
+  c.innerHTML=`<h3 style="margin:10px 0 4px">${esc(lfShort(LF_TYPES[f.type]))} Check List &nbsp;<span class="muted small" id="ckcnt"></span></h3>`+docs.map((x,i)=>`<label class="ckrow"><span>${toBn(i+1)}. ${esc(x)}</span><input type="checkbox" data-k="ck${i}" ${f.d['ck'+i]?'checked':''} onchange="A.lfCk(this)" ${ro?'disabled':''}></label>`).join('');A.lfCk(null)};
 A.lfset=el=>{const k=el.dataset.k;S.lf.d[k]=el.type==='checkbox'?el.checked:el.value;S.lf.dirty=true;
+  if(k==='sa'){const c=$('#lfsa');if(c)c.innerHTML=lfSaHtml(S.lf.d,false)}
   {const t=LF_TYPES[S.lf.type];if(t.calc){const c=$('#lfcalc');if(c)c.innerHTML=t.calc(S.lf.d)}}
   if(el.tagName==='INPUT'&&el.inputMode==='decimal'){const nx=el.parentElement.querySelector('.muted.small.bn');const tk=lfTaka(el.value);if(nx)nx.textContent=tk;else if(tk&&/টাকা/.test(el.parentElement.querySelector('label').textContent)){const d=document.createElement('div');d.className='muted small bn';d.textContent=tk;el.parentElement.appendChild(d)}}};
-A.lfSave=async()=>{const f=S.lf;await api('/lf/save',{method:'PUT',body:{id:f.id,type:f.type,data:f.d}});f.dirty=false;f.isNew=false;toast('Saved.')};
+A.lfSave=async()=>{const f=S.lf;if(!f.d.sa)throw new Error('Select the Sanction Authority (mandatory) before saving.');await api('/lf/save',{method:'PUT',body:{id:f.id,type:f.type,data:f.d}});f.dirty=false;f.isNew=false;toast('Saved.')};
 A.lfDel=async()=>{await api('/lf/delete',{method:'POST',body:{id:S.lf.id}});S.lf=null;toast('Deleted.');A.lfBack()};
-A.lfBack=()=>{if(S.lf&&S.lf.dirty&&!confirm('Leave without saving?'))return;S.lf=null;go({page:'leaf',leaf:S.view.leaf})};
+A.lfBack=()=>go({page:'leaf',leaf:S.view.leaf,lfNull:1});
 
 /* ---------- printing ---------- */
 function lfHead(){const o=office(S.lf.office);return`<div class="p-h"><img src="${LOGO}" alt=""><div class="tx"><div class="b">জনতা ব্যাংক পিএলসি.</div><div>${esc(o?(o.nameBn||o.name):'')}</div></div></div>`}
@@ -161,7 +190,7 @@ function lfDocChk(){
   const f=S.lf,d=f.d,t=LF_TYPES[f.type];const docs=lfDocs(t);
   return`<div class="r3pg">${lfHead()}<div class="gtitle">${esc(lfShort(t))} Check List - কাগজপত্রের চেকলিস্ট</div>
   <p>আবেদনকারী: ${lfv(d,'a_name')} &nbsp; হিসাব নম্বর: ${lfv(d,'a_acct')} &nbsp; ঋণের পরিমাণ: ${lfTaka(d.l_amt)}</p>
-  <table class="r3t" style="width:100%;border-collapse:collapse"><tr><th style="width:7%">টিক</th><th style="width:7%">ক্রমিক</th><th>কাগজপত্রের নাম</th></tr>${docs.map((x,i)=>`<tr><td style="text-align:center;font-size:15px">${d['ck'+i]?'☑':'☐'}</td><td style="text-align:center">${toBn(i+1)}</td><td>${esc(x)}</td></tr>`).join('')}</table>
+  <table class="r3t" style="width:100%;border-collapse:collapse"><tr><th style="width:8%">ক্রমিক</th><th>কাগজপত্রের নাম</th><th style="width:8%">টিক</th></tr>${docs.map((x,i)=>`<tr><td style="text-align:center">${toBn(i+1)}</td><td>${esc(x)}</td><td style="text-align:center;font-size:15px">${d['ck'+i]?'☑':'☐'}</td></tr>`).join('')}</table>
   ${lfSign('কর্মকর্তা','ব্যবস্থাপক')}</div>`;
 }
 function lfDocGua(){
@@ -356,8 +385,8 @@ async function lfRpAll(type){
   const of=lfOf(),t=LF_TYPES[type],n=lfDocs(t).length;
   const j=await api('/lf/items?type='+type+'&office='+encodeURIComponent(of));
   const box=$('#lfbox');if(!box)return;
-  const rows=j.forms.map((f,i)=>{const d=f.data||{};return[toBn(i+1),f.name||d.a_name||'',f.acct||d.a_acct||'',d.l_amt?lfFmt(d.l_amt):'',d.l_months?toBn(d.l_months):'',d.l_date?lfDate(d.l_date):'',officeName(f.office),toBn(lfDocs(t).filter((x,k)=>d['ck'+k]).length)+'/'+toBn(n)]});
-  const hd=['ক্রমিক','আবেদনকারী','হিসাব নম্বর','ঋণের পরিমাণ (টাকা)','কিস্তি (মাস)','আবেদনের তারিখ','অফিস/শাখা','কাগজপত্র জমা'];
+  const rows=j.forms.map((f,i)=>{const d=f.data||{};return[toBn(i+1),f.name||d.a_name||'',f.acct||d.a_acct||'',d.l_amt?lfFmt(d.l_amt):'',d.l_months?toBn(d.l_months):'',d.l_date?lfDate(d.l_date):'',officeName(f.office),f.sa||d.sa||'',lfStat({...f,sa:f.sa||d.sa},true),toBn(lfDocs(t).filter((x,k)=>d['ck'+k]).length)+'/'+toBn(n)]});
+  const hd=['ক্রমিক','আবেদনকারী','হিসাব নম্বর','ঋণের পরিমাণ (টাকা)','কিস্তি (মাস)','আবেদনের তারিখ','অফিস/শাখা','মঞ্জুরি কর্তৃপক্ষ','অবস্থা','কাগজপত্র জমা'];
   S.lfrp={rows,hd,type};
   const tbl=`<table class="r3t" style="width:100%;border-collapse:collapse"><tr>${hd.map(h=>`<th>${h}</th>`).join('')}</tr>${rows.map(r=>`<tr>${r.map((c,k)=>`<td${k===3?' style="text-align:right"':''}>${esc(c)}</td>`).join('')}</tr>`).join('')}</table>`;
   const rc=$('#rpctl');if(rc)rc.innerHTML=lfOfSel(of,1)+`<div class="bar"><button class="pri" onclick="A.lfRpPrint()">Print</button><button onclick="A.lfRpCsv()">Download (Excel)</button></div>`;
@@ -410,3 +439,28 @@ Object.assign(LF_TYPES.cfpersonal,{ownDocs:true,docs:[
 'ঋণ হিসাবের তথ্যের প্রিন্টেড কপি (AOF)',
 'ঋণগ্রহীতার বেতন হিসাব (সঞ্চয়ী হিসাব) এর প্রিন্ট কপি'
 ]});
+
+/* ================= Data Entry (Area Office) ================= */
+const LF_AO=[lfT('ao_mno','সভার নম্বর (Meeting No.)'),lfD('ao_mdate','সভার তারিখ'),lfT('ao_slref','মঞ্জুরিপত্র স্মারক নম্বর'),lfD('ao_sldate','মঞ্জুরিপত্রের তারিখ'),lfN('ao_amt','মঞ্জুরিকৃত ঋণের পরিমাণ (টাকা)'),lfS('ao_months','কিস্তির সংখ্যা (মাস)',['12','24','36','48','60','72','84','96']),lfT('ao_rate','সুদের হার (% বার্ষিক)'),lfT('ao_nsref','নোটশীট স্মারক নম্বর'),lfD('ao_nsdate','নোটশীটের তারিখ'),lfA('ao_cond','মঞ্জুরির শর্তাবলি'),lfA('ao_rem','মন্তব্য/সুপারিশ')];
+function pageLfAo(l){
+  const type=lfTypeOfLeaf(l.id);
+  S.view.after=()=>lfAoLoad(type);
+  return`<div class="pghead"><div class="hrow"><h2>${esc(lfShort(LF_TYPES[type]))} Data Entry (Area Office)</h2><span id="hdrsave"></span></div></div><div id="lfbox" class="muted" style="margin-top:12px">Loading...</div>`;
+}
+async function lfAoLoad(type){
+  const of=S.view.lfof||(isArea()||isAdmin()?'all':S.user.office);
+  const j=await api('/lf/list?type='+type+'&office='+encodeURIComponent(of));
+  const box=$('#lfbox');if(!box)return;
+  const cur=await lfLoadSel(j.forms);
+  const sel=`<div class="card"><div class="row" style="align-items:flex-end">${lfOfSel(of)}${lfAppSel(j.forms,cur)}</div></div>`;
+  if(!cur){box.outerHTML=`<div id="lfbox">${sel}<p class="muted">${j.forms.length?'Select an applicant.':'No applications saved yet.'}</p></div>`;return}
+  const r=await api('/lf/ao?office='+encodeURIComponent(cur.office)+'&id='+encodeURIComponent(cur.id));
+  const f=S.lf;f.ao=r.ao||{};f.aoDirty=false;
+  const ro=!isArea(),d=f.d,fc={...cur,sa:cur.sa||d.sa};
+  const info=`<div class="card bn" style="margin-top:12px"><div><b>${esc(d.a_name||'')}</b> ${d.a_acct?'- '+esc(d.a_acct):''} &nbsp; ঋণের পরিমাণ: ${d.l_amt?esc(lfTaka(d.l_amt)):''}</div><div class="small">Sanction authority: <b>${esc(fc.sa||'')}</b>${d.fw_ref?' &nbsp; Forwarding letter: '+esc(d.fw_ref)+' '+(d.fw_date?lfDate(d.fw_date):''):''}</div><div class="small">Status: ${esc(lfStat(fc))}</div></div>`;
+  if(fc.sa==='Branch'){box.outerHTML=`<div id="lfbox">${sel}${info}<div class="note n-info" style="margin-top:12px">This application is sanctioned by the Branch. No Area Office entry is needed.</div></div>`;return}
+  box.outerHTML=`<div id="lfbox" class="lfform">${sel}${info}${ro?'<div class="note n-info" style="margin-top:12px">View only: only the Area Office can enter this page.</div>':''}${r.flow&&r.flow.status==='received'?'':'<div class="note n-info" style="margin-top:12px">The physical file is not marked as received yet (do this from the Data Entry list).</div>'}<div class="card bn" style="margin-top:12px"><h3>Area Office entry (for Note Sheet and Sanction Letter)</h3><div class="row">${LF_AO.map(x=>lfField(x,f.ao[x.k],ro,'A.lfAoset')).join('')}</div></div></div>`;
+  const hs=$('#hdrsave');if(hs)hs.innerHTML=ro?'':`<button class="pri" onclick="run(A.lfAoSave)" style="height:28px;padding:2px 18px;font-size:13px">Save</button>`;
+}
+A.lfAoset=el=>{S.lf.ao[el.dataset.k]=el.value;S.lf.aoDirty=true};
+A.lfAoSave=async()=>{const f=S.lf;await api('/lf/ao',{method:'PUT',body:{office:f.office,id:f.id,data:f.ao}});f.aoDirty=false;toast('Saved.')};

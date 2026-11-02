@@ -132,6 +132,7 @@ const myOffice=()=>office(S.user.office);
 function childBranches(){return S.offices.filter(o=>o.level==='BR'&&(isAdmin()||o.parent===S.user.office)).sort((a,b)=>a.name.localeCompare(b.name))}
 function go(v){
   if(IWC.pending.size&&!confirm('Calculator changes are still being saved online. Leave anyway?'))return;
+  if(S.lf&&(S.lf.dirty||S.lf.aoDirty)){lfAsk(()=>{S.lf=null;go(v)});return}
   if(S.dirty&&!confirm('You have unsaved changes on this report. Leave without saving?'))return;
   S.dirty=false;clearInterval(S.autoTimer);S.view=v;
   if(innerWidth<=760)S.side=false;   // on phones the menu closes after a choice
@@ -212,7 +213,7 @@ function pageLeaf(){
   if(l.tpl==='iwc')return pageIwc(l);
   if(l.tpl==='iwr')return pageIwr(l);
   if(l.tpl==='lf')return pageLoanForms(l);
-  if(l.tpl==='lfcl')return pageLfCl(l);
+  if(l.tpl==='lfao')return pageLfAo(l);
   if(l.tpl==='lfrp')return pageLfRp(l);
   if(l.tpl&&l.tpl.startsWith('rcd3'))return pageRcd3(l);
   if(l.tpl&&l.tpl.startsWith('rcd4'))return pageRcd4(l);
