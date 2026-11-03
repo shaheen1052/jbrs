@@ -1627,7 +1627,7 @@ function fwDraw(){
   if(rf&&rf.dataset.k!==brs.join('|')){rf.dataset.k=brs.join('|');rf.innerHTML=`<div class="muted small" style="margin:10px 0 4px">Reference number (only the number) for each branch:</div><div class="row">${brs.map(b=>`<div style="flex:1 1 200px"><label>${esc(b||'(no branch name)')} - ${rows.filter(r=>r.br===b).length} loan(s)</label><input value="${esc(FW.ref[b]||'')}" oninput="FW.ref[${esc(JSON.stringify(b)).replace(/"/g,'&quot;')}]=this.value;fwDraw()" placeholder="e.g. 1759"></div>`).join('')}</div>`}
   const v=$('#fwview');if(!v)return;
   FW.fs={};v.innerHTML=rows.length?fwPages(rows):'<p class="muted">No loan rows found. Check the header row number and the column matching above.</p>';
-  v.querySelectorAll('.fwt').forEach(t=>{const w=t.closest('.fwin'),cs=getComputedStyle(w),av=w.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);let f=8;while(t.scrollWidth>av+1&&f>3.5){f-=.2;t.style.fontSize=f+'pt'}FW.fs[t.dataset.b]=Math.min(FW.fs[t.dataset.b]||9,f)});
+  v.querySelectorAll('.fwt').forEach(t=>{const w=t.closest('.fwin'),cs=getComputedStyle(w),av=w.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);let f=8;const pg=t.closest('.lfpage');while((t.scrollWidth>av+1||w.scrollHeight>pg.clientHeight-4)&&f>3.2){f-=.2;t.style.fontSize=f+'pt'}FW.fs[t.dataset.b]=Math.min(FW.fs[t.dataset.b]||9,f)});
   v.querySelectorAll('.fwt').forEach(t=>{t.style.fontSize=FW.fs[t.dataset.b]+'pt'});
 }
 A.fwDo=async w=>{
