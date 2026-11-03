@@ -8,7 +8,7 @@ function pageGaAll(l){
 }
 function gaLoadLib(){
   if(window.XLSX)return Promise.resolve();
-  return new Promise((ok,no)=>{const s=document.createElement('script');s.src='/vendor/xlsx.mini.min.js';s.onload=ok;s.onerror=()=>no(new Error('Could not load the Excel reader.'));document.head.appendChild(s)});
+  return new Promise((ok,no)=>{const s=document.createElement('script');s.src='/vendor/xlsx.full.min.js';s.onload=ok;s.onerror=()=>no(new Error('Could not load the Excel reader.'));document.head.appendChild(s)});
 }
 const gaDmy=d=>String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
 const gaNum=v=>typeof v==='number'?v:(/^-?[\d,]+(\.\d+)?$/.test(String(v).trim())&&String(v).trim()!==''?parseFloat(String(v).replace(/,/g,'')):NaN);
