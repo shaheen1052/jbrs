@@ -207,7 +207,7 @@ async function fwOut(html,w,fname,land){
   const host=document.createElement('div');host.className='lfpdfhost';host.innerHTML=html;document.body.appendChild(host);
   try{fwFitIn(host);const {jsPDF}=window.jspdf;const pdf=new jsPDF({unit:'mm',format:'a4',orientation:land?'landscape':'portrait',compress:true});
     const pgs=[...host.querySelectorAll('.lfpage')];
-    for(let i=0;i<pgs.length;i++){const c=await html2canvas(pgs[i],{scale:2.2,backgroundColor:'#ffffff',logging:false});if(i)pdf.addPage();pdf.addImage(c.toDataURL('image/jpeg',0.93),'JPEG',0,0,land?297:210,land?210:297,undefined,'FAST')}
+    for(let i=0;i<pgs.length;i++){const c=await html2canvas(pgs[i],{scale:3,backgroundColor:'#ffffff',logging:false});{const g=c.getContext('2d');g.setTransform(1,0,0,1,0,0);const pr=pgs[i].getBoundingClientRect(),S=3,R=v=>Math.round(v*S);g.strokeStyle='#000';g.lineWidth=2;g.lineJoin='miter';pgs[i].querySelectorAll('.fwt th,.fwt td').forEach(e=>{const r=e.getBoundingClientRect();if(!r.width)return;const x1=R(r.left-pr.left),y1=R(r.top-pr.top);g.strokeRect(x1,y1,R(r.right-pr.left)-x1,R(r.bottom-pr.top)-y1)})}if(i)pdf.addPage();pdf.addImage(c.toDataURL('image/jpeg',0.95),'JPEG',0,0,land?297:210,land?210:297,undefined,'FAST')}
     if(w==='print'&&win){win.location.href=URL.createObjectURL(pdf.output('blob'));toast('Opened in a new tab - print or save from there.')}
     else pdf.save(fname);
   }catch(e){if(win)win.close();throw e}finally{host.remove()}
