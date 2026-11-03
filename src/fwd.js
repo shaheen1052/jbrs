@@ -1,5 +1,5 @@
 /* ================= Forwarding (AO): forwarding letter to Divisional Office from Annexure-Ga Excel ================= */
-const FW={fs:{},rem:'',d:'',ref:{},pre:'',suf:'',sig:'',des:'',to:'',aoff:'',raw:null,hr:0,map:{},br:''};
+const FW={code:'',fname:'',nn:'',nd:'',fs:{},rem:'',d:'',ref:{},pre:'',suf:'',sig:'',des:'',to:'',aoff:'',raw:null,hr:0,map:{},br:''};
 const FW_F=[['br','শাখার নাম (Branch)',/শাখা|branch/i],['nm','গ্রাহকের নাম (Customer)',/গ্রাহক|ঋণগ্রহীতা|ঋণ গ্রহীতা|name|customer|borrower/i],['loan','ঋণের পরিমাণ (Loan)',/ঋণের|ঋণ\s*স্থিতি|loan|limit/i],['imp','আরোপিত সুদ (Imposed)',/^(?!.*অনারোপিত).*আরোপিত|imposed|charged/i],['gen','অনারোপিত সাধারণ সুদ',/সাধারণ|general|unapplied.*gen|normal/i],['pen','অনারোপিত দন্ড সুদ',/দন্ড|দণ্ড|penal/i],['tot','মোট (Total)',/^মোট|^total/i],['sus','ইন্টারেস্ট সাসপেন্স',/সাসপেন্স|suspense/i],['cib','যাচিত CIBTCA',/cibtca|যাচিত/i],['rem','মন্তব্য (Remarks)',/মন্তব্য|remark|status/i]];
 
 const FW_BJ={A:'অ',B:'ই',C:'ঈ',D:'উ',E:'ঊ',F:'ঋ',G:'এ',H:'ঐ',I:'ও',J:'ঔ',K:'ক',L:'খ',M:'গ',N:'ঘ',O:'ঙ',P:'চ',Q:'ছ',R:'জ',S:'ঝ',T:'ঞ',U:'ট',V:'ঠ',W:'ড',X:'ঢ',Y:'ণ',Z:'ত',_:'থ','`':'দ',a:'ধ',b:'ন',c:'প',d:'ফ',e:'ব',f:'ভ',g:'ম',h:'য',i:'র',j:'ল',k:'শ',l:'ষ',m:'স',n:'হ',o:'ড়',p:'ঢ়',q:'য়',r:'ৎ',s:'ং',t:'ঃ',u:'ঁ',v:'া',x:'ী',y:'ু',z:'ু','~':'ূ','„':'ৃ','Š':'ৗ','¨':'্য','ª':'্র','Ö':'্র','|':'।','ÿ':'ক্ষ','Ä':'ঞ্জ','Ÿ':'জ্ঞ','¯':'স্','®':'ষ্ণ','¤':'ন্','¦':'ব্','œ':'স্ত','Ñ':'ঙ্গ','Ý':'ন্দ','Ø':'্ব'};
@@ -28,25 +28,28 @@ function fwInit(){
   FW.rem='বিএল';FW.pre=fwLS('pre','এঃঅঃসিরাজ/এক্সিট পলিসি');FW.suf=fwLS('suf','এমএএইচ');FW.sig=fwLS('sig','আহমেদ তৈয়ব হাসান');FW.des=fwLS('des','উপ মহাব্যবস্থাপক');
   FW.to=fwLS('to','মহাব্যবস্থাপক\nজনতা ব্যাংক পিএলসি.\nবিভাগীয় কার্যালয়\nবগুড়া।');
   FW.sub=fwLS('sub','বাংলাদেশ ব্যাংকের বিআরপিডি-১ সার্কুলার লেটার নং ২৩ তারিখ: ২৯/০৬/২০২৬ ইং এবং অত্র ব্যাংকের নির্দেশ বিজ্ঞপ্তি নং ১৪১১/২৬ তারিখ: ০২/০৭/২০২৬ ইং এর আলোকে রিটেইল কাস্টমার ডিপার্টমেন্ট-৩ এর ০৮/০৭/২০২৬ ইং তারিখের পত্র সূত্র নং আরসিডি-৩/কৃ. ও প. ঋণ/ এককালীন এক্সিট/ ২০২৬/ ২৫৭-৪০৭ এর পরামর্শক্রমে বিশেষ এক্সিট সুবিধার আওতায় সুদ মওকুফ প্রস্তাব প্রেরণ প্রসঙ্গে।');
-  const t=new Date();FW.d=String(t.getDate()).padStart(2,'0')+'/'+String(t.getMonth()+1).padStart(2,'0')+'/'+t.getFullYear();
+  FW.prep=fwLS('prep','(মোঃ আলমগীর হোসেন)|এসপিও');FW.signs=fwLS('signs','(মোঃ শাহীন মাহমুদ)|পিও\n(মোঃ আলমগীর হোসেন)|এসপিও\n(নিবির কুমার আমিন)|এসপিও\nমোঃ জাফর ইকবাল|সহকারী মহাব্যবস্থাপক\n(আহমেদ তৈয়ব হাসান)|উপমহাব্যবস্থাপক');
+  const t=new Date();FW.d=String(t.getDate()).padStart(2,'0')+'/'+String(t.getMonth()+1).padStart(2,'0')+'/'+t.getFullYear();FW.nd=FW.d;
 }
 function pageFwd(l){
   fwInit();
-  return`<div class="pghead"><div class="hrow"><h2>Forwarding (AO)</h2><div class="hrow" id="fwctl" style="flex:1 1 auto;justify-content:flex-end"><div class="bar"><button class="pri" onclick="run(()=>A.fwDo('print'))">Print</button><button onclick="run(()=>A.fwDo('pdf'))">Download PDF</button></div></div></div></div>
+  return`<div class="pghead"><div class="hrow"><h2>Forwarding (AO)</h2><div class="hrow" id="fwctl" style="flex:1 1 auto;justify-content:flex-end"><div class="bar"><button class="pri" onclick="run(()=>A.fwDo('print'))">Print</button><button onclick="run(()=>A.fwDo('pdf'))">Download PDF</button><button onclick="run(()=>A.fwNote())">Note Sheet</button><button onclick="run(()=>A.fwGha())">Annexure-Gha</button><button class="pri" onclick="run(()=>A.fwSave())">Save</button></div></div></div></div>
   <div class="card" style="margin-top:12px"><div class="row" style="align-items:flex-end"><div style="flex:1 1 260px"><label>Annexure-Ga Excel (.xlsx, .xls or .csv) - for forwarding only, not saved</label><input type="file" id="fw_f" accept=".xlsx,.xls,.csv" onchange="run(()=>fwPick(this))" style="height:auto"></div>
-  <div style="flex:0 0 140px"><label>Letter date (dd/mm/yyyy)</label><input id="fw_d" value="${esc(FW.d)}" maxlength="10" oninput="FW.d=this.value;fwDraw()"></div></div>
+  <div style="flex:0 0 140px"><label>Letter date (dd/mm/yyyy)</label><input id="fw_d" value="${esc(FW.d)}" maxlength="10" oninput="FW.d=this.value;fwDraw()"></div>
+  <div style="flex:0 0 110px"><label>Meeting no. (Note Sheet)</label><input value="${esc(FW.nn)}" oninput="FW.nn=this.value"></div><div style="flex:0 0 140px"><label>Note Sheet date</label><input value="${esc(FW.nd)}" maxlength="10" oninput="FW.nd=this.value"></div></div>
   <div id="fwmap"></div></div>
   <details class="card" style="margin-top:12px"><summary><b>Letter wording (saved on this computer)</b></summary><div class="row" style="margin-top:8px">
   <div style="flex:1 1 280px"><label>Reference prefix</label><input value="${esc(FW.pre)}" oninput="FW.pre=this.value;fwSV('pre',this.value);fwDraw()"></div>
   <div style="flex:0 0 140px"><label>Reference suffix</label><input value="${esc(FW.suf)}" oninput="FW.suf=this.value;fwSV('suf',this.value);fwDraw()"></div>
   <div style="flex:1 1 220px"><label>Signatory name</label><input value="${esc(FW.sig)}" oninput="FW.sig=this.value;fwSV('sig',this.value);fwDraw()"></div>
   <div style="flex:1 1 220px"><label>Designation</label><input value="${esc(FW.des)}" oninput="FW.des=this.value;fwSV('des',this.value);fwDraw()"></div></div>
+  <div class="row"><div style="flex:1 1 260px"><label>Note Sheet: prepared by (name|designation)</label><input value="${esc(FW.prep)}" oninput="FW.prep=this.value;fwSV('prep',this.value)"></div><div style="flex:2 1 400px"><label>Note Sheet: signatories, one per line (name|designation)</label><textarea rows="5" oninput="FW.signs=this.value;fwSV('signs',this.value)">${esc(FW.signs)}</textarea></div></div>
   <div class="row"><div style="flex:1 1 220px"><label>Addressee (one line each)</label><textarea rows="4" oninput="FW.to=this.value;fwSV('to',this.value);fwDraw()">${esc(FW.to)}</textarea></div>
   <div style="flex:2 1 400px"><label>Subject (বিষয়)</label><textarea rows="4" oninput="FW.sub=this.value;fwSV('sub',this.value);fwDraw()">${esc(FW.sub)}</textarea></div></div></details>
   <div id="fwview" class="lfsc" style="margin-top:12px;overflow:auto"><p class="muted">Upload the Annexure-Ga Excel to prepare the letters. Each branch gets an original letter and an office copy, one full page each.</p></div>`;
 }
 async function fwPick(inp){
-  const f=inp.files[0];if(!f)return;await gaLoadLib();
+  const f=inp.files[0];if(!f)return;FW.fname=f.name;FW.ref={};FW.fs={};await gaLoadLib();
   const wb=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true});
   const sn=wb.SheetNames.find(n=>/customer|পরিশিষ্ট-গ|annexure/i.test(n)&&!/summ?ery/i.test(n))||wb.SheetNames[0];
   const aoa=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:'',raw:true}).map(r=>r.map(c=>c instanceof Date?gaDmy(c):c));
@@ -66,9 +69,11 @@ function fwGuess(){
   FW_F.forEach(([k,,re])=>{const i=h.findIndex((x,j)=>!used.has(j)&&re.test(x));if(i>=0){FW.map[k]=i;used.add(i)}else FW.map[k]=-1});
   if(FW.map.imp<0&&FW.map.gen>=0&&FW.map.pen>=0){}
 }
+function fwKids(){const k=childBranches();if(!FW.code&&FW.br){const m=k.find(o=>o.nameBn&&String(o.nameBn).includes(FW.br));if(m)FW.code=m.code}return k}
 function fwMapUi(){
   if(FW.ga){$('#fwmap').innerHTML=`<div class="row" style="margin-top:10px;align-items:flex-end"><div class="muted small" style="flex:1 1 100%">Annexure-Ga format recognised. Interest columns are taken from the file (Imposed = ledger due - principal due; Unimposed general and penal; Interest suspense; CIBTCA).</div>
   <div style="flex:1 1 220px"><label>Branch name (read from the file - you can edit)</label><input value="${esc(FW.br)}" oninput="FW.br=this.value;fwDraw()"></div>
+  <div style="flex:1 1 260px"><label>Save to branch (for Annexure-Ga (All))</label><select onchange="FW.code=this.value"><option value="">- select branch -</option>${fwKids().map(k=>`<option value="${k.code}" ${FW.code===k.code?'selected':''}>${k.code} - ${esc(k.name)}</option>`).join('')}</select></div>
   </div><div id="fwref"></div>`;return}
   const h=FW.raw[FW.hr]||[];
   const opt=k=>`<option value="-1">- none -</option>${h.map((x,i)=>`<option value="${i}" ${FW.map[k]===i?'selected':''}>${i+1}. ${esc(String(x).slice(0,40)||'(blank)')}</option>`).join('')}`;
@@ -84,7 +89,7 @@ function fwData(){
     for(const r of FW.raw.slice(FW.gaStart)){
       if(!/^\s*\d+\s*$/.test(String(r[0])))break;const nm=String(r[1]).trim();if(!nm)continue;
       const imp=n(r[14])-n(r[15]),gen=n(r[16]),pen=n(r[17]);
-      out.push({br:FW.br,nm,loan:n(r[6]),imp,gen,pen,tot:imp+gen+pen,sus:n(r[18]),cib:n(r[19]),rem:(v=>v&&!/^(না|নাই|no|n|-|0)$/i.test(v)?'অবলোপন':FW.rem)(String(r[21]).trim())});
+      out.push({br:FW.br,nm,loan:n(r[6]),imp,gen,pen,tot:imp+gen+pen,sus:n(r[18]),cib:n(r[19]),raw:r.slice(0,22),rem:(v=>v&&!/^(না|নাই|no|n|-|0)$/i.test(v)?'অবলোপন':FW.rem)(String(r[21]).trim())});
     }return out}const M=FW.map,g=(r,k)=>M[k]>=0?r[M[k]]:'';const out=[];
   FW.raw.slice(FW.hr+1).forEach(r=>{
     if(r.every(c=>String(c).trim()===''))return;
@@ -131,19 +136,84 @@ function fwDraw(){
   if(rf&&rf.dataset.k!==brs.join('|')){rf.dataset.k=brs.join('|');rf.innerHTML=`<div class="muted small" style="margin:10px 0 4px">Reference number (only the number) for each branch:</div><div class="row">${brs.map(b=>`<div style="flex:1 1 200px"><label>${esc(b||'(no branch name)')} - ${rows.filter(r=>r.br===b).length} loan(s)</label><input value="${esc(FW.ref[b]||'')}" oninput="FW.ref[${esc(JSON.stringify(b)).replace(/"/g,'&quot;')}]=this.value;fwDraw()" placeholder="e.g. 1759"></div>`).join('')}</div>`}
   const v=$('#fwview');if(!v)return;
   FW.fs={};v.innerHTML=rows.length?fwPages(rows):'<p class="muted">No loan rows found. Check the header row number and the column matching above.</p>';
-  v.querySelectorAll('.fwt').forEach(t=>{const w=t.closest('.fwin'),cs=getComputedStyle(w),av=w.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);let f=8;const pg=t.closest('.lfpage');while((t.scrollWidth>av+1||w.scrollHeight>pg.clientHeight-4)&&f>3.2){f-=.2;t.style.fontSize=f+'pt'}FW.fs[t.dataset.b]=Math.min(FW.fs[t.dataset.b]||9,f)});
+  v.querySelectorAll('.fwt').forEach(t=>{const w=t.closest('.fwin'),cs=getComputedStyle(w),av=w.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);let f=8;const pg=t.closest('.lfpage');while(fwOver(t,av,w,pg)&&f>3.2){f-=.2;t.style.fontSize=f+'pt'}FW.fs[t.dataset.b]=Math.min(FW.fs[t.dataset.b]||9,f)});
   v.querySelectorAll('.fwt').forEach(t=>{t.style.fontSize=FW.fs[t.dataset.b]+'pt'});
 }
-A.fwDo=async w=>{
-  const rows=fwData();if(!rows.length)return toast('Upload the Annexure-Ga Excel first.');
-  const html=fwPages(rows);   // uses the font sizes fitted in the preview
+
+const fwOver=(t,av,w,pg)=>t.scrollWidth>av+1||w.scrollHeight>pg.clientHeight-4||[...t.querySelectorAll('td,th')].some(c=>c.scrollWidth>c.clientWidth+1);
+function fwFitIn(root){
+  root.querySelectorAll('.fwt').forEach(t=>{if(t.style.fontSize)return;const w=t.closest('.fwin'),cs=getComputedStyle(w),av=w.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight),pg=t.closest('.lfpage');let f=7.5;t.style.fontSize=f+'pt';while(fwOver(t,av,w,pg)&&f>3.2){f-=.2;t.style.fontSize=f+'pt'}});
+}
+async function fwOut(html,w,fname){
   let win=null;if(w==='print'){try{win=window.open('','_blank')}catch(e){}}
   toast('Preparing PDF...');await lfLoadPdf();if(document.fonts&&document.fonts.ready)await document.fonts.ready;
   const host=document.createElement('div');host.className='lfpdfhost';host.innerHTML=html;document.body.appendChild(host);
-  try{const {jsPDF}=window.jspdf;const pdf=new jsPDF({unit:'mm',format:'a4',orientation:'portrait',compress:true});
+  try{fwFitIn(host);const {jsPDF}=window.jspdf;const pdf=new jsPDF({unit:'mm',format:'a4',orientation:'portrait',compress:true});
     const pgs=[...host.querySelectorAll('.lfpage')];
     for(let i=0;i<pgs.length;i++){const c=await html2canvas(pgs[i],{scale:2.2,backgroundColor:'#ffffff',logging:false});if(i)pdf.addPage();pdf.addImage(c.toDataURL('image/jpeg',0.93),'JPEG',0,0,210,297,undefined,'FAST')}
-    if(w==='print'&&win){win.location.href=URL.createObjectURL(pdf.output('blob'));toast('The letters opened in a new tab - print from there (Ctrl+P).')}
-    else pdf.save('JBRS_Forwarding_AO.pdf');
+    if(w==='print'&&win){win.location.href=URL.createObjectURL(pdf.output('blob'));toast('Opened in a new tab - print or save from there.')}
+    else pdf.save(fname);
   }catch(e){if(win)win.close();throw e}finally{host.remove()}
+}
+A.fwDo=async w=>{
+  const rows=fwData();if(!rows.length)return toast('Upload the Annexure-Ga Excel first.');
+  return fwOut(fwPages(rows),w,'JBRS_Forwarding_AO.pdf');   // uses the font sizes fitted in the preview
+};
+const fwBy=rows=>{const by={};rows.forEach(r=>{(by[r.br]=by[r.br]||[]).push(r)});return by};
+const fwDate=d=>toBn(d)+' ইং';
+function fwNotePages(rows){
+  const by=fwBy(rows);let h='';
+  const prep=FW.prep.split('|'),sg=FW.signs.split('\n').filter(x=>x.trim()).map(x=>x.split('|'));
+  Object.keys(by).forEach(br=>{
+    const rs=by[br],T=k=>rs.reduce((a,r)=>a+r[k],0);
+    const col=r=>r.raw,n=v=>fwN(v);
+    const body=rs.map((r,i)=>{const c=r.raw,coll=gaNum(c[13]);return`<tr><td class="c">${toBn(i+1)}</td>${i===0?`<td class="c" rowspan="${rs.length}">${esc(br)}</td>`:''}<td>${esc(r.nm)}</td><td class="c">${esc(String(c[2]))}</td><td class="c">${esc(String(c[4]))}</td><td class="n">${n(r.loan)}</td><td class="n">${n(isNaN(coll)?0:coll)}</td><td class="n">${n(r.imp)}</td><td class="n">${n(r.gen)}</td><td class="n">${n(r.pen)}</td><td class="n">${n(r.tot)}</td><td class="n">${n(r.sus)}</td><td class="n">${n(r.cib)}</td><td class="c">${esc(r.rem)}</td></tr>`}).join('');
+    const coll=rs.reduce((a,r)=>a+(isNaN(gaNum(r.raw[13]))?0:gaNum(r.raw[13])),0);
+    h+=`<div class="lfpage fwpage note"><div class="fwin" style="padding:12mm 10mm">
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:3mm"><img src="${LOGO}" alt="" style="width:16mm;height:auto"><div style="text-align:center"><div style="font-size:19pt;font-weight:700;line-height:1.15">জনতা ব্যাংক পিএলসি.</div><div style="font-size:12pt">এরিয়া অফিস, সিরাজগঞ্জ</div></div></div>
+    <div style="display:flex;justify-content:space-between;font-weight:700;border-top:1.5px solid #000;border-bottom:1px solid #000;padding:1.5mm 0;margin:2mm 0 3mm"><span>সভা নং-${FW.nn?esc(toBn(FW.nn)):'<span style="display:inline-block;width:12mm"></span>'}</span><span>নোট শীট</span><span>তারিখ: ${esc(fwDate(FW.nd))}</span></div>
+    <p class="j" style="margin:0 0 2mm;font-size:10.5pt"><b>বিষয়ঃ</b> বাংলাদেশ ব্যাংকের ''এক্সিট পলিসি'' বিআরপিডি-১ সার্কুলার লেটার নং-২৩ ; তারিখ-২৯.০৬.২০২৬ এর আলোকে অত্র ব্যাংকের নি: বি: নং-১৪১১/২৬ তারিখ ০২/০৭/২০২৬ ইং মোতাবেক ''ক্ষতি'' হিসাবে শ্রেণীকৃত ঋণ সমূহ শাখার সুপারিশের প্রেক্ষিতে নিম্নোক্ত কৃষি/পল্লী ঋণের সুদ মওকুফ (আরোপিত, অনারোপিত এবং দন্ড সুদ) প্রস্তাব প্রধান কার্যালয়ে প্রেরণের নিমিত্তে অত্র কার্যালয়ে যাচাই কমিটিতে সিদ্ধান্তের জন্য উপস্থাপন করা হলো।</p>
+    <div style="text-align:right;font-size:10.5pt;margin:1mm 0 2mm;line-height:1.25">${esc(prep[0]||'')}<br>${esc(prep[1]||'')}</div>
+    <table class="fwt" data-b="${esc(br)}"><colgroup><col style="width:3.2%"><col style="width:7%"><col style="width:11%"><col style="width:11%"><col style="width:8%"><col style="width:7.5%"><col style="width:8.5%"><col style="width:7.5%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:7%"><col style="width:7%"><col style="width:6%"></colgroup>
+    <tr><th rowspan="2">ক্রম নং</th><th rowspan="2">শাখার নাম</th><th rowspan="2">ঋণ গ্রহীতার নাম</th><th rowspan="2">ঋণের প্রকৃতি ও হিসাব নং</th><th rowspan="2">বিতরণের তারিখ</th><th rowspan="2">মূল ঋণ</th><th rowspan="2">বিতরণের পর হতে মোট আদায় (নগদ আদায় + অন্যান্য)</th><th colspan="4">সুদ মওকুফের জন্য সুপারিশকৃত সুদের পরিমাণ</th><th rowspan="2">ইন্টারেস্ট সাসপেন্স</th><th rowspan="2">যাচিত CIBTCA</th><th rowspan="2">মন্তব্য</th></tr>
+    <tr><th>আরোপিত সুদ</th><th>অনা: সা: সুদ</th><th>অনা: দন্ড সুদ</th><th>মোট</th></tr>
+    <tr>${[1,2,3,4,5,6,7,8,9,10,'১২=(৮+৯+১০)',11,12,13].map(x=>`<th style="font-weight:400">${toBn(x)}</th>`).join('')}</tr>
+    ${body}
+    <tr class="tt"><td colspan="4" class="c">মোট</td><td></td><td class="n">${n(T('loan'))}</td><td class="n">${n(coll)}</td><td class="n">${n(T('imp'))}</td><td class="n">${n(T('gen'))}</td><td class="n">${n(T('pen'))}</td><td class="n">${n(T('tot'))}</td><td class="n">${n(T('sus'))}</td><td class="n">${n(T('cib'))}</td><td></td></tr></table>
+    <p class="j" style="margin:6mm 0 0;font-size:10.5pt">বর্ণিত সার্কুলার মোতাবেক সুদ মওকুফ প্রস্তাব বিবেচ্য হওয়ায় প্রস্তাবগুলি প্রধান কার্যালয়ে প্রেরণের নিমিত্তে বিভাগীয় কার্যালয়, বগুড়ায় প্রেরণের সিদ্ধান্ত গৃহীত হলো :-</p>
+    <div style="display:flex;justify-content:space-between;margin-top:22mm;font-size:9.5pt;text-align:center;line-height:1.3">${sg.map(x=>`<div>${esc(x[0]||'')}<br>${esc(x[1]||'')}</div>`).join('')}</div>
+    </div></div>`;
+  });
+  return h;
+}
+A.fwNote=async()=>{
+  const rows=fwData();if(!rows.length)return toast('Upload the Annexure-Ga Excel first.');
+  if(!FW.ga)return toast('The Note Sheet needs the Annexure-Ga (customer wise) file.');
+  return fwOut(fwNotePages(rows),'print','JBRS_Note_Sheet.pdf');
+};
+const FW_GH=['ক্রঃ নং','এরিয়ার নাম','শাখার নাম','ঋণের ধরণ/প্রকৃতি','ঋণ সংখ্যা','আসল','আরোপিত দায়: সুদ','আরোপিত দায়: অন্যান্য খরচ','মোট দায় (৬+৭+৮)','পরিশোধ: আসল','পরিশোধ: সুদ','পরিশোধ: অন্যান্য খরচ','মোট পরিশোধ','লেজার বকেয়া (৯-১৩)','আদায়যোগ্য আসল (৬-১০)','অনারোপিত সাধারণ সুদ','অনারোপিত দন্ড সুদ','ইন্টারেস্ট সাসপেন্সের পরিমাণ','যাচিত CIBTCA এর পরিমাণ (১৪-১৫-১৮)','কস্ট অব ফান্ড এর পরিমাণ'];
+A.fwGha=async()=>{
+  const rows=fwData();if(!rows.length||!FW.ga)return toast('Upload the Annexure-Ga (customer wise) Excel first.');
+  await gaLoadLib();
+  const g={};rows.forEach(r=>{const ty=String(r.raw[3]).trim(),k=r.br+'|'+ty;(g[k]=g[k]||{br:r.br,ty,rs:[]}).rs.push(r.raw)});
+  const nn=v=>{v=gaNum(v);return isNaN(v)?0:v},idx=[6,7,8,9,10,11,12,13,14,15,16,17,18,19,20];
+  const data=[],tot=new Array(16).fill(0);
+  Object.values(g).forEach((x,i)=>{const sum=idx.map(c=>Math.round(x.rs.reduce((a,r)=>a+nn(r[c]),0)*100)/100);data.push([i+1,'সিরাজগঞ্জ',x.br,x.ty,x.rs.length,...sum]);tot[0]+=x.rs.length;sum.forEach((v,j)=>tot[j+1]=Math.round((tot[j+1]+v)*100)/100)});
+  const aoa=[['জনতা ব্যাংক পিএলসি.'],['পরিশিষ্ট-ঘ'],['বিষয়ঃ নির্দেশ বিজ্ঞপ্তি নং- ১৪১১/২৬ তারিখ ০২/০৭/২০২৬ অনুযায়ী বিশেষ এক্সিট সুবিধার আওতায় কৃষি ও পল্লী ঋণসমূহের ৩০/০৬/২০২৬ জুন ভিত্তিক ক্ষতি হিসাবে শ্রেণিকৃত অনাদায়ী ঋণ হিসাবের তথ্যাদি।'],['(টাকার অংকে)'],FW_GH,FW_GH.map((_,i)=>i+1),...data,['','সর্বমোট','','',...tot]];
+  const ws=XLSX.utils.aoa_to_sheet(aoa);ws['!merges']=[0,1,2].map(r=>({s:{r,c:0},e:{r,c:19}}));
+  ws['!cols']=FW_GH.map((_,i)=>({wch:i<4?16:15}));
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Annexure-Gha');
+  XLSX.writeFile(wb,'JBRS_Annexure-Gha.xlsx');
+};
+const FW_GA_HEAD=['ক্র.নং','ঋণ গ্রহীতার নাম','হিসাব নং','ঋণের ধরণ/প্রকৃতি','ঋণ বিতরণের তারিখ','ক্ষতি হিসাবে শ্রেণীকরণের তারিখ','আসল','আরোপিত দায়: সুদ','আরোপিত দায়: অন্যান্য খরচ','মোট দায়','পরিশোধ: আসল','পরিশোধ: সুদ','পরিশোধ: অন্যান্য খরচ','মোট পরিশোধ','লেজার বকেয়া','আদায়যোগ্য আসল','অনারোপিত সাধারণ সুদ','অনারোপিত দন্ড সুদ','ইন্টারেস্ট সাসপেন্সের পরিমাণ','যাচিত CIBTCA এর পরিমাণ','কস্ট অব ফান্ড এর পরিমাণ','অবলোপনকৃত কিনা?'];
+A.fwSave=async()=>{
+  const rows=fwData();if(!rows.length||!FW.ga)return toast('Upload the Annexure-Ga (customer wise) Excel first.');
+  if(!FW.code)return toast('Select the branch to save under.');
+  const j=await api('/ga/rows?office='+encodeURIComponent(FW.code));
+  const old=(j.batches||[]).filter(b=>b.office===FW.code);
+  if(old.length&&!confirm('Annexure-Ga of this branch is already saved ('+old.length+' file). Replace it with this one?'))return;
+  for(const b of old)await api('/ga/delete',{method:'POST',body:{id:b.id}});
+  const data=rows.map(r=>r.raw.map((c,i)=>i===0?r.raw[0]:(typeof c==='number'?c:String(c))));
+  await api('/ga/upload',{method:'PUT',body:{office:FW.code,label:'Annexure-Ga '+FW.d,fname:FW.fname,head:FW_GA_HEAD,rows:data}});
+  toast('Saved '+data.length+' loans under '+officeName(FW.code)+'. See Annexure-Ga (All).');
 };
