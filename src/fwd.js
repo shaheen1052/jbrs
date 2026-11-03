@@ -137,12 +137,13 @@ function fwDraw(){
 A.fwDo=async w=>{
   const rows=fwData();if(!rows.length)return toast('Upload the Annexure-Ga Excel first.');
   const html=fwPages(rows);   // uses the font sizes fitted in the preview
-  if(w==='print')return A.lfPrintHtml(html);
+  let win=null;if(w==='print'){try{win=window.open('','_blank')}catch(e){}}
   toast('Preparing PDF...');await lfLoadPdf();if(document.fonts&&document.fonts.ready)await document.fonts.ready;
   const host=document.createElement('div');host.className='lfpdfhost';host.innerHTML=html;document.body.appendChild(host);
   try{const {jsPDF}=window.jspdf;const pdf=new jsPDF({unit:'mm',format:'a4',orientation:'portrait',compress:true});
     const pgs=[...host.querySelectorAll('.lfpage')];
     for(let i=0;i<pgs.length;i++){const c=await html2canvas(pgs[i],{scale:2.2,backgroundColor:'#ffffff',logging:false});if(i)pdf.addPage();pdf.addImage(c.toDataURL('image/jpeg',0.93),'JPEG',0,0,210,297,undefined,'FAST')}
-    pdf.save('JBRS_Forwarding_AO.pdf');
-  }finally{host.remove()}
+    if(w==='print'&&win){win.location.href=URL.createObjectURL(pdf.output('blob'));toast('The letters opened in a new tab - print from there (Ctrl+P).')}
+    else pdf.save('JBRS_Forwarding_AO.pdf');
+  }catch(e){if(win)win.close();throw e}finally{host.remove()}
 };
