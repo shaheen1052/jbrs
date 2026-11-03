@@ -20,6 +20,7 @@ const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS loan_forms(office TEXT,id TEXT,type TEXT,name TEXT,acct TEXT,data TEXT,updated TEXT,updated_by TEXT,PRIMARY KEY(office,id))`,
   `CREATE TABLE IF NOT EXISTS loan_flow(office TEXT,id TEXT,status TEXT,out_no TEXT,out_date TEXT,in_no TEXT,in_date TEXT,ao TEXT,updated TEXT,updated_by TEXT,PRIMARY KEY(office,id))`,
   `CREATE TABLE IF NOT EXISTS loan_dec(office TEXT,id TEXT,seq INTEGER,dec TEXT,note TEXT,dec_date TEXT,at TEXT,by TEXT,PRIMARY KEY(office,id,seq))`,
+  `CREATE TABLE IF NOT EXISTS ga_batches(id TEXT PRIMARY KEY,office TEXT,label TEXT,fname TEXT,head TEXT,rows TEXT,nrows INTEGER,uploaded TEXT,by TEXT)`,
   `CREATE TABLE IF NOT EXISTS loan_files(fid TEXT PRIMARY KEY,office TEXT,id TEXT,seq INTEGER,name TEXT,mime TEXT,size INTEGER,data TEXT,at TEXT,by TEXT)`
 ];
 const LF_SEL = "SELECT l.office,l.id,l.type,l.name,l.acct,l.updated,json_extract(l.data,'$.sa') AS sa,json_extract(l.data,'$.sl_ref') AS sl_ref,json_extract(l.data,'$.sl_date') AS sl_date,f.status,f.out_no,f.out_date,f.in_no,f.in_date FROM loan_forms l LEFT JOIN loan_flow f ON f.office=l.office AND f.id=l.id";
@@ -439,6 +440,36 @@ async function handle(req, env) {
     const sq = await db.prepare('SELECT COALESCE(MAX(seq),0)+1 AS n FROM loan_dec WHERE office=? AND id=?').bind(u.office, b.id).first();
     await db.prepare('INSERT INTO loan_dec(office,id,seq,dec,note,dec_date,at,by) VALUES(?,?,?,?,?,?,?,?)').bind(u.office, b.id, sq.n, 'sanctioned', 'Sanctioned by Branch. Sanction letter ref: ' + x.ref, x.dt || iso().slice(0, 10), iso(), u.id).run();
     await audit(db, u.id, 'loan branch sanctioned', String(b.id));
+    return json({ ok: true });
+  }
+  if (p === '/ga/rows' && m === 'GET') {
+    const office = url.searchParams.get('office') || 'all';
+    if (office !== 'all' && !ID_RE.test(office)) return err('Bad office.');
+    const r = await readable(db, u);
+    if (office !== 'all' && r !== null && !r.has(office)) return err('Not allowed.', 403);
+    let q = 'SELECT id,office,label,fname,head,rows,nrows,uploaded FROM ga_batches'; const a = [];
+    if (office !== 'all') { q += ' WHERE office=?'; a.push(office); }
+    const rs = (await db.prepare(q + ' ORDER BY uploaded DESC LIMIT 400').bind(...a).all()).results.filter(x => r === null || r.has(x.office));
+    return json({ batches: rs.map(x => ({ ...x, head: JSON.parse(x.head), rows: JSON.parse(x.rows) })) });
+  }
+  if (p === '/ga/upload' && m === 'PUT') {
+    if (u.role !== 'AREA' && u.role !== 'ADMIN') return err('Only the Area Office can upload.', 403);
+    const t = await req.text(); if (t.length > 1800000) return err('The file has too many rows (limit about 1.5 MB of data).');
+    const b = JSON.parse(t || '{}'); const office = String(b.office || '');
+    if (!ID_RE.test(office) || !Array.isArray(b.head) || !Array.isArray(b.rows) || !b.rows.length || b.head.length > 60) return err('Bad upload.');
+    if (!(await canRead(db, u, office))) return err('Not allowed.', 403);
+    const id = 'G' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    await db.prepare('INSERT INTO ga_batches(id,office,label,fname,head,rows,nrows,uploaded,by) VALUES(?,?,?,?,?,?,?,?,?)').bind(id, office, String(b.label || '').slice(0, 80), String(b.fname || '').slice(0, 120), JSON.stringify(b.head), JSON.stringify(b.rows), b.rows.length, iso(), u.id).run();
+    await audit(db, u.id, 'annexure-ga uploaded', office + ' ' + b.rows.length + ' rows');
+    return json({ ok: true, id });
+  }
+  if (p === '/ga/delete' && m === 'POST') {
+    if (u.role !== 'AREA' && u.role !== 'ADMIN') return err('Not allowed.', 403);
+    const b = await body(req); const id = String(b.id || '');
+    const x = await db.prepare('SELECT office FROM ga_batches WHERE id=?').bind(id).first();
+    if (!x || !(await canRead(db, u, x.office))) return err('Not found.', 404);
+    await db.prepare('DELETE FROM ga_batches WHERE id=?').bind(id).run();
+    await audit(db, u.id, 'annexure-ga upload removed', id);
     return json({ ok: true });
   }
   if (p === '/lf/delete' && m === 'POST') {

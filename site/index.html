@@ -119,7 +119,7 @@ table.gt{border-collapse:collapse;width:100%}
 .top{position:sticky;top:0;z-index:60}
 .side{position:sticky;top:var(--topH,58px);height:calc(100vh - var(--topH,58px));align-self:flex-start}
 .lfmain{overflow:visible}
-.pghead{position:sticky;top:var(--topH,58px);z-index:20;background:var(--bg);padding:8px 0 6px;margin:-6px 0 10px;border-bottom:1px solid var(--line)}.pghead h2{margin:0;font-size:20px}.pghead .hrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.pghead .hrow h2{flex:1 1 auto}.pghead .bar{margin:0;gap:6px}.pghead button,.pghead select{height:28px;padding:2px 12px;font-size:13px;line-height:1.2;width:auto;min-width:0;max-width:240px}.pghead select{padding:2px 6px}
+.pghead{position:sticky;top:-20px;z-index:20;background:var(--bg);padding:8px 0 6px;margin:-6px 0 10px;border-bottom:1px solid var(--line)}.pghead h2{margin:0;font-size:20px}.pghead .hrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.pghead .hrow h2{flex:1 1 auto}.pghead .bar{margin:0;gap:6px}.pghead button,.pghead select{height:28px;padding:2px 12px;font-size:13px;line-height:1.2;width:auto;min-width:0;max-width:240px}.pghead select{padding:2px 6px}
 .lfform label{font-size:12px;margin:0 0 2px}.lfform input,.lfform select,.lfform textarea{padding:2px 7px;font-size:13px;height:28px;min-height:0;line-height:1.2}.lfform textarea{resize:vertical}
 .lfform .row{gap:6px 10px}.lfform .fc{flex:1 1 140px;max-width:210px}.lfform .fc.ad{flex:0 0 calc((100% - 20px)/3);max-width:none}.lfform .fc.ad textarea{height:54px}@media(max-width:760px){.lfform .fc.ad{flex:1 1 100%}}.lfform .fc.w{flex:1 1 100%;max-width:none}.lfform .fc.w2{flex:1 1 240px;max-width:330px}.lfform h3{font-size:14px;margin:0 0 6px}.lfform .card{padding:10px 12px}
 .ckrow span{flex:1}.ckrow{display:flex;gap:10px;align-items:flex-start;padding:7px 4px;border-bottom:1px solid var(--line);font-size:13.5px;color:var(--text);margin:0;cursor:pointer}.ckrow input{width:18px;height:18px;margin:2px 0 0;flex:0 0 auto;padding:0}
@@ -142,7 +142,7 @@ table.gt{border-collapse:collapse;width:100%}
 @media print{#printArea.lf0{padding:0}#printArea .lfpad{padding:10mm 11mm}#printArea .lfpage .kt th,#printArea .lfpage .kt td{border:1px solid #333;padding:0 1.5mm;background:#fff}}
 .menubtn{background:transparent;border:1px solid rgba(255,255,255,.7);color:#fff;font-size:20px;line-height:1;padding:5px 11px;margin-right:6px}
 .sidebg{display:none}.layout.noside .side{display:none}
-@media (max-width:760px){.side{position:fixed;top:var(--topH,0px);left:0;bottom:0;height:auto;width:84%;max-width:330px;max-height:none;z-index:50;border-right:1px solid var(--line);border-bottom:none;box-shadow:0 0 30px rgba(0,0,0,.3);padding-top:16px}.layout:not(.noside) .sidebg{display:block;position:fixed;inset:var(--topH,0px) 0 0 0;background:rgba(0,0,0,.35);z-index:40}}
+@media (max-width:760px){.main{overflow:visible}.pghead{top:calc(var(--topH,0px) - 6px)}.side{position:fixed;top:var(--topH,0px);left:0;bottom:0;height:auto;width:84%;max-width:330px;max-height:none;z-index:50;border-right:1px solid var(--line);border-bottom:none;box-shadow:0 0 30px rgba(0,0,0,.3);padding-top:16px}.layout:not(.noside) .sidebg{display:block;position:fixed;inset:var(--topH,0px) 0 0 0;background:rgba(0,0,0,.35);z-index:40}}
 .b-NONE{background:#f1f1f1;color:#666}.b-NEW{background:#eef0ef;color:#4a5752}
 .stats .stat .n{font-size:28px}
 .side{padding:12px 10px}
@@ -183,7 +183,7 @@ const TREE=[
  {id:'dep',name:'Deposit',items:[L('dep_pos','Deposit position'),L('dep_open','Account opening'),L('dep_dorm','Dormant and unclaimed deposit'),L('dep_cash','Cash statement')]},
  {id:'loan',name:'Loan and advance',items:[L('ln_cmsme','CMSME'),G('Agricultural and rural credit',[G('RCD-3',[L('ln_rcd3','Data entry','rcd3'),L('ln_rcd3s1','Statement-1 (Accumulated)','rcd3s1'),L('ln_rcd3s2','Statement-2 (Product-wise)','rcd3s2')]),G('RCD-4',[L('ln_rcd4','Data entry','rcd4'),L('ln_rcd4s1','Statement-1 (ছক-ক)','rcd4s1'),L('ln_rcd4s2','Statement-2 (Accumulated)','rcd4s2'),L('ln_rcd4s3','Statement-3 (Product-wise)','rcd4s3')]),G('RCD-4 Consumer Financing',[L('ln_rcd4cf','Data entry','rcd4cf'),L('ln_rcd4cfs1','Statement-1 (ছক-খ)','rcd4cfs1'),L('ln_rcd4cfs2','Statement-2 (Accumulated)','rcd4cfs2'),L('ln_rcd4cfs3','Statement-3 (Product-wise)','rcd4cfs3')])]),L('ln_sod','Secured overdraft'),L('ln_staff','Staff loan'),G('Loan Application',[L('lf_cmsme','CMSME','lf'),G('Agricultural & Rural Credit',[G('RCD-3 Loans',[L('lf_crop','Crop Loan','lf'),L('lf_dairy','Dairy cow rearing (RCD Cir. 66/17)','lf'),L('lf_bullfat','Bull Fattening (RCD Cir. 75/19)','lf')]),G('RCD-4 Loans',[L('lf_mpsc','Multipurpose Supervisory Credit','lf'),L('lf_gnkr','Grameen Nari Kormosngsthan Rin','lf'),L('lf_youth','Loan for Trained Youth','lf')])]),G('Consumer financing',[L('lf_cfpersonal','Personal Loan','lf'),L('lf_cfcredit','Consumer Credit','lf'),L('lf_cfhealth','Janata Support Health Care Loan','lf'),L('lf_cfpension','Janata Support Loan for Pensioner','lf')]),L('lf_sod','Secured overdraft','lf'),G('Staff loan',[L('lf_stfhouse','Staff House Building Loan','lf'),L('lf_stfmoto','Staff Motor Cycle Loan','lf'),L('lf_stfcomp','Staff Computer Loan','lf'),L('lf_execcar','Executive Car Loan','lf')]),L('lf_reports','Loan Reports','lfrpt')])]},
  {id:'acc',name:'Accounts',items:[L('gl_branch','At a glance (এক নজরে)','glance'),L('ac_budget','Budget and expenditure'),L('ac_susp','Unadjusted suspense'),L('ac_bpen','Unadjusted bank pension'),L('ac_apen','Unadjusted army pension')]},
- {id:'rec',name:'Recovery',items:[L('rc_class','Classification of loan'),L('rc_recov','Recovery of classified loan'),G('Suit cases',[L('rc_ar','Artho Rin case'),L('rc_cert','Certificate case'),L('rc_ms','Money suit'),L('rc_cd','Cheque dishonour')]),G('Interest waiver calculator',[L('rc_iwc','Data entry','iwc'),G('Report',[L('rc_iwga','Annexure-Ga','iwr'),L('rc_iwgha','Annexure-Gha','iwr')])])]},
+ {id:'rec',name:'Recovery',items:[L('rc_class','Classification of loan'),L('rc_recov','Recovery of classified loan'),G('Suit cases',[L('rc_ar','Artho Rin case'),L('rc_cert','Certificate case'),L('rc_ms','Money suit'),L('rc_cd','Cheque dishonour')]),G('Interest waiver calculator',[L('rc_iwc','Data entry','iwc'),G('Report',[L('rc_iwga','Annexure-Ga','iwr'),L('rc_iwgha','Annexure-Gha','iwr')])]),L('rc_gaall','Annexure-Ga (All)','gaall')]},
  {id:'aud',name:'Audit compliance',items:[L('au_bb','Bangladesh Bank audit',null),G('Head Office',[L('au_ho_gen','General',null),L('au_ho_it','IT',null)]),L('au_div','Divisional Office',null),G('Area Office',[L('au_ar_short','Short inspection',null),L('au_ar_test','Test inspection',null)]),L('au_comm','Commercial audit',null)]}
 ];
 const LEAVES={};
@@ -1403,6 +1403,96 @@ function pageLfDash(){S.view.after=async()=>{
     <h3 style="margin-top:16px">Recent movement</h3><div class="card" style="overflow:auto">${rec.length?`<table><tr><th>Last saved</th><th>Applicant</th><th>Loan type</th><th>Branch</th><th>Sanctioned by / authority</th><th>Status</th><th>Outward no. / date</th><th>Inward no. / date</th></tr>${rec.map(f=>`<tr class="click" onclick="go({page:'leaf',leaf:'${(LF_TYPES[f.type]||{}).leaf}',lfid:'${f.id}',lfoff:'${f.office}',after:null})"><td>${fmtDT(f.updated)}</td><td>${esc(f.name||'(no name)')}</td><td>${esc(LF_TYPES[f.type]?lfShort(LF_TYPES[f.type]):f.type)}</td><td>${esc(officeName(f.office))}</td><td>${esc(lfWho(sa(f)))}</td><td>${esc(lfStat(sa(f)))}</td><td>${esc(lfOI(f.out_no,f.out_date))}</td><td>${esc(lfOI(f.in_no,f.in_date))}</td></tr>`).join('')}</table>`:'Nothing yet.'}</div></div>`};
   return`<h2>Loan Dashboard</h2><div id="lfdash" class="card muted">Loading...</div>`}
 
+/* ================= Annexure-Ga (All): upload branch Excel files, filter, report ================= */
+const GA={sel:'all',q:'',batches:[],pend:null};
+function pageGaAll(l){
+  S.view.after=gaLoad;
+  const up=isArea()||isAdmin();
+  return`<div class="pghead"><div class="hrow"><h2>Annexure-Ga (All)</h2><div class="hrow" id="gactl" style="flex:1 1 auto;justify-content:flex-end"></div></div></div>
+  ${up?`<div class="card" style="margin-top:12px" id="gaup"></div>`:''}<div id="gabox" class="muted" style="margin-top:12px">Loading...</div>`;
+}
+function gaLoadLib(){
+  if(window.XLSX)return Promise.resolve();
+  return new Promise((ok,no)=>{const s=document.createElement('script');s.src='/vendor/xlsx.mini.min.js';s.onload=ok;s.onerror=()=>no(new Error('Could not load the Excel reader.'));document.head.appendChild(s)});
+}
+const gaDmy=d=>String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+const gaNum=v=>typeof v==='number'?v:(/^-?[\d,]+(\.\d+)?$/.test(String(v).trim())&&String(v).trim()!==''?parseFloat(String(v).replace(/,/g,'')):NaN);
+async function gaLoad(){
+  const j=await api('/ga/rows?office='+encodeURIComponent(GA.sel));
+  GA.batches=j.batches;gaRender();gaUpUi();
+}
+function gaUpUi(){
+  const el=$('#gaup');if(!el||GA.upOpen===undefined&&false)return;
+  const kids=childBranches();
+  const p=GA.pend;
+  el.innerHTML=`<div class="hrow"><b style="flex:1">Upload Annexure-Ga (Excel)</b><button onclick="GA.upOpen=!GA.upOpen;gaUpUi()">${GA.upOpen?'Close':'Upload'}</button></div>
+  ${GA.upOpen?`<div class="row" style="margin-top:10px;align-items:flex-end"><div style="flex:1 1 240px"><label>Branch *</label><select id="ga_of"><option value="">- select branch -</option>${isArea()?`<option value="${S.user.office}">Area Office (own)</option>`:''}${kids.map(k=>`<option value="${k.code}" ${p&&p.office===k.code?'selected':''}>${k.code} - ${esc(k.name)}</option>`).join('')}</select></div>
+  <div style="flex:1 1 200px"><label>Label / period (optional)</label><input id="ga_lb" placeholder="e.g. September 2026" value="${esc(p?p.label:'')}"></div>
+  <div style="flex:1 1 260px"><label>Excel file (.xlsx, .xls or .csv)</label><input type="file" id="ga_f" accept=".xlsx,.xls,.csv" onchange="run(()=>gaPick(this))" style="height:auto"></div></div>
+  ${p?`<div style="margin-top:10px"><div class="row" style="align-items:flex-end"><div style="flex:0 0 140px"><label>Header row no.</label><input id="ga_hr" type="number" min="1" value="${p.hr+1}" onchange="run(gaHdr)"></div><div class="muted small" style="flex:1">${esc(p.fname)} - ${p.rows.length} data rows found. Check the columns below, then Save.</div></div>
+  <div style="overflow:auto;margin-top:8px"><table><tr>${p.head.map(h=>`<th>${esc(h)}</th>`).join('')}</tr>${p.rows.slice(0,5).map(r=>`<tr>${r.map(c=>`<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</table></div>
+  <div class="bar" style="margin-top:10px"><button class="pri" onclick="run(gaSave)">Save upload</button><button onclick="GA.pend=null;gaUpUi()">Cancel</button></div></div>`:''}`:''}`;
+}
+async function gaPick(inp){
+  const f=inp.files[0];if(!f)return;
+  await gaLoadLib();
+  const buf=await f.arrayBuffer();
+  const wb=XLSX.read(buf,{type:'array',cellDates:true});
+  const ws=wb.Sheets[wb.SheetNames[0]];
+  const aoa=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:'',blankrows:false}).map(r=>r.map(c=>c instanceof Date?gaDmy(c):c));
+  if(!aoa.length)throw new Error('The file is empty.');
+  let hr=0,best=0;aoa.slice(0,15).forEach((r,i)=>{const n=r.filter(c=>String(c).trim()!=='').length;if(n>best){best=n;hr=i}});
+  GA.raw=aoa;GA.fname=f.name;GA.pendOf=$('#ga_of').value;GA.pendLb=$('#ga_lb').value;
+  gaBuild(hr);
+}
+function gaBuild(hr){
+  const aoa=GA.raw,w=Math.max(...aoa.slice(hr).map(r=>r.length));
+  const head=(aoa[hr]||[]).concat(Array(Math.max(0,w-(aoa[hr]||[]).length)).fill('')).slice(0,w).map((h,i)=>String(h).trim()||('Column '+(i+1)));
+  const rows=aoa.slice(hr+1).map(r=>head.map((h,i)=>r[i]===undefined?'':r[i])).filter(r=>r.some(c=>String(c).trim()!=='')&&!/^(total|grand total|মোট|সর্বমোট)/i.test(String(r.find(c=>String(c).trim()!=='')||'').trim()));
+  GA.pend={office:GA.pendOf,label:GA.pendLb,fname:GA.fname,head,rows,hr};
+  gaUpUi();
+}
+async function gaHdr(){const v=parseInt($('#ga_hr').value)||1;GA.pendOf=$('#ga_of').value;GA.pendLb=$('#ga_lb').value;gaBuild(Math.max(0,Math.min(v-1,GA.raw.length-1)))}
+async function gaSave(){
+  const p=GA.pend,of=$('#ga_of').value;if(!of)throw new Error('Select the branch for this file.');
+  if(!p.rows.length)throw new Error('No data rows found. Check the header row number.');
+  await api('/ga/upload',{method:'PUT',body:{office:of,label:$('#ga_lb').value,fname:p.fname,head:p.head,rows:p.rows}});
+  toast('Uploaded '+p.rows.length+' rows.');GA.pend=null;GA.upOpen=false;await gaLoad();
+}
+A.gaDel=async id=>{if(!confirm('Remove this uploaded file and its rows?'))return;await api('/ga/delete',{method:'POST',body:{id}});toast('Removed.');await gaLoad()};
+A.gaSet=(k,v)=>{GA[k]=v;if(k==='sel')run(gaLoad);else gaRender()};
+function gaTable(){   // union of headers; Branch column first
+  const cols=[];GA.batches.forEach(b=>b.head.forEach(h=>{if(!cols.includes(h))cols.push(h)}));
+  const q=GA.q.trim().toLowerCase(),rows=[];
+  GA.batches.slice().reverse().forEach(b=>b.rows.forEach(r=>{
+    const obj=Object.fromEntries(b.head.map((h,i)=>[h,r[i]]));
+    const line=[officeName(b.office),...cols.map(c=>obj[c]===undefined?'':obj[c])];
+    if(!q||line.join(' ').toLowerCase().includes(q))rows.push(line)}));
+  const head=['Branch',...cols];
+  const tot=head.map((h,i)=>{if(i===0)return'';const vals=rows.map(r=>r[i]).filter(v=>String(v).trim()!=='');if(!vals.length||/নং|\bno\b|number|account|acct|হিসাব|ক্র|sl|serial|date|তারিখ/i.test(h))return'';const nn=vals.map(gaNum);return nn.every(x=>!isNaN(x))?nn.reduce((a,b)=>a+b,0):''});
+  return{head,rows,tot};
+}
+const gaFmt=v=>typeof v==='number'?(Number.isInteger(v)?v.toLocaleString('en-IN'):v.toLocaleString('en-IN',{maximumFractionDigits:2})):v;
+function gaRender(){
+  const box=$('#gabox'),ctl=$('#gactl');if(!box)return;
+  const kids=isBranch()?[]:childBranches();
+  if(ctl)ctl.innerHTML=`${isBranch()?'':`<select onchange="A.gaSet('sel',this.value)"><option value="all" ${GA.sel==='all'?'selected':''}>All branches</option>${isArea()?`<option value="${S.user.office}" ${GA.sel===S.user.office?'selected':''}>Area Office (own)</option>`:''}${kids.map(k=>`<option value="${k.code}" ${GA.sel===k.code?'selected':''}>${k.code} - ${esc(k.name)}</option>`).join('')}</select>`}<input placeholder="Search..." value="${esc(GA.q)}" oninput="GA.q=this.value;clearTimeout(GA.t);GA.t=setTimeout(gaRender,250)" style="height:28px;padding:2px 7px;font-size:13px;width:150px"><div class="bar"><button class="pri" onclick="A.gaPrint()">Print</button><button onclick="run(A.gaXl)">Download Excel</button></div>`;
+  const t=gaTable();
+  const up=isArea()||isAdmin();
+  box.outerHTML=`<div id="gabox"><div class="card" style="overflow:auto">${t.rows.length?`<div class="muted small" style="margin-bottom:6px">${t.rows.length} rows from ${GA.batches.length} uploaded file(s).</div><table><tr><th>SL</th>${t.head.map(h=>`<th>${esc(h)}</th>`).join('')}</tr>${t.rows.map((r,i)=>`<tr><td>${i+1}</td>${r.map((c,k)=>`<td${typeof c==='number'?' style="text-align:right"':''}>${esc(gaFmt(c))}</td>`).join('')}</tr>`).join('')}${t.tot.some(x=>x!=='')?`<tr style="font-weight:700;background:var(--bg)"><td></td>${t.tot.map((c,k)=>`<td style="text-align:right">${k===0?'Total':c===''?'':esc(gaFmt(c))}</td>`).join('')}</tr>`:''}</table>`:'No Annexure-Ga data'+(GA.q?' matches the search.':' uploaded yet.')}</div>
+  ${GA.batches.length?`<h3 style="margin-top:16px">Uploaded files</h3><div class="card" style="overflow:auto"><table><tr><th>Branch</th><th>Label</th><th>File</th><th>Rows</th><th>Uploaded</th>${up?'<th></th>':''}</tr>${GA.batches.map(b=>`<tr><td>${esc(officeName(b.office))}</td><td>${esc(b.label)}</td><td>${esc(b.fname)}</td><td>${b.nrows}</td><td>${fmtDT(b.uploaded)}</td>${up?`<td><button class="dan" onclick="run(()=>A.gaDel('${b.id}'))">Remove</button></td>`:''}</tr>`).join('')}</table></div>`:''}</div>`;
+}
+A.gaXl=async()=>{
+  await gaLoadLib();const t=gaTable();
+  const ws=XLSX.utils.aoa_to_sheet([['SL',...t.head],...t.rows.map((r,i)=>[i+1,...r]),...(t.tot.some(x=>x!=='')?[['',...t.tot.map((c,k)=>k===0?'Total':c)]]:[])]);
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Annexure-Ga');
+  XLSX.writeFile(wb,'Annexure-Ga_'+(GA.sel==='all'?'All':GA.sel)+'.xlsx');
+};
+A.gaPrint=()=>{
+  const t=gaTable(),o=office(S.user.office);
+  A.lfPrintHtml(`<div class="bn r3p lfpad"><div class="p-h"><img src="${LOGO}" alt=""><div class="tx"><div class="b">জনতা ব্যাংক পিএলসি.</div><div>${esc(o?(o.nameBn||o.name):'')}</div></div></div><div class="gtitle">পরিশিষ্ট-গ (Annexure-Ga) - ${GA.sel==='all'?'সকল শাখা':esc(officeName(GA.sel))}</div>
+  <table class="r3t" style="width:100%;border-collapse:collapse;font-size:10px"><tr><th>SL</th>${t.head.map(h=>`<th>${esc(h)}</th>`).join('')}</tr>${t.rows.map((r,i)=>`<tr><td>${i+1}</td>${r.map(c=>`<td${typeof c==='number'?' style="text-align:right"':''}>${esc(gaFmt(c))}</td>`).join('')}</tr>`).join('')}${t.tot.some(x=>x!=='')?`<tr style="font-weight:700"><td></td>${t.tot.map((c,k)=>`<td style="text-align:right">${k===0?'Total':c===''?'':esc(gaFmt(c))}</td>`).join('')}</tr>`:''}</table>${lfSign('কর্মকর্তা',isArea()?'অফিস প্রধান':'ব্যবস্থাপক')}</div>`)};
+
 /* ================= JBRS ONLINE APP ================= */
 const APP={name:'JB Reporting System',short:'JBRS',version:'Online 1.0',bank:'Janata Bank PLC.',dev:'Developed by - Md. Shaheen Mahmud, Principal Officer, 024365'};
 const LEVELS={HO:'Head Office',DIV:'Divisional Office',AREA:'Area Office',BR:'Branch'};
@@ -1573,10 +1663,12 @@ function MAINMENU(){
   const lp=TREE.find(p=>p.id==='loan').items.find(x=>x.group==='Loan Application');
   const ok=it=>it.group?it.items.length>0:true;
   const flt=items=>items.map(it=>it.group?{...it,items:flt(it.items)}:it).filter(ok);
-  const rep=TREE.map(p=>({group:p.name,items:p.items.filter(x=>x!==lp)}));
+  const iw=TREE.flatMap(p=>p.items).find(x=>x.group==='Interest waiver calculator');
+  const setP=it=>it.group?it.items.forEach(setP):(LEAVES[it.id]&&(LEAVES[it.id].pillar='Calculation Tools'));setP(iw);
+  const rep=TREE.map(p=>({group:p.name,items:p.items.filter(x=>x!==lp&&x!==iw)}));
   LEAVES.lf_dash=LEAVES.lf_dash||{id:'lf_dash',name:'Loan Dashboard',title:'Loan Dashboard',pillar:'Loan Application',tpl:'ldash'};
   LEAVES.st_dash=LEAVES.st_dash||{id:'st_dash',name:'Statements Dashboard',title:'Statements Dashboard',pillar:'Statements',tpl:'sdash'};
-  return[{id:'lapp',name:'Loan Application',items:[LEAVES.lf_dash,...flt(lp.items)],lvl:3},{id:'rep',name:'Statements',items:[LEAVES.st_dash,...rep],lvl:2}];
+  return[{id:'lapp',name:'Loan Application',items:[LEAVES.lf_dash,...flt(lp.items)],lvl:3},{id:'rep',name:'Statements',items:[LEAVES.st_dash,...rep],lvl:2},{id:'calc',name:'Calculation Tools',items:[iw],lvl:3}];
 }
 function menuItems(items,leafBtn,top){return items.map(it=>{
   if(!it.group)return leafBtn(it);
@@ -1591,7 +1683,7 @@ A.collapseAll=()=>{document.querySelectorAll('[id^="gl_"],[id^="pl_"]').forEach(
 A.openAll=()=>{document.querySelectorAll('[id^="gl_"],[id^="pl_"]').forEach(e=>{e.style.display='';S.open[e.id.slice(3)]=true});document.querySelectorAll('[id^="gc_"],[id^="pc_"]').forEach(e=>e.innerHTML='&minus;')};
 A.toggleAll=()=>{const els=[...document.querySelectorAll('[id^="gl_"],[id^="pl_"]')];const anyOpen=els.some(e=>e.style.display!=='none');if(anyOpen)A.collapseAll();else A.openAll();const any2=anyOpen?false:true;const b=$('#allbtn');if(b)b.innerHTML=any2?'&#8679; Collapse all':'&#8681; Open all'};
 A.togglePillar=id=>{const el=$('#pl_'+id);const hide=el.style.display!=='none';el.style.display=hide?'none':'';S.open[id]=!hide;const c=$('#pc_'+id);if(c)c.innerHTML=hide?'+':'&minus;'};
-const PCOL={lapp:['#2e7d32','#e8f5e9'],rep:['#1d5fa8','#e7f0fb'],dep:['#1d5fa8','#e7f0fb'],loan:['#2e7d32','#e8f5e9'],acc:['#6a3fb5','#f0ebfa'],rec:['#b55400','#fdf0e2'],aud:['#b42318','#fdecea'],_:['#0a7aa6','#e2f4fb']};
+const PCOL={calc:['#6a3fb5','#f0ebfa'],lapp:['#2e7d32','#e8f5e9'],rep:['#1d5fa8','#e7f0fb'],dep:['#1d5fa8','#e7f0fb'],loan:['#2e7d32','#e8f5e9'],acc:['#6a3fb5','#f0ebfa'],rec:['#b55400','#fdf0e2'],aud:['#b42318','#fdecea'],_:['#0a7aa6','#e2f4fb']};
 function setMain(h){const m=$('#main');if(m)m.innerHTML=h+`<div class="dev">${APP.dev}</div>`}
 
 /* ---------- dashboard ---------- */
@@ -1628,6 +1720,7 @@ function pageLeaf(){
   const l=LEAVES[S.view.leaf];const head=`<div class="muted small">${esc(l.pillar)}</div><h2>${esc(l.title)}</h2>`;
   if(l.tpl==='iwc')return pageIwc(l);
   if(l.tpl==='iwr')return pageIwr(l);
+  if(l.tpl==='gaall')return pageGaAll(l);
   if(l.tpl==='ldash')return pageLfDash();
   if(l.tpl==='sdash')return pageDash('Statements Dashboard');
   if(l.tpl==='lf')return isArea()?pageLfAo(l):pageLoanForms(l);
