@@ -336,9 +336,10 @@ const FW_GAFILL=['','','','','','','#FCD5B4','#FCD5B4','#FCD5B4','#FCD5B4','#92D
 const FW_GANUM={9:'১০= (৭+৮+৯)',13:'১৪=(১১+১২+১৩)',15:'১৬=(৭-১১)',19:'২০=(১৫-১৬-১৯)'};
 function fwGaSets(rows){
   const m=new Map();rows.forEach(r=>{const k=r.code||r.br;if(!m.has(k))m.set(k,{code:r.code,br:r.br,rs:[]});m.get(k).rs.push(r.raw)});
-  return[...m.values()].filter(x=>!FW.gbr||x.code===FW.gbr).map(x=>{const l=x.code?fwLoc(x.code):{upz:'',dist:''},tot=new Array(22).fill(0);
-    x.rs.forEach(r=>{for(let c=6;c<=20;c++){const v=gaNum(r[c]);if(!isNaN(v))tot[c]=Math.round((tot[c]+v)*100)/100}});
-    return{br:x.br,rs:x.rs,tot,upz:l.upz,dist:l.dist}});
+  const g=[...m.values()].filter(x=>!FW.gbr||x.code===FW.gbr);if(!g.length)return[];
+  const rs=[],brs=[],tot=new Array(22).fill(0);
+  g.forEach(x=>x.rs.forEach(r=>{rs.push(r);brs.push(x.br);for(let c=6;c<=20;c++){const v=gaNum(r[c]);if(!isNaN(v))tot[c]=Math.round((tot[c]+v)*100)/100}}));
+  return[{br:g.length===1?g[0].br:'',rs,brs,tot}];
 }
 function fwGaHtml(sets){
   const th=(t,c,o='')=>`<th ${o} style="${FW_GAFILL[c]?'background:'+FW_GAFILL[c]+';':''}">${esc(t)}</th>`,PER=18;let h='';
@@ -349,12 +350,12 @@ function fwGaHtml(sets){
       const last=p===pn-1;
       h+=`<div class="lfpage fwpage fwland"><div class="fwin" style="padding:9mm 8mm"><div style="text-align:center;font-size:15pt;font-weight:700">জনতা ব্যাংক পিএলসি.</div><div style="text-align:center;font-size:12pt;font-weight:700">এরিয়া অফিস, সিরাজগঞ্জ</div>
       <p style="font-size:9.5pt;margin:2mm 0 1mm;text-align:justify">${FW_GSUBJ}</p>
-      <div style="font-size:9.5pt;font-weight:700;margin-bottom:1mm">শাখা: ${esc(set.br)}${pn>1?` (পাতা ${toBn(p+1)}/${toBn(pn)})`:''}</div>
-      <table class="fwt" style="table-layout:auto"><tr>${R2.map(([c,t])=>th(t,c,'rowspan="2"')).join('')}${th('আরোপিত দায়',7,'colspan="2"')}${th('মোট দায়',9,'rowspan="2"')}${th('পরিশোধ',10,'colspan="3"')}${[[13,'মোট পরিশোধ'],[14,'লেজার বকেয়া'],[15,'আদায়যোগ্য আসল']].map(([c,t])=>th(t,c,'rowspan="2"')).join('')}${th('অনারোপিত সুদ',16,'colspan="2"')}${[[18,'ইন্টারেস্ট সাসপেন্স এর পরিমাণ'],[19,'যাচিত CIBTCA এর পরিমাণ'],[20,'কস্ট অব ফান্ড এর পরিমাণ'],[21,'অবলোপনকৃত কি’না?']].map(([c,t])=>th(t,c,'rowspan="2"')).join('')}</tr>
+      ${pn>1?`<div style="font-size:9pt;text-align:right">পাতা ${toBn(p+1)}/${toBn(pn)}</div>`:''}
+      <table class="fwt" style="table-layout:auto"><tr>${R2.slice(0,1).map(([c,t])=>th(t,c,'rowspan="2"')).join('')}${th('শাখা',0,'rowspan="2"')}${R2.slice(1).map(([c,t])=>th(t,c,'rowspan="2"')).join('')}${th('আরোপিত দায়',7,'colspan="2"')}${th('মোট দায়',9,'rowspan="2"')}${th('পরিশোধ',10,'colspan="3"')}${[[13,'মোট পরিশোধ'],[14,'লেজার বকেয়া'],[15,'আদায়যোগ্য আসল']].map(([c,t])=>th(t,c,'rowspan="2"')).join('')}${th('অনারোপিত সুদ',16,'colspan="2"')}${[[18,'ইন্টারেস্ট সাসপেন্স এর পরিমাণ'],[19,'যাচিত CIBTCA এর পরিমাণ'],[20,'কস্ট অব ফান্ড এর পরিমাণ'],[21,'অবলোপনকৃত কি’না?']].map(([c,t])=>th(t,c,'rowspan="2"')).join('')}</tr>
       <tr>${[[7,'সুদ'],[8,'অন্যান্য খরচ'],[10,'আসল'],[11,'সুদ'],[12,'অন্যান্য খরচ'],[16,'সাধারণ সুদ'],[17,'দণ্ড সুদ']].map(([c,t])=>th(t,c)).join('')}</tr>
-      <tr>${FW_GAFILL.map((f,c)=>`<th style="background:#D9D9D9">${FW_GANUM[c]||toBn(c+1)}</th>`).join('')}</tr>
-      ${set.rs.slice(p*PER,(p+1)*PER).map((r,i)=>`<tr>${r.map((c,k)=>{const v=k===0?toBn(p*PER+i+1):k>=6&&k<=20?fwN(isNaN(gaNum(c))?0:gaNum(c)):toBn(String(c));return`<td style="${k===1?'text-align:left':k>=6&&k<=20?'text-align:right':'text-align:center'}">${k===1?esc(c):v}</td>`}).join('')}</tr>`).join('')}
-      ${last?`<tr style="font-weight:700"><td colspan="6" style="text-align:center">সর্বমোট</td>${set.tot.slice(6,21).map(c=>`<td style="text-align:right">${fwN(c)}</td>`).join('')}<td></td></tr>`:''}</table>
+      <tr><th style="background:#D9D9D9">১</th><th style="background:#D9D9D9">০</th>${FW_GAFILL.slice(1).map((f,c0)=>{const c=c0+1;return`<th style="background:#D9D9D9">${FW_GANUM[c]||toBn(c+1)}</th>`}).join('')}</tr>
+      ${set.rs.slice(p*PER,(p+1)*PER).map((r,i)=>`<tr><td style="text-align:center">${toBn(p*PER+i+1)}</td><td style="text-align:left">${esc(set.brs[p*PER+i])}</td>${r.slice(1).map((c,k0)=>{const k=k0+1;return`<td style="${k===1?'white-space:nowrap;text-align:left':k>=6&&k<=20?'text-align:right':'text-align:center'}">${k===1?esc(c):k>=6&&k<=20?fwN(isNaN(gaNum(c))?0:gaNum(c)):toBn(String(c))}</td>`}).join('')}</tr>`).join('')}
+      ${last?`<tr style="font-weight:700"><td colspan="7" style="text-align:center">সর্বমোট</td>${set.tot.slice(6,21).map(c=>`<td style="text-align:right">${fwN(c)}</td>`).join('')}<td></td></tr>`:''}</table>
       </div></div>`;
     }
   });
@@ -365,11 +366,11 @@ A.fwGaXl=async()=>{
   const sets=fwGaSets(rows);if(!sets.length)return toast('No uploaded file is saved to this branch.');
   await gaLoadLib();const wb=XLSX.utils.book_new(),used=new Set();
   sets.forEach((st,i)=>{
-    const aoa=[['জনতা ব্যাংক পিএলসি.'],['এরিয়া অফিস, সিরাজগঞ্জ'],[FW_GSUBJ],['শাখা: '+st.br],FW_GA_HEAD,FW_GA_HEAD.map((_,c)=>c+1),
-      ...st.rs.map((r,k)=>r.map((c,j)=>j===0?k+1:j>=6&&j<=20?(isNaN(gaNum(c))?0:gaNum(c)):String(c))),
-      ['','সর্বমোট','','','','',...st.tot.slice(6,21),'']];
-    const ws=XLSX.utils.aoa_to_sheet(aoa);ws['!merges']=[0,1,2,3].map(r=>({s:{r,c:0},e:{r,c:21}}));ws['!cols']=FW_GA_HEAD.map((_,c)=>({wch:c===1?30:c===2?16:c<6?14:13}));
-    let n=String(st.br||'Sheet'+(i+1)).replace(/[\[\]:*?\/\\]/g,' ').slice(0,28);while(used.has(n.toLowerCase()))n=n.slice(0,25)+'-'+(i+1);used.add(n.toLowerCase());XLSX.utils.book_append_sheet(wb,ws,n);
+    const H=[FW_GA_HEAD[0],'শাখা',...FW_GA_HEAD.slice(1)],aoa=[['জনতা ব্যাংক পিএলসি.'],['এরিয়া অফিস, সিরাজগঞ্জ'],[FW_GSUBJ],H,[1,0,...FW_GA_HEAD.slice(1).map((_,c)=>c+2)],
+      ...st.rs.map((r,k)=>[k+1,st.brs[k],...r.slice(1).map((c,j0)=>{const j=j0+1;return j>=6&&j<=20?(isNaN(gaNum(c))?0:gaNum(c)):String(c)})]),
+      ['','সর্বমোট','','','','','',...st.tot.slice(6,21),'']];
+    const ws=XLSX.utils.aoa_to_sheet(aoa);ws['!merges']=[0,1,2].map(r=>({s:{r,c:0},e:{r,c:22}}));ws['!cols']=H.map((_,c)=>({wch:c===2?30:c===3?16:c<7?14:13}));
+    let n=String(st.br||'Annexure-Ga').replace(/[\[\]:*?\/\\]/g,' ').slice(0,28);while(used.has(n.toLowerCase()))n=n.slice(0,25)+'-'+(i+1);used.add(n.toLowerCase());XLSX.utils.book_append_sheet(wb,ws,n);
   });
   XLSX.writeFile(wb,'JBRS_Annexure-Ga_'+(FW.gbr||'all')+'.xlsx');
 };
