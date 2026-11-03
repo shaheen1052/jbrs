@@ -28,7 +28,7 @@ function fwInit(){
   FW.rem='বিএল';FW.pre=fwLS('pre','এঃঅঃসিরাজ/এক্সিট পলিসি');FW.suf=fwLS('suf','এমএএইচ');FW.sig=fwLS('sig','আহমেদ তৈয়ব হাসান');FW.des=fwLS('des','উপ মহাব্যবস্থাপক');
   FW.to=fwLS('to','মহাব্যবস্থাপক\nজনতা ব্যাংক পিএলসি.\nবিভাগীয় কার্যালয়\nবগুড়া।');
   FW.sub=fwLS('sub','বাংলাদেশ ব্যাংকের বিআরপিডি-১ সার্কুলার লেটার নং ২৩ তারিখ: ২৯/০৬/২০২৬ ইং এবং অত্র ব্যাংকের নির্দেশ বিজ্ঞপ্তি নং ১৪১১/২৬ তারিখ: ০২/০৭/২০২৬ ইং এর আলোকে রিটেইল কাস্টমার ডিপার্টমেন্ট-৩ এর ০৮/০৭/২০২৬ ইং তারিখের পত্র সূত্র নং আরসিডি-৩/কৃ. ও প. ঋণ/ এককালীন এক্সিট/ ২০২৬/ ২৫৭-৪০৭ এর পরামর্শক্রমে বিশেষ এক্সিট সুবিধার আওতায় সুদ মওকুফ প্রস্তাব প্রেরণ প্রসঙ্গে।');
-  FW.prep=fwLS('prep','(মোঃ আলমগীর হোসেন)|এসপিও');FW.signs=fwLS('signs','(মোঃ শাহীন মাহমুদ)|পিও\n(মোঃ আলমগীর হোসেন)|এসপিও\n(নিবির কুমার আমিন)|এসপিও\nমোঃ জাফর ইকবাল|সহকারী মহাব্যবস্থাপক\n(আহমেদ তৈয়ব হাসান)|উপমহাব্যবস্থাপক');
+  FW.fin=fwLS('fin','(আহমেদ তৈয়ব হাসান)|উপমহাব্যবস্থাপক');FW.prep=fwLS('prep','(মোঃ আলমগীর হোসেন)|এসপিও');FW.signs=fwLS('signs','(মোঃ শাহীন মাহমুদ)|পিও\n(মোঃ আলমগীর হোসেন)|এসপিও\n(নিবির কুমার আমিন)|এসপিও\nমোঃ জাফর ইকবাল|সহকারী মহাব্যবস্থাপক\n(আহমেদ তৈয়ব হাসান)|উপমহাব্যবস্থাপক');
   const t=new Date();FW.d=String(t.getDate()).padStart(2,'0')+'/'+String(t.getMonth()+1).padStart(2,'0')+'/'+t.getFullYear();FW.nd=FW.d;
 }
 function pageFwd(l){
@@ -46,7 +46,7 @@ function pageFwd(l){
   <details class="card" style="margin-top:12px"><summary><b>Wording</b> <span class="muted small">(saved on this computer)</span></summary><div class="g" style="margin-top:8px">
   ${I('Ref suffix',FW.suf,"FW.suf=this.value;fwSV('suf',this.value);fwDraw()")}
   ${I('Sign name',FW.sig,"FW.sig=this.value;fwSV('sig',this.value);fwDraw()")}${I('Post',FW.des,"FW.des=this.value;fwSV('des',this.value);fwDraw()")}
-  <div style="grid-column:span 2">${I('Note: prepared by (name|post)',FW.prep,"FW.prep=this.value;fwSV('prep',this.value)")}</div></div>
+  <div style="grid-column:span 2">${I('Note: prepared by (name|post)',FW.prep,"FW.prep=this.value;fwSV('prep',this.value)")}</div><div style="grid-column:span 2">${I('Note: final approval (name|post)',FW.fin,"FW.fin=this.value;fwSV('fin',this.value)")}</div></div>
   <div class="g" style="margin-top:8px"><div style="grid-column:span 2"><label>Note: signers (name|post per line)</label><textarea rows="5" oninput="FW.signs=this.value;fwSV('signs',this.value)">${esc(FW.signs)}</textarea></div>
   <div><label>To</label><textarea rows="5" oninput="FW.to=this.value;fwSV('to',this.value);fwDraw()">${esc(FW.to)}</textarea></div>
   <div style="grid-column:span 2"><label>Subject</label><textarea rows="5" oninput="FW.sub=this.value;fwSV('sub',this.value);fwDraw()">${esc(FW.sub)}</textarea></div></div></details>
@@ -199,7 +199,7 @@ A.fwDo=async w=>{
 const fwDate=d=>toBn(d)+' ইং';
 function fwNotePages(rows){
   const by=fwBy(rows);let h='';
-  const prep=FW.prep.split('|'),sg=FW.signs.split('\n').filter(x=>x.trim()).map(x=>x.split('|'));
+  const fin=FW.fin.split('|'),prep=FW.prep.split('|'),sg=FW.signs.split('\n').filter(x=>x.trim()).map(x=>x.split('|'));
   Object.keys(by).forEach(br=>{
     const rs=by[br],T=k=>rs.reduce((a,r)=>a+r[k],0);
     const col=r=>r.raw,n=v=>fwN(v);
@@ -209,15 +209,16 @@ function fwNotePages(rows){
     <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:3mm"><img src="${LOGO}" alt="" style="width:16mm;height:auto"><div style="text-align:center"><div style="font-size:19pt;font-weight:700;line-height:1.15">জনতা ব্যাংক পিএলসি.</div><div style="font-size:12pt">এরিয়া অফিস, সিরাজগঞ্জ</div></div></div>
     <div style="display:flex;justify-content:space-between;font-weight:700;border-top:1.5px solid #000;border-bottom:1px solid #000;padding:1.5mm 0;margin:2mm 0 3mm"><span>সভা নং-${FW.nn?esc(toBn(FW.nn)):'<span style="display:inline-block;width:12mm"></span>'}</span><span>নোট শীট</span><span>তারিখ: ${esc(fwDate(FW.nd))}</span></div>
     <p class="j" style="margin:0 0 2mm;font-size:10.5pt"><b>বিষয়ঃ</b> বাংলাদেশ ব্যাংকের ''এক্সিট পলিসি'' বিআরপিডি-১ সার্কুলার লেটার নং-২৩ ; তারিখ-২৯.০৬.২০২৬ এর আলোকে অত্র ব্যাংকের নি: বি: নং-১৪১১/২৬ তারিখ ০২/০৭/২০২৬ ইং মোতাবেক ''ক্ষতি'' হিসাবে শ্রেণীকৃত ঋণ সমূহ শাখার সুপারিশের প্রেক্ষিতে নিম্নোক্ত কৃষি/পল্লী ঋণের সুদ মওকুফ (আরোপিত, অনারোপিত এবং দন্ড সুদ) প্রস্তাব প্রধান কার্যালয়ে প্রেরণের নিমিত্তে অত্র কার্যালয়ে যাচাই কমিটিতে সিদ্ধান্তের জন্য উপস্থাপন করা হলো।</p>
-    <div style="text-align:right;font-size:10.5pt;margin:1mm 0 2mm;line-height:1.25">${esc(prep[0]||'')}<br>${esc(prep[1]||'')}</div>
-    <table class="fwt" data-b="${esc(br)}"><colgroup><col style="width:3.2%"><col style="width:7%"><col style="width:11%"><col style="width:11%"><col style="width:8%"><col style="width:7.5%"><col style="width:8.5%"><col style="width:7.5%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:7%"><col style="width:7%"><col style="width:6%"></colgroup>
+    <div style="text-align:right;font-size:10.5pt;margin:1mm 0 7mm;line-height:1.25">${esc(prep[0]||'')}<br>${esc(prep[1]||'')}</div>
+    <table class="fwt" data-b="${esc(br)}"><colgroup><col style="width:3%"><col style="width:6.5%"><col style="width:10.5%"><col style="width:9.5%"><col style="width:7%"><col style="width:8.5%"><col style="width:8.8%"><col style="width:8.2%"><col style="width:8.2%"><col style="width:8.2%"><col style="width:8.5%"><col style="width:7.6%"><col style="width:7.8%"><col style="width:6.5%"></colgroup>
     <tr><th rowspan="2">ক্রম নং</th><th rowspan="2">শাখার নাম</th><th rowspan="2">ঋণ গ্রহীতার নাম</th><th rowspan="2">ঋণের প্রকৃতি ও হিসাব নং</th><th rowspan="2">বিতরণের তারিখ</th><th rowspan="2">মূল ঋণ</th><th rowspan="2">বিতরণের পর হতে মোট আদায় (নগদ আদায় + অন্যান্য)</th><th colspan="4">সুদ মওকুফের জন্য সুপারিশকৃত সুদের পরিমাণ</th><th rowspan="2">ইন্টারেস্ট সাসপেন্স</th><th rowspan="2">যাচিত CIBTCA</th><th rowspan="2">মন্তব্য</th></tr>
     <tr><th>আরোপিত সুদ</th><th>অনা: সা: সুদ</th><th>অনা: দন্ড সুদ</th><th>মোট</th></tr>
     <tr>${[1,2,3,4,5,6,7,8,9,10,'১২=(৮+৯+১০)',11,12,13].map(x=>`<th style="font-weight:400">${toBn(x)}</th>`).join('')}</tr>
     ${body}
     <tr class="tt"><td colspan="4" class="c">মোট</td><td></td><td class="n">${n(T('loan'))}</td><td class="n">${n(coll)}</td><td class="n">${n(T('imp'))}</td><td class="n">${n(T('gen'))}</td><td class="n">${n(T('pen'))}</td><td class="n">${n(T('tot'))}</td><td class="n">${n(T('sus'))}</td><td class="n">${n(T('cib'))}</td><td></td></tr></table>
     <p class="j" style="margin:6mm 0 0;font-size:10.5pt">বর্ণিত সার্কুলার মোতাবেক সুদ মওকুফ প্রস্তাব বিবেচ্য হওয়ায় প্রস্তাবগুলি প্রধান কার্যালয়ে প্রেরণের নিমিত্তে বিভাগীয় কার্যালয়, বগুড়ায় প্রেরণের সিদ্ধান্ত গৃহীত হলো :-</p>
-    <div style="display:flex;justify-content:space-between;margin-top:22mm;font-size:9.5pt;text-align:center;line-height:1.3">${sg.map(x=>`<div>${esc(x[0]||'')}<br>${esc(x[1]||'')}</div>`).join('')}</div>
+    <div style="display:flex;justify-content:space-between;margin-top:20mm;font-size:10pt;text-align:center;line-height:1.3">${sg.map(x=>`<div>${esc(x[0]||'')}<br>${esc(x[1]||'')}</div>`).join('')}</div>
+    <div style="margin-top:20mm;text-align:right;font-size:10.5pt;line-height:1.3">${esc(fin[0]||'')}<br>${esc(fin[1]||'')}</div>
     </div></div>`;
   });
   return h;
