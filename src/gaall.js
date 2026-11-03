@@ -11,7 +11,7 @@ function gaLoadLib(){
   return new Promise((ok,no)=>{const s=document.createElement('script');s.src='/vendor/xlsx.full.min.js';s.onload=ok;s.onerror=()=>no(new Error('Could not load the Excel reader.'));document.head.appendChild(s)});
 }
 const gaDmy=d=>String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
-const gaNum=v=>typeof v==='number'?v:(/^-?[\d,]+(\.\d+)?$/.test(String(v).trim())&&String(v).trim()!==''?parseFloat(String(v).replace(/,/g,'')):NaN);
+const gaNum=v=>{if(typeof v==='number')return v;const t=String(v).trim().replace(/[\u09E6-\u09EF]/g,d=>d.charCodeAt(0)-0x9E6);return /^-?[\d,]+(\.\d+)?$/.test(t)&&t!==''?parseFloat(t.replace(/,/g,'')):NaN};
 async function gaLoad(){
   const j=await api('/ga/rows?office='+encodeURIComponent(GA.sel));
   GA.batches=j.batches;gaRender();gaUpUi();

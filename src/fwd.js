@@ -59,11 +59,11 @@ function pageFwd(l){
 }
 const fwUpz=f=>f.upz!==undefined?f.upz:fwLoc(f.code).upz;
 const fwUni=t=>{t=String(t==null?'':t).trim();return t&&!/[\u0980-\u09FF]/.test(t)&&/[A-Za-z\u2020\u2021\u02c6\u2030\u0153]/.test(t)?fwBijoy(t).trim():t};
-const fwGaRows=f=>{const out=[],n=v=>{v=gaNum(v);return isNaN(v)?0:v};
+const fwGaRows=f=>{const out=[],n=v=>{v=gaNum(v);return isNaN(v)?0:fw2(v)};
   for(const r of f.aoa.slice(f.start)){
     if(!/^\s*\d+\s*$/.test(String(r[0])))break;const nm=fwUni(r[1]);if(!nm)continue;
-    const imp=n(r[14])-n(r[15]),gen=n(r[16]),pen=n(r[17]),wo=String(r[21]).trim();
-    out.push({br:f.br,code:f.code,upz:fwUpz(f),nm,loan:n(r[6]),imp,gen,pen,tot:imp+gen+pen,sus:n(r[18]),cib:n(r[19]),raw:(()=>{const q=r.slice(0,22);q[1]=nm;q[3]=fwUni(q[3]);return q})(),rem:wo&&!/^(না|নাই|no|n|-|0)$/i.test(wo)?'অবলোপন':FW.rem});
+    const imp=fw2(n(r[14])-n(r[15])),gen=n(r[16]),pen=n(r[17]),wo=String(r[21]).trim();
+    out.push({br:f.br,code:f.code,upz:fwUpz(f),nm,loan:n(r[6]),imp,gen,pen,tot:fw2(imp+gen+pen),sus:n(r[18]),cib:n(r[19]),raw:(()=>{const q=r.slice(0,22);q[1]=nm;q[3]=fwUni(q[3]);return q})(),rem:wo&&!/^(না|নাই|no|n|-|0)$/i.test(wo)?'অবলোপন':FW.rem});
   }return out};
 async function fwParse(f){
   const wb=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true});
@@ -131,7 +131,8 @@ function fwData(){
 }
 const fwBy=rows=>{const by={};if(FW.comb&&new Set(rows.map(r=>r.br)).size>1){by.ALL=rows;return by}rows.forEach(r=>{(by[r.br]=by[r.br]||[]).push(r)});return by};
 const fwRun=(rs,i)=>{if(i&&rs[i-1].br===rs[i].br)return'';let n=1;while(i+n<rs.length&&rs[i+n].br===rs[i].br)n++;return`<td class="c" rowspan="${n}">${esc(rs[i].br)}</td>`};
-const fwN=v=>toBn((+v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}));
+const fw2=v=>{v=Math.round((+v||0)*100+(v<0?-1e-7:1e-7))/100;return v===0?0:v};
+const fwN=v=>toBn(fw2(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}));
 function fwPages(rows){
   const by=fwBy(rows);
   const d=FW.d,yr=(d.split('/')[2]||'');let h='';
@@ -168,9 +169,9 @@ function fwDraw(){
 }
 function fwGhaAoa(rows){
   const g={};rows.forEach(r=>{const ty=String(r.raw[3]).trim(),k=r.br+'|'+ty;(g[k]=g[k]||{br:r.br,ty,rs:[]}).rs.push(r.raw)});
-  const nn=v=>{v=gaNum(v);return isNaN(v)?0:v},idx=[6,7,8,9,10,11,12,13,14,15,16,17,18,19,20];
+  const nn=v=>{v=gaNum(v);return isNaN(v)?0:fw2(v)},idx=[6,7,8,9,10,11,12,13,14,15,16,17,18,19,20];
   const data=[],tot=new Array(16).fill(0);
-  Object.values(g).forEach((x,i)=>{const sum=idx.map(c=>Math.round(x.rs.reduce((a,r)=>a+nn(r[c]),0)*100)/100);data.push([i+1,'সিরাজগঞ্জ',x.br,x.ty,x.rs.length,...sum]);tot[0]+=x.rs.length;sum.forEach((v,j)=>tot[j+1]=Math.round((tot[j+1]+v)*100)/100)});
+  Object.values(g).forEach((x,i)=>{const sum=idx.map(c=>fw2(x.rs.reduce((a,r)=>a+nn(r[c]),0)));data.push([i+1,'সিরাজগঞ্জ',x.br,x.ty,x.rs.length,...sum]);tot[0]+=x.rs.length;sum.forEach((v,j)=>tot[j+1]=fw2(tot[j+1]+v))});
   return{data,tot};
 }
 function fwShow(){
@@ -213,10 +214,10 @@ function fwNotePages(rows){
   const by=fwBy(rows);let h='';
   const fin=FW.fin.split('|'),prep=FW.prep.split('|'),sg=FW.signs.split('\n').filter(x=>x.trim()).map(x=>x.split('|'));
   Object.keys(by).forEach(br=>{
-    const rs=by[br],T=k=>rs.reduce((a,r)=>a+r[k],0);
+    const rs=by[br],T=k=>fw2(rs.reduce((a,r)=>a+r[k],0));
     const col=r=>r.raw,n=v=>fwN(v);
     const body=rs.map((r,i)=>{const c=r.raw,coll=gaNum(c[13]);return`<tr><td class="c">${toBn(i+1)}</td>${fwRun(rs,i)}<td>${esc(r.nm)}</td><td class="c">${esc(String(c[2]))}</td><td class="n">${n(r.loan)}</td><td class="n">${n(isNaN(coll)?0:coll)}</td><td class="n">${n(r.imp)}</td><td class="n">${n(r.gen)}</td><td class="n">${n(r.pen)}</td><td class="n">${n(r.tot)}</td><td class="n">${n(r.sus)}</td><td class="n">${n(r.cib)}</td><td class="c">${esc(r.rem)}</td></tr>`}).join('');
-    const coll=rs.reduce((a,r)=>a+(isNaN(gaNum(r.raw[13]))?0:gaNum(r.raw[13])),0);
+    const coll=fw2(rs.reduce((a,r)=>a+(isNaN(gaNum(r.raw[13]))?0:fw2(gaNum(r.raw[13]))),0));
     h+=`<div class="lfpage fwpage note"><div class="fwin" style="padding:12mm 10mm">
     <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:3mm"><img src="${LOGO}" alt="" style="width:16mm;height:auto"><div style="text-align:center"><div style="font-size:19pt;font-weight:700;line-height:1.15">জনতা ব্যাংক পিএলসি.</div><div style="font-size:12pt">এরিয়া অফিস, সিরাজগঞ্জ</div></div></div>
     <div style="display:flex;justify-content:space-between;font-weight:700;border-top:1.5px solid #000;border-bottom:1px solid #000;padding:1.5mm 0;margin:2mm 0 3mm"><span>সভা নং-${FW.nn?esc(toBn(FW.nn)):'<span style="display:inline-block;width:12mm"></span>'}</span><span>নোট শীট</span><span>তারিখ: ${esc(fwDate(FW.nd))}</span></div>
@@ -342,7 +343,7 @@ function fwGaSets(rows){
   const m=new Map();rows.forEach(r=>{const k=r.code||r.br;if(!m.has(k))m.set(k,{code:r.code,br:r.br,rs:[]});m.get(k).rs.push(r.raw)});
   const g=[...m.values()].filter(x=>!FW.gbr||x.code===FW.gbr).sort((x,y)=>{const e=z=>{const o=(S.offices||[]).find(q=>q.code===z.code);return o?o.name:'~'+z.br};return e(x).localeCompare(e(y),'en')});if(!g.length)return[];
   const rs=[],brs=[],tot=new Array(22).fill(0);
-  g.forEach(x=>x.rs.forEach(r=>{rs.push(r);brs.push(x.br);for(let c=6;c<=20;c++){const v=gaNum(r[c]);if(!isNaN(v))tot[c]=Math.round((tot[c]+v)*100)/100}}));
+  g.forEach(x=>x.rs.forEach(r=>{rs.push(r);brs.push(x.br);for(let c=6;c<=20;c++){const v=gaNum(r[c]);if(!isNaN(v))tot[c]=fw2(tot[c]+fw2(v))}}));
   return[{br:g.length===1?g[0].br:'',rs,brs,tot}];
 }
 function fwGaHtml(sets){
@@ -358,7 +359,7 @@ function fwGaHtml(sets){
       <table class="fwt" style="table-layout:auto"><tr>${R2.slice(0,1).map(([c,t])=>th(t,c,'rowspan="2"')).join('')}${th('শাখা',0,'rowspan="2"')}${R2.slice(1).map(([c,t])=>th(t,c,'rowspan="2"')).join('')}${th('আরোপিত দায়',7,'colspan="2"')}${th('মোট দায়',9,'rowspan="2"')}${th('পরিশোধ',10,'colspan="3"')}${[[13,'মোট পরিশোধ'],[14,'লেজার বকেয়া'],[15,'আদায়যোগ্য আসল']].map(([c,t])=>th(t,c,'rowspan="2"')).join('')}${th('অনারোপিত সুদ',16,'colspan="2"')}${[[18,'ইন্টারেস্ট সাসপেন্স এর পরিমাণ'],[19,'যাচিত CIBTCA এর পরিমাণ'],[20,'কস্ট অব ফান্ড এর পরিমাণ'],[21,'অবলোপনকৃত কি’না?']].map(([c,t])=>th(t,c,'rowspan="2"')).join('')}</tr>
       <tr>${[[7,'সুদ'],[8,'অন্যান্য খরচ'],[10,'আসল'],[11,'সুদ'],[12,'অন্যান্য খরচ'],[16,'সাধারণ সুদ'],[17,'দণ্ড সুদ']].map(([c,t])=>th(t,c)).join('')}</tr>
       <tr><th style="background:#D9D9D9">১</th><th style="background:#D9D9D9">০</th>${FW_GAFILL.slice(1).map((f,c0)=>{const c=c0+1;return`<th style="background:#D9D9D9">${FW_GANUM[c]||toBn(c+1)}</th>`}).join('')}</tr>
-      ${set.rs.slice(p*PER,(p+1)*PER).map((r,i)=>`<tr><td style="text-align:center">${toBn(p*PER+i+1)}</td><td style="text-align:left">${esc(set.brs[p*PER+i])}</td>${r.slice(1).map((c,k0)=>{const k=k0+1;return`<td style="${k===1?'white-space:nowrap;text-align:left':k>=6&&k<=20?'text-align:right':'text-align:center'}">${k===1?esc(c):k>=6&&k<=20?fwN(isNaN(gaNum(c))?0:gaNum(c)):toBn(String(c))}</td>`}).join('')}</tr>`).join('')}
+      ${set.rs.slice(p*PER,(p+1)*PER).map((r,i)=>`<tr><td style="text-align:center">${toBn(p*PER+i+1)}</td><td style="text-align:left">${esc(set.brs[p*PER+i])}</td>${r.slice(1).map((c,k0)=>{const k=k0+1;return`<td style="${k===1?'white-space:nowrap;text-align:left':k>=6&&k<=20?'text-align:right':'text-align:center'}">${k===1?esc(c):k>=6&&k<=20?fwN(isNaN(gaNum(c))?0:fw2(gaNum(c))):toBn(String(c))}</td>`}).join('')}</tr>`).join('')}
       ${last?`<tr style="font-weight:700"><td colspan="7" style="text-align:center">সর্বমোট</td>${set.tot.slice(6,21).map(c=>`<td style="text-align:right">${fwN(c)}</td>`).join('')}<td></td></tr>`:''}</table>
       </div></div>`;
     }
@@ -371,7 +372,7 @@ A.fwGaXl=async()=>{
   await gaLoadLib();const wb=XLSX.utils.book_new(),used=new Set();
   sets.forEach((st,i)=>{
     const H=[FW_GA_HEAD[0],'শাখা',...FW_GA_HEAD.slice(1)],aoa=[['জনতা ব্যাংক পিএলসি.'],['এরিয়া অফিস, সিরাজগঞ্জ'],[FW_GSUBJ],H,[1,0,...FW_GA_HEAD.slice(1).map((_,c)=>c+2)],
-      ...st.rs.map((r,k)=>[k+1,st.brs[k],...r.slice(1).map((c,j0)=>{const j=j0+1;return j>=6&&j<=20?(isNaN(gaNum(c))?0:gaNum(c)):String(c)})]),
+      ...st.rs.map((r,k)=>[k+1,st.brs[k],...r.slice(1).map((c,j0)=>{const j=j0+1;return j>=6&&j<=20?(isNaN(gaNum(c))?0:fw2(gaNum(c))):String(c)})]),
       ['','সর্বমোট','','','','','',...st.tot.slice(6,21),'']];
     const ws=XLSX.utils.aoa_to_sheet(aoa);ws['!merges']=[0,1,2].map(r=>({s:{r,c:0},e:{r,c:22}}));ws['!cols']=H.map((_,c)=>({wch:c===2?30:c===3?16:c<7?14:13}));
     let n=String(st.br||'Annexure-Ga').replace(/[\[\]:*?\/\\]/g,' ').slice(0,28);while(used.has(n.toLowerCase()))n=n.slice(0,25)+'-'+(i+1);used.add(n.toLowerCase());XLSX.utils.book_append_sheet(wb,ws,n);
