@@ -3,7 +3,7 @@ ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC=os.path.join(ROOT,'src','offline_base.html')
 GL=os.path.join(ROOT,'src','glance.js')
 APPJS=os.path.join(ROOT,'src','app_online.js')
-RCD=[os.path.join(ROOT,'src',f) for f in ('rcd3_data.js','rcd3.js','rcd4_data.js','rcd4cf_data.js','rcd4.js','loanforms.js','gaall.js')]
+RCD=[os.path.join(ROOT,'src',f) for f in ('rcd3_data.js','rcd3.js','rcd4_data.js','rcd4cf_data.js','rcd4.js','loanforms.js','gaall.js','fwd.js')]
 OUT=os.path.join(ROOT,'site','index.html')
 s=open(SRC,encoding='utf-8').read()
 style=re.search(r'<style>([\s\S]*?)</style>',s).group(1)
@@ -29,7 +29,7 @@ _LFM="G('Loan Application',["+",".join([
  "L('lf_reports','Loan Reports','lfrpt')"
 ])+"])"
 tree=tree.replace(_ln,"L('ln_sod','Secured overdraft'),L('ln_staff','Staff loan'),"+_LFM+"]}")
-tree=tree.replace(_old,"G('Interest waiver calculator',[L('rc_iwc','Data entry','iwc'),G('Report',[L('rc_iwga','Annexure-Ga','iwr'),L('rc_iwgha','Annexure-Gha','iwr')])]),L('rc_gaall','Annexure-Ga (All)','gaall')")
+tree=tree.replace(_old,"G('Interest waiver calculator',[L('rc_iwc','Data entry','iwc'),G('Report',[L('rc_iwga','Annexure-Ga','iwr'),L('rc_iwgha','Annexure-Gha','iwr'),L('rc_gaall','Annexure-Ga (All)','gaall'),L('rc_fwd','Forwarding (AO)','fwd')])])")
 _lb=tree.index('const LEAVES={};')
 tree=tree[:_lb]+"""const LEAVES={};
 function addLeaves(items,pillar,prefix){items.forEach(it=>{if(it.group)addLeaves(it.items,pillar,(prefix?prefix+' / ':'')+it.group);else LEAVES[it.id]={...it,pillar,title:prefix?prefix+' ('+it.name+')':it.name}})}
@@ -60,6 +60,7 @@ extra_css=""".top{position:sticky;top:0;z-index:60}
 .lfpage .gtitle{font-size:14px;font-weight:700;margin:4px 0 10px}.lfpage .gtitle,.lfpad .gtitle{text-align:center}.lfpage .r3t th,.lfpad .r3t th{text-align:center}.lfpage .p-h .tx,.lfpad .p-h .tx{text-align:center}.lfpage .p-h .b,.lfpad .p-h .b{font-size:22px}.lfpage .p-h .tx div:not(.b),.lfpad .p-h .tx div:not(.b){font-size:15px}.lfpage .p-h img,.lfpad .p-h img{width:52px}.lfpage .p-sign{display:flex;justify-content:space-between;margin:40px 8mm 0;gap:40px}.lfpage .p-sign div{flex:0 0 42mm;border-top:1px solid #000;padding-top:4px;font-size:11.5px;text-align:center}
 .lfpage .r3t th,.lfpage .r3t td{border:1px solid #444;padding:1px 3px;font-size:12px;color:#000;background:#fff}
 .lfpage{width:210mm;height:297mm;box-sizing:border-box;background:#fff;color:#000;font-family:'KalpurushJB','Kalpurush',sans-serif;font-size:12pt;line-height:1.4;position:relative;overflow:hidden;break-after:page;page-break-after:always;break-inside:avoid}
+.fwpage .fwin{padding:12mm 10mm 12mm 14mm;font-size:11pt;line-height:1.35}.fwpage .fwh{display:flex;gap:10px;align-items:flex-start;border-bottom:1.5px solid #000;padding-bottom:3mm}.fwpage .fwh img{width:20mm;height:auto;margin-top:2mm}.fwpage .fwl{flex:1.3;font-size:9pt;line-height:1.3}.fwpage .fwb{font-size:19pt;font-weight:700;line-height:1.15}.fwpage .fwr{flex:1;font-size:9pt;line-height:1.3}.fwpage .fwa{font-size:12pt;font-weight:700}.fwpage .fwref{display:flex;justify-content:space-between;font-size:11pt;margin:2mm 0 4mm}.fwpage .fwsub{display:flex;gap:6px;margin:3mm 0;text-align:justify}.fwpage .fwsub b{white-space:nowrap}.fwpage p{margin:2mm 0}.fwpage .j{text-align:justify}.fwpage .fwt{width:100%;border-collapse:collapse;font-size:8.5pt;line-height:1.2}.fwpage .fwt th,.fwpage .fwt td{border:1px solid #000;padding:1.2mm 1mm;background:#fff}.fwpage .fwt th{text-align:center;font-weight:400}.fwpage .fwt .c{text-align:center;white-space:nowrap}.fwpage .fwt td:nth-child(3){white-space:nowrap}.fwpage .fwt .n{text-align:right;white-space:nowrap}.fwpage .fwt .tt td{font-weight:700}.fwpage.fw2 .fwt{font-size:7.5pt}.fwpage.fw2 .fwt td{padding:.6mm 1mm}.fwpage.fw3 .fwt{font-size:6.5pt}.fwpage.fw3 .fwt td{padding:.2mm 1mm}.fwpage.fw4 .fwt{font-size:5.5pt}.fwpage.fw4 .fwt td{padding:0 .8mm}.fwpage .fwsg{margin-top:6mm}.fwpage .fwan{margin-top:6mm;font-size:10pt}
 .lfpage:last-child{break-after:auto;page-break-after:auto}.lfpage .u{text-decoration:underline}
 .lfpage .lff{display:inline-block;border-bottom:1px dotted #000;text-align:center;padding:0 1mm;line-height:1.25;vertical-align:bottom;box-sizing:border-box}
 .lfpage .kl{display:flex;width:161mm;min-height:5.9mm;line-height:5.9mm;align-items:flex-end}.lfpage .kb{flex:0 0 47mm;white-space:nowrap}.lfpage .kc{flex:0 0 2.5mm}.lfpage .kn{flex:0 0 auto;white-space:nowrap;margin-right:1.5mm}.lfpage .kf{flex:1;border-bottom:1px dotted #000;margin-left:1mm;margin-right:2mm;min-height:5.2mm;line-height:5.2mm;font-size:11.5pt;overflow-wrap:anywhere}

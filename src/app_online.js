@@ -168,9 +168,9 @@ function MAINMENU(){
   const lp=TREE.find(p=>p.id==='loan').items.find(x=>x.group==='Loan Application');
   const ok=it=>it.group?it.items.length>0:true;
   const flt=items=>items.map(it=>it.group?{...it,items:flt(it.items)}:it).filter(ok);
-  const iw=TREE.flatMap(p=>p.items).find(x=>x.group==='Interest waiver calculator');
+  const iw0=TREE.flatMap(p=>p.items).find(x=>x.group==='Interest waiver calculator');const fwOk=S.user&&S.user.role!=='BRANCH';const iw=iw0&&{...iw0,items:iw0.items.map(it=>it.group?{...it,items:it.items.filter(x=>x.id!=='rc_fwd'||fwOk)}:it)};
   const setP=it=>it.group?it.items.forEach(setP):(LEAVES[it.id]&&(LEAVES[it.id].pillar='Calculation Tools'));setP(iw);
-  const rep=TREE.map(p=>({group:p.name,items:p.items.filter(x=>x!==lp&&x!==iw)}));
+  const rep=TREE.map(p=>({group:p.name,items:p.items.filter(x=>x!==lp&&x!==iw0)}));
   LEAVES.lf_dash=LEAVES.lf_dash||{id:'lf_dash',name:'Loan Dashboard',title:'Loan Dashboard',pillar:'Loan Application',tpl:'ldash'};
   LEAVES.st_dash=LEAVES.st_dash||{id:'st_dash',name:'Statements Dashboard',title:'Statements Dashboard',pillar:'Statements',tpl:'sdash'};
   return[{id:'lapp',name:'Loan Application',items:[LEAVES.lf_dash,...flt(lp.items)],lvl:3},{id:'rep',name:'Statements',items:[LEAVES.st_dash,...rep],lvl:2},{id:'calc',name:'Calculation Tools',items:[iw],lvl:3}];
@@ -226,6 +226,7 @@ function pageLeaf(){
   if(l.tpl==='iwc')return pageIwc(l);
   if(l.tpl==='iwr')return pageIwr(l);
   if(l.tpl==='gaall')return pageGaAll(l);
+  if(l.tpl==='fwd')return pageFwd(l);
   if(l.tpl==='ldash')return pageLfDash();
   if(l.tpl==='sdash')return pageDash('Statements Dashboard');
   if(l.tpl==='lf')return isArea()?pageLfAo(l):pageLoanForms(l);
