@@ -35,14 +35,14 @@ function pageFwd(l){
   fwInit();
   const I=(lb,v,ev,ex='')=>`<div><label>${lb}</label><input value="${esc(v)}" oninput="${ev}" ${ex}></div>`;
   return`<div class="pghead"><div class="hrow"><h2>Forwarding (AO)</h2><div class="hrow" id="fwctl" style="flex:1 1 auto;justify-content:flex-end"><div class="bar"><select id="fwrep" onchange="FW.rep=this.value;FW.show=false;$('#fwview').innerHTML=''" style="height:32px"><option value="letter" ${FW.rep==='letter'?'selected':''}>Forwarding letter</option><option value="note" ${FW.rep==='note'?'selected':''}>Note Sheet</option><option value="gha" ${FW.rep==='gha'?'selected':''}>Annexure-Gha</option></select>
-  <button onclick="run(()=>A.fwView())">View</button><button class="pri" onclick="run(()=>A.fwGo())">Print / Download</button>
-  <button onclick="run(()=>A.fwSave())">Save</button></div></div></div></div>
+  <button onclick="run(()=>A.fwView())">View</button><button onclick="run(()=>A.fwGo('print'))">Print</button><button class="pri" onclick="run(()=>A.fwGo('pdf'))">Download</button></div></div></div></div>
   <div class="card fwform" style="margin-top:12px"><div class="g">
   <div style="grid-column:span 2"><label>Excel files (Ga)</label><input type="file" id="fw_f" accept=".xlsx,.xls,.csv" multiple onchange="run(()=>fwPick(this))" style="height:auto"></div>
   <div style="grid-column:span 2">${I('Letter Reference',FW.pre,"FW.pre=this.value;fwSV('pre',this.value);fwDraw()")}</div>
   ${I('Date',FW.d,"FW.d=this.value;fwDraw()",'id="fw_d" maxlength="10"')}${I('Meeting no.',FW.nn,"FW.nn=this.value;fwDraw()")}${I('Note date',FW.nd,"FW.nd=this.value;fwDraw()",'maxlength="10"')}
+  <div id="fwref" style="display:contents"></div>
   <label class="chk" title="Ticked: files of different branches are put in ONE letter, ONE Note Sheet, ONE Gha. Unticked: a separate letter and Note Sheet for each branch."><input type="checkbox" ${FW.comb?'checked':''} onchange="FW.comb=this.checked;fwDraw()"> Combine all branches in one letter</label></div>
-  <div id="fwmap"></div></div>
+  <div id="fwmap"></div><div class="bar" style="margin-top:12px"><button class="pri" onclick="run(()=>A.fwSave())">Save</button></div></div>
   <details class="card" style="margin-top:12px"><summary><b>Wording</b> <span class="muted small">(saved on this computer)</span></summary><div class="g" style="margin-top:8px">
   ${I('Ref suffix',FW.suf,"FW.suf=this.value;fwSV('suf',this.value);fwDraw()")}
   ${I('Sign name',FW.sig,"FW.sig=this.value;fwSV('sig',this.value);fwDraw()")}${I('Post',FW.des,"FW.des=this.value;fwSV('des',this.value);fwDraw()")}
@@ -93,7 +93,7 @@ function fwGuess(){
 function fwFilesUi(){
   const kids=childBranches();
   return`<table class="fwft" style="margin-top:10px"><tr><th>File</th><th>Loans</th><th>Branch (from file)</th><th>Save to</th><th><a href="#" onclick="FW.files=[];FW.raw=null;FW.fs={};fwMapUi();fwDraw();return false">Clear</a></th></tr>
-  ${FW.files.map((f,i)=>`<tr><td>${esc(f.name)}</td><td>${fwGaRows(f).length}</td><td><input value="${esc(f.br)}" oninput="FW.files[${i}].br=this.value;fwDraw()"></td><td><select onchange="FW.files[${i}].code=this.value"><option value="">- branch -</option>${kids.map(k=>`<option value="${k.code}" ${f.code===k.code?'selected':''}>${k.code} - ${esc(k.name)}</option>`).join('')}</select></td><td><a href="#" onclick="FW.files.splice(${i},1);FW.raw=FW.files.length?FW.files[0].aoa:null;fwMapUi();fwDraw();return false">&times;</a></td></tr>`).join('')}</table><div id="fwref"></div>`;
+  ${FW.files.map((f,i)=>`<tr><td>${esc(f.name)}</td><td>${fwGaRows(f).length}</td><td><input value="${esc(f.br)}" oninput="FW.files[${i}].br=this.value;fwDraw()"></td><td><select onchange="FW.files[${i}].code=this.value"><option value="">- branch -</option>${kids.map(k=>`<option value="${k.code}" ${f.code===k.code?'selected':''}>${k.code} - ${esc(k.name)}</option>`).join('')}</select></td><td><a href="#" onclick="FW.files.splice(${i},1);FW.raw=FW.files.length?FW.files[0].aoa:null;fwMapUi();fwDraw();return false">&times;</a></td></tr>`).join('')}</table>`;
 }
 function fwMapUi(){
   if(FW.ga){$('#fwmap').innerHTML=FW.files.length?fwFilesUi():'';return}
@@ -103,7 +103,7 @@ function fwMapUi(){
   <div style="flex:1 1 220px"><label>Branch name (if the file has no branch column)</label><input value="${esc(FW.br)}" oninput="FW.br=this.value;fwDraw()"></div></div>
   <div class="muted small" style="margin:8px 0 4px">Match each letter column with a column of your Excel file (guessed automatically - please check):</div>
   <div class="row">${FW_F.map(([k,n])=>`<div style="flex:1 1 190px"><label>${n}</label><select onchange="FW.map['${k}']=+this.value;fwDraw()">${opt(k)}</select></div>`).join('')}</div>
-  <div id="fwref"></div>`;
+  `;
 }
 function fwData(){
   if(FW.ga)return FW.files.flatMap(fwGaRows);
@@ -153,7 +153,7 @@ function fwPages(rows){
 function fwDraw(){
   if(!FW.raw)return;const rows=fwData(),keys=Object.keys(fwBy(rows));
   const rf=$('#fwref');
-  if(rf&&rf.dataset.k!==keys.join('|')){rf.dataset.k=keys.join('|');rf.innerHTML=`<div class="row" style="margin-top:10px;gap:10px">${keys.map(b=>`<div style="flex:0 0 130px"><label>Outward Number${keys.length>1||b==='ALL'?' - '+esc(b==='ALL'?'all':b):''}</label><input value="${esc(FW.ref[b]||'')}" oninput="FW.ref[${esc(JSON.stringify(b)).replace(/"/g,'&quot;')}]=this.value;fwDraw()" placeholder="e.g. 1759"></div>`).join('')}</div>`}
+  if(rf&&rf.dataset.k!==keys.join('|')){rf.dataset.k=keys.join('|');rf.innerHTML=`${keys.map(b=>`<div><label>Outward Number${keys.length>1||b==='ALL'?' - '+esc(b==='ALL'?'all':b):''}</label><input value="${esc(FW.ref[b]||'')}" oninput="FW.ref[${esc(JSON.stringify(b)).replace(/"/g,'&quot;')}]=this.value;fwDraw()" placeholder="e.g. 1759"></div>`).join('')}`}
   if(FW.show)fwShow();
 }
 function fwGhaAoa(rows){
@@ -171,23 +171,30 @@ function fwShow(){
   v.innerHTML=FW.rep==='note'?fwNotePages(rows):fwPages(rows);fwFitIn(v);
 }
 A.fwView=async()=>{if(!FW.raw)return toast('Upload the Annexure-Ga Excel first.');FW.show=true;fwShow()};
-A.fwGo=async()=>{
+A.fwGo=async w=>{
   if(!FW.raw)return toast('Upload the Annexure-Ga Excel first.');
-  if(FW.rep==='gha')return A.fwGha();
-  if(FW.rep==='note')return A.fwNote();
-  return A.fwDo('print');
+  const rows=fwData();if(!rows.length)return toast('No loan rows found.');
+  if(FW.rep==='gha'){if(w==='print')return fwOut(fwGhaPage(rows),'print','JBRS_Annexure-Gha.pdf',true);return A.fwGha()}
+  if(FW.rep==='note'){if(!FW.ga)return toast('The Note Sheet needs the Annexure-Ga (customer wise) file.');return fwOut(fwNotePages(rows),w,'JBRS_Note_Sheet.pdf')}
+  return fwOut(fwPages(rows),w,'JBRS_Forwarding_AO.pdf');
 };
+function fwGhaPage(rows){
+  const {data,tot}=fwGhaAoa(rows);
+  return`<div class="lfpage fwpage fwland"><div class="fwin" style="padding:10mm 8mm"><div style="text-align:center"><div style="font-size:16pt;font-weight:700">জনতা ব্যাংক পিএলসি.</div><div style="font-size:12pt;font-weight:700">পরিশিষ্ট-ঘ</div></div>
+  <p class="j" style="font-size:9pt;margin:2mm 0">বিষয়ঃ নির্দেশ বিজ্ঞপ্তি নং- ১৪১১/২৬ তারিখ ০২/০৭/২০২৬ অনুযায়ী বিশেষ এক্সিট সুবিধার আওতায় কৃষি ও পল্লী ঋণসমূহের ৩০/০৬/২০২৬ জুন ভিত্তিক ক্ষতি হিসাবে শ্রেণিকৃত অনাদায়ী ঋণ হিসাবের তথ্যাদি।</p><div style="text-align:right;font-size:9pt">(টাকার অংকে)</div>
+  <table class="fwt" style="table-layout:auto"><tr>${FW_GH.map(h=>`<th>${esc(h)}</th>`).join('')}</tr><tr>${FW_GH.map((_,i)=>`<th style="font-weight:400">${toBn(i+1)}</th>`).join('')}</tr>${data.map(r=>`<tr>${r.map((c,i)=>`<td class="${i>3?'n':'c'}">${typeof c==='number'&&i>4?fwN(c):esc(i===0?toBn(c):i===4?toBn(c):c)}</td>`).join('')}</tr>`).join('')}<tr class="tt"><td></td><td class="c">সর্বমোট</td><td></td><td></td>${tot.map((c,i)=>`<td class="n">${i?fwN(c):toBn(c)}</td>`).join('')}</tr></table></div></div>`;
+}
 const fwOver=(t,av,w,pg)=>t.scrollWidth>av+1||w.scrollHeight>pg.clientHeight-4||[...t.querySelectorAll('td,th')].some(c=>c.scrollWidth>c.clientWidth+1);
 function fwFitIn(root){
   root.querySelectorAll('.fwt').forEach(t=>{if(t.style.fontSize)return;const w=t.closest('.fwin'),cs=getComputedStyle(w),av=w.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight),pg=t.closest('.lfpage');let f=8;t.style.fontSize=f+'pt';while(fwOver(t,av,w,pg)&&f>3.2){f-=.2;t.style.fontSize=f+'pt'}});
 }
-async function fwOut(html,w,fname){
+async function fwOut(html,w,fname,land){
   let win=null;if(w==='print'){try{win=window.open('','_blank')}catch(e){}}
   toast('Preparing PDF...');await lfLoadPdf();if(document.fonts&&document.fonts.ready)await document.fonts.ready;
   const host=document.createElement('div');host.className='lfpdfhost';host.innerHTML=html;document.body.appendChild(host);
-  try{fwFitIn(host);const {jsPDF}=window.jspdf;const pdf=new jsPDF({unit:'mm',format:'a4',orientation:'portrait',compress:true});
+  try{fwFitIn(host);const {jsPDF}=window.jspdf;const pdf=new jsPDF({unit:'mm',format:'a4',orientation:land?'landscape':'portrait',compress:true});
     const pgs=[...host.querySelectorAll('.lfpage')];
-    for(let i=0;i<pgs.length;i++){const c=await html2canvas(pgs[i],{scale:2.2,backgroundColor:'#ffffff',logging:false});if(i)pdf.addPage();pdf.addImage(c.toDataURL('image/jpeg',0.93),'JPEG',0,0,210,297,undefined,'FAST')}
+    for(let i=0;i<pgs.length;i++){const c=await html2canvas(pgs[i],{scale:2.2,backgroundColor:'#ffffff',logging:false});if(i)pdf.addPage();pdf.addImage(c.toDataURL('image/jpeg',0.93),'JPEG',0,0,land?297:210,land?210:297,undefined,'FAST')}
     if(w==='print'&&win){win.location.href=URL.createObjectURL(pdf.output('blob'));toast('Opened in a new tab - print or save from there.')}
     else pdf.save(fname);
   }catch(e){if(win)win.close();throw e}finally{host.remove()}
