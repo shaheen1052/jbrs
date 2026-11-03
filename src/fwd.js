@@ -34,16 +34,18 @@ function fwInit(){
 function pageFwd(l){
   fwInit();
   const I=(lb,v,ev,ex='')=>`<div><label>${lb}</label><input value="${esc(v)}" oninput="${ev}" ${ex}></div>`;
-  return`<div class="pghead"><div class="hrow"><h2>Forwarding (AO)</h2><div class="hrow" id="fwctl" style="flex:1 1 auto;justify-content:flex-end"><div class="bar"><select id="fwrep" onchange="FW.rep=this.value;FW.show=false;$('#fwview').innerHTML=''" style="height:32px"><option value="letter" ${FW.rep==='letter'?'selected':''}>Forwarding letter</option><option value="note" ${FW.rep==='note'?'selected':''}>Note Sheet</option><option value="gha" ${FW.rep==='gha'?'selected':''}>Annexure-Gha</option></select>
+  return`<div class="pghead"><div class="hrow"><h2>Forwarding (AO)</h2><div class="hrow" id="fwctl" style="flex:1 1 auto;justify-content:flex-end"><div class="bar"><select id="fwrep" onchange="FW.rep=this.value;FW.show=false;$('#fwview').innerHTML=''" style="height:32px"><option value="letter" ${FW.rep==='letter'?'selected':''}>Forwarding letter</option><option value="note" ${FW.rep==='note'?'selected':''}>Note Sheet</option><option value="gha" ${FW.rep==='gha'?'selected':''}>Annexure-Gha (PDF)</option><option value="ghaxl" ${FW.rep==='ghaxl'?'selected':''}>Annexure-Gha (Excel)</option><option value="ghabr" ${FW.rep==='ghabr'?'selected':''}>Annexure-Gha (Branchwise)</option></select>
   <button onclick="run(()=>A.fwView())">View</button><button onclick="run(()=>A.fwGo('print'))">Print</button><button class="pri" onclick="run(()=>A.fwGo('pdf'))">Download</button></div></div></div></div>
-  <div class="card fwform" style="margin-top:12px"><div class="g">
-  <div style="grid-column:span 2"><label>Excel files (Ga)</label><input type="file" id="fw_f" accept=".xlsx,.xls,.csv" multiple onchange="run(()=>fwPick(this))" style="height:auto"></div>
-  <div style="grid-column:span 2">${I('Letter Reference',FW.pre,"FW.pre=this.value;fwSV('pre',this.value);fwDraw()")}</div>
-  ${I('Date',FW.d,"FW.d=this.value;fwDraw()",'id="fw_d" maxlength="10"')}${I('Meeting no.',FW.nn,"FW.nn=this.value;fwDraw()")}${I('Note date',FW.nd,"FW.nd=this.value;fwDraw()",'maxlength="10"')}
+  <div class="card fwform" style="margin-top:8px;padding:10px 12px"><div class="g">
+  <div style="grid-column:span 2"><label>Upload Excel (Ga)</label><input type="file" id="fw_f" accept=".xlsx,.xls,.csv" multiple onchange="run(()=>fwPick(this))" style="height:auto;padding:3px"></div>
+  ${I('Date',FW.d,"FW.d=this.value;fwDraw()",'id="fw_d" maxlength="10"')}
   <div id="fwref" style="display:contents"></div>
-  <label class="chk" title="Ticked: files of different branches are put in ONE letter, ONE Note Sheet, ONE Gha. Unticked: a separate letter and Note Sheet for each branch."><input type="checkbox" ${FW.comb?'checked':''} onchange="FW.comb=this.checked;fwDraw()"> Combine all branches in one letter</label></div>
-  <div id="fwmap"></div><div class="bar" style="margin-top:12px"><button class="pri" onclick="run(()=>A.fwSave())">Save</button></div></div>
+  ${I('Meeting no.',FW.nn,"FW.nn=this.value;fwDraw()")}${I('Note date',FW.nd,"FW.nd=this.value;fwDraw()",'maxlength="10"')}
+  <label class="chk" title="Ticked: files of different branches are put in ONE letter, ONE Note Sheet, ONE Gha. Unticked: a separate letter and Note Sheet for each branch."><input type="checkbox" ${FW.comb?'checked':''} onchange="FW.comb=this.checked;fwDraw()"> Combine all branches in one letter</label>
+  <div style="text-align:right"><button class="pri" onclick="run(()=>A.fwSave())">Save</button></div></div>
+  <div id="fwmap" style="margin-top:6px"></div></div>
   <details class="card" style="margin-top:12px"><summary><b>Wording</b> <span class="muted small">(saved on this computer)</span></summary><div class="g" style="margin-top:8px">
+  <div style="grid-column:span 2">${I('Letter Reference',FW.pre,"FW.pre=this.value;fwSV('pre',this.value);fwDraw()")}</div>
   ${I('Ref suffix',FW.suf,"FW.suf=this.value;fwSV('suf',this.value);fwDraw()")}
   ${I('Sign name',FW.sig,"FW.sig=this.value;fwSV('sig',this.value);fwDraw()")}${I('Post',FW.des,"FW.des=this.value;fwSV('des',this.value);fwDraw()")}
   <div style="grid-column:span 2">${I('Note: prepared by (name|post)',FW.prep,"FW.prep=this.value;fwSV('prep',this.value)")}</div><div style="grid-column:span 2">${I('Note: final approval (name|post)',FW.fin,"FW.fin=this.value;fwSV('fin',this.value)")}</div></div>
@@ -167,23 +169,18 @@ function fwShow(){
   const v=$('#fwview');if(!v)return;const rows=fwData();
   if(!rows.length){v.innerHTML='<p class="muted">No loan rows found.</p>';return}
   if(FW.rep!=='letter'&&!FW.ga){v.innerHTML='<p class="muted">This report needs Annexure-Ga (customer wise) files.</p>';return}
-  if(FW.rep==='gha'){const {data,tot}=fwGhaAoa(rows);v.innerHTML=`<div class="card" style="overflow:auto"><table class="fwft"><tr>${FW_GH.map(h=>`<th>${esc(h)}</th>`).join('')}</tr>${data.map(r=>`<tr>${r.map((c,i)=>`<td${typeof c==='number'&&i>3?' style="text-align:right"':''}>${typeof c==='number'&&i>4?fwN(c):esc(c)}</td>`).join('')}</tr>`).join('')}<tr style="font-weight:700"><td></td><td>সর্বমোট</td><td></td><td></td>${tot.map((c,i)=>`<td style="text-align:right">${i?fwN(c):c}</td>`).join('')}</tr></table></div>`;return}
+  if(FW.rep.startsWith('gha')){v.innerHTML='<div style="overflow:auto">'+fwGhaHtml(fwGSets(rows,FW.rep==='ghabr'))+'</div>';fwFitIn(v);const zf=Math.min(1,(v.clientWidth-4)/(297*96/25.4));v.querySelectorAll('.fwpage').forEach(e=>{e.style.zoom=zf;e.style.marginBottom='8px'});return}
   v.innerHTML=FW.rep==='note'?fwNotePages(rows):fwPages(rows);fwFitIn(v);
 }
 A.fwView=async()=>{if(!FW.raw)return toast('Upload the Annexure-Ga Excel first.');FW.show=true;fwShow()};
 A.fwGo=async w=>{
   if(!FW.raw)return toast('Upload the Annexure-Ga Excel first.');
   const rows=fwData();if(!rows.length)return toast('No loan rows found.');
-  if(FW.rep==='gha'){if(w==='print')return fwOut(fwGhaPage(rows),'print','JBRS_Annexure-Gha.pdf',true);return A.fwGha()}
+  if(FW.rep==='ghaxl'){if(w==='print')return toast('Excel cannot be printed from here. Choose Annexure-Gha (PDF) to print, or Download the Excel.');return A.fwGhaXl(false)}
+  if(FW.rep==='gha'||FW.rep==='ghabr'){if(!FW.ga)return toast('This report needs Annexure-Ga (customer wise) files.');return fwOut(fwGhaHtml(fwGSets(rows,FW.rep==='ghabr')),w,FW.rep==='ghabr'?'JBRS_Annexure-Gha_Branchwise.pdf':'JBRS_Annexure-Gha.pdf',true)}
   if(FW.rep==='note'){if(!FW.ga)return toast('The Note Sheet needs the Annexure-Ga (customer wise) file.');return fwOut(fwNotePages(rows),w,'JBRS_Note_Sheet.pdf')}
   return fwOut(fwPages(rows),w,'JBRS_Forwarding_AO.pdf');
 };
-function fwGhaPage(rows){
-  const {data,tot}=fwGhaAoa(rows);
-  return`<div class="lfpage fwpage fwland"><div class="fwin" style="padding:10mm 8mm"><div style="text-align:center"><div style="font-size:16pt;font-weight:700">জনতা ব্যাংক পিএলসি.</div><div style="font-size:12pt;font-weight:700">পরিশিষ্ট-ঘ</div></div>
-  <p class="j" style="font-size:9pt;margin:2mm 0">বিষয়ঃ নির্দেশ বিজ্ঞপ্তি নং- ১৪১১/২৬ তারিখ ০২/০৭/২০২৬ অনুযায়ী বিশেষ এক্সিট সুবিধার আওতায় কৃষি ও পল্লী ঋণসমূহের ৩০/০৬/২০২৬ জুন ভিত্তিক ক্ষতি হিসাবে শ্রেণিকৃত অনাদায়ী ঋণ হিসাবের তথ্যাদি।</p><div style="text-align:right;font-size:9pt">(টাকার অংকে)</div>
-  <table class="fwt" style="table-layout:auto"><tr>${FW_GH.map(h=>`<th>${esc(h)}</th>`).join('')}</tr><tr>${FW_GH.map((_,i)=>`<th style="font-weight:400">${toBn(i+1)}</th>`).join('')}</tr>${data.map(r=>`<tr>${r.map((c,i)=>`<td class="${i>3?'n':'c'}">${typeof c==='number'&&i>4?fwN(c):esc(i===0?toBn(c):i===4?toBn(c):c)}</td>`).join('')}</tr>`).join('')}<tr class="tt"><td></td><td class="c">সর্বমোট</td><td></td><td></td>${tot.map((c,i)=>`<td class="n">${i?fwN(c):toBn(c)}</td>`).join('')}</tr></table></div></div>`;
-}
 const fwOver=(t,av,w,pg)=>t.scrollWidth>av+1||w.scrollHeight>pg.clientHeight-4||[...t.querySelectorAll('td,th')].some(c=>c.scrollWidth>c.clientWidth+1);
 function fwFitIn(root){
   root.querySelectorAll('.fwt').forEach(t=>{if(t.style.fontSize)return;const w=t.closest('.fwin'),cs=getComputedStyle(w),av=w.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight),pg=t.closest('.lfpage');let f=8;t.style.fontSize=f+'pt';while(fwOver(t,av,w,pg)&&f>3.2){f-=.2;t.style.fontSize=f+'pt'}});
@@ -235,15 +232,98 @@ A.fwNote=async()=>{
   if(!FW.ga)return toast('The Note Sheet needs the Annexure-Ga (customer wise) file.');
   return fwOut(fwNotePages(rows),'print','JBRS_Note_Sheet.pdf');
 };
-const FW_GH=['ক্রঃ নং','এরিয়ার নাম','শাখার নাম','ঋণের ধরণ/প্রকৃতি','ঋণ সংখ্যা','আসল','আরোপিত দায়: সুদ','আরোপিত দায়: অন্যান্য খরচ','মোট দায় (৬+৭+৮)','পরিশোধ: আসল','পরিশোধ: সুদ','পরিশোধ: অন্যান্য খরচ','মোট পরিশোধ','লেজার বকেয়া (৯-১৩)','আদায়যোগ্য আসল (৬-১০)','অনারোপিত সাধারণ সুদ','অনারোপিত দন্ড সুদ','ইন্টারেস্ট সাসপেন্সের পরিমাণ','যাচিত CIBTCA এর পরিমাণ (১৪-১৫-১৮)','কস্ট অব ফান্ড এর পরিমাণ'];
-A.fwGha=async()=>{
+
+/* ===== Annexure-Gha: same layout as the calculator's prescribed format ===== */
+const FW_GSUBJ='বিষয়: নির্দেশ বিজ্ঞপ্তি নং- ১৪১১/২৬ তারিখ ০২/০৭/২০২৬ অনুযায়ী বিশেষ এক্সিট সুবিধার আওতায় কৃষি ও পল্লী ঋণসমূহের ৩০/০৬/২০২৬ জুন ভিত্তিক ক্ষতি হিসাবে শ্রেণিকৃত অনাদায়ী ঋণ হিসাবের তথ্যাদি।';
+const FW_GNOTE='বি: দ্র:- নির্দেশ বিজ্ঞপ্তি নং- ১৪১১/২৬ তারিখ: ০২/০৭/২০২৬ মোতাবেক সুদ মওকুফের নিমিত্ত ১৯ নং কলামে উল্লিখিত CIBTCA এর পরিমাণ সঠিক রয়েছে।';
+const FW_GNUM={8:'৯=(৬+৭+৮)',12:'১৩=(১০+১১+১২)',13:'১৪=(৯-১৩)',14:'১৫=(৬-১০)',18:'১৯=(১৪-১৫-১৮)'};
+const FW_GFILL=['','','','','','#FCD5B4','#FCD5B4','#FCD5B4','#FCD5B4','#92D050','#92D050','#92D050','#92D050','#FCD5B4','#FCD5B4','','','#92D050','#FFC000','#C6D9F1'];
+const FW_GSIGN=['এরিয়া অফিস সংশ্লিষ্ট কর্মকর্তা','এরিয়া অফিস প্রধান','বিভাগীয় কার্যালয় সংশ্লিষ্ট কর্মকর্তা','বিভাগীয় কার্যালয় প্রধান'];
+const fwGSets=(rows,by)=>{
+  const mk=(rs,name)=>{const {data,tot}=fwGhaAoa(rs);return{name,data,tot,doff:'বগুড়া',upz:'',dist:''}};
+  if(!by)return[mk(rows,'Annexure-Gha')];
+  const o=[];[...new Set(rows.map(r=>r.br))].forEach(b=>o.push(mk(rows.filter(r=>r.br===b),b)));return o;
+};
+function fwGhaHtml(sets){
+  const th=(t,c,o='')=>`<th ${o} style="${FW_GFILL[c]?'background:'+FW_GFILL[c]+';':''}">${esc(t)}</th>`;
+  const PER=24;let h='';
+  sets.forEach(set=>{
+    const n=set.data.length,pn=Math.max(1,Math.ceil(n/PER));
+    for(let p=0;p<pn;p++){
+      const rs=set.data.slice(p*PER,(p+1)*PER),last=p===pn-1;
+      h+=`<div class="lfpage fwpage fwland"><div class="fwin" style="padding:9mm 8mm"><div style="text-align:center;font-size:15pt;font-weight:700">জনতা ব্যাংক পিএলসি.</div>
+      <div style="text-align:right;font-size:11pt;font-weight:700;text-decoration:underline">পরিশিষ্ট-ঘ${pn>1?`<span style="font-weight:400;text-decoration:none">&nbsp;&nbsp;(পাতা ${toBn(p+1)}/${toBn(pn)})</span>`:''}</div>
+      <div style="text-align:center;font-size:9.5pt;margin-top:1mm">বিভাগীয় কার্যালয়ের নাম: ${esc(set.doff)}</div>
+      <div style="display:flex;justify-content:center;gap:40mm;font-size:9.5pt"><span>উপজেলা: ${esc(set.upz)}</span><span>জেলা: ${esc(set.dist)}</span></div>
+      <p style="font-size:9pt;margin:2mm 0 1mm;text-decoration:underline;text-align:justify">${FW_GSUBJ}</p><div style="text-align:right;font-size:9pt">(টাকার অংকে)</div>
+      <table class="fwt" style="table-layout:auto"><tr>${[0,1,2,3,4].map(c=>th(['ক্র: নং','এরিয়ার নাম','শাখার নাম','ঋণের ধরণ /প্রকৃতি','ঋণ সংখ্যা'][c],c,'rowspan="2"')).join('')}${th('আসল',5,'rowspan="2"')}${th('আরোপিত দায়',6,'colspan="2"')}${th('মোট দায়',8,'rowspan="2"')}${th('পরিশোধ',9,'colspan="3"')}${th('মোট পরিশোধ',12,'rowspan="2"')}${th('লেজার বকেয়া',13,'rowspan="2"')}${th('আদায়যোগ্য আসল',14,'rowspan="2"')}${th('অনারোপিত দায়',15,'colspan="2"')}${th('ইন্টারেস্ট সাসপেন্স এর পরিমাণ',17,'rowspan="2"')}${th('যাচিত CIBTCA এর পরিমাণ',18,'rowspan="2"')}${th('কস্ট অব ফান্ড পরিমাণ',19,'rowspan="2"')}</tr>
+      <tr>${[[6,'সুদ'],[7,'অন্যান্য খরচ'],[9,'আসল'],[10,'সুদ'],[11,'অন্যান্য খরচ'],[15,'সাধারণ সুদ'],[16,'দণ্ড সুদ']].map(([c,t])=>th(t,c)).join('')}</tr>
+      <tr>${FW_GFILL.map((f,c)=>`<th style="background:#D9D9D9">${FW_GNUM[c]||toBn(c+1)}</th>`).join('')}</tr>
+      ${rs.map((r,i)=>`<tr>${r.map((c,k)=>`<td style="${k===1||k===2?'text-align:left':k>4?'text-align:right':'text-align:center'}">${k===0?toBn(c):k===4?toBn(c):k>4?fwN(c):esc(c)}</td>`).join('')}</tr>`).join('')}
+      ${last?`<tr style="font-weight:700"><td colspan="4" style="text-align:center">সর্বমোট</td><td style="text-align:center">${toBn(set.tot[0])}</td>${set.tot.slice(1).map(c=>`<td style="text-align:right">${fwN(c)}</td>`).join('')}</tr>`:''}</table>
+      ${last?`<p style="font-size:9pt;margin:3mm 0 0">${FW_GNOTE}</p><div style="display:flex;justify-content:space-around;margin-top:16mm;font-size:9.5pt;text-align:center">${FW_GSIGN.map(t=>`<div>${t}<br>(নামসহ সীল মোহর)</div>`).join('')}</div>`:''}
+      </div></div>`;
+    }
+  });
+  return h;
+}
+const XCRC=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+function xZip(files){const enc=new TextEncoder(),parts=[],cd=[];let off=0;
+ const u16=v=>[v&255,(v>>>8)&255],u32=v=>[v&255,(v>>>8)&255,(v>>>16)&255,(v>>>24)&255];
+ files.forEach(f=>{const nm=enc.encode(f[0]),d=typeof f[1]=="string"?enc.encode(f[1]):f[1];let c=0xFFFFFFFF;for(let i=0;i<d.length;i++)c=XCRC[(c^d[i])&255]^(c>>>8);c=(c^0xFFFFFFFF)>>>0;
+  const h=new Uint8Array([...u32(0x04034b50),...u16(20),...u16(0x0800),...u16(0),...u16(0),...u16(0x21),...u32(c),...u32(d.length),...u32(d.length),...u16(nm.length),...u16(0)]);
+  parts.push(h,nm,d);cd.push(new Uint8Array([...u32(0x02014b50),...u16(20),...u16(20),...u16(0x0800),...u16(0),...u16(0),...u16(0x21),...u32(c),...u32(d.length),...u32(d.length),...u16(nm.length),...u16(0),...u16(0),...u16(0),...u16(0),...u32(0),...u32(off)]),nm);off+=h.length+nm.length+d.length});
+ const cs=cd.reduce((a,b)=>a+b.length,0);parts.push(...cd,new Uint8Array([...u32(0x06054b50),...u16(0),...u16(0),...u16(files.length),...u16(files.length),...u32(cs),...u32(off),...u16(0)]));
+ return new Blob(parts,{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"})}
+
+const FW_GSTY=(()=>{const FN='<name val="Kalpurush"/><family val="2"/>',font=(sz,b,u)=>`<font>${b?"<b/>":""}${u?"<u/>":""}<sz val="${sz}"/>${FN}</font>`;
+ const fill=c=>`<fill><patternFill patternType="solid"><fgColor rgb="FF${c}"/><bgColor indexed="64"/></patternFill></fill>`;
+ const X=(f,fi,b,al,nf)=>`<xf numFmtId="${nf||0}" fontId="${f}" fillId="${fi}" borderId="${b}" xfId="0"${nf?' applyNumberFormat="1"':""} applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment ${al}/></xf>`;
+ const C='horizontal="center" vertical="center" wrapText="1"',Lf='horizontal="left" vertical="center" wrapText="1"',Rt='horizontal="right" vertical="center"';
+ const styles=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="2"><numFmt numFmtId="164" formatCode="[$-5000445]#,##0.00;[$-5000445](#,##0.00);&quot;-&quot;"/><numFmt numFmtId="165" formatCode="[$-5000445]0"/></numFmts><fonts count="7">${font(11)}${font(14,1)}${font(12,1,1)}${font(11,1)}${font(10)}${font(9,1)}${font(11,1)}</fonts><fills count="7"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>${fill("FCD5B4")}${fill("92D050")}${fill("C6D9F1")}${fill("D9D9D9")}${fill("FFC000")}</fills><borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color auto="1"/></left><right style="thin"><color auto="1"/></right><top style="thin"><color auto="1"/></top><bottom style="thin"><color auto="1"/></bottom><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="21"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>${X(1,0,0,C)}${X(2,0,0,Rt)}${X(2,0,0,C)}${X(3,0,0,'horizontal="left" vertical="center"')}${X(0,0,0,Rt)}${X(4,0,1,C)}${X(4,2,1,C)}${X(4,3,1,C)}${X(4,4,1,C)}${X(5,5,1,C)}${X(6,0,1,C)}${X(6,0,1,Lf)}${X(6,0,1,Rt,164)}${X(6,0,1,C)}${X(6,0,1,Rt,164)}${X(3,0,0,Lf)}${X(0,0,0,C)}${X(6,0,1,C,165)}${X(4,6,1,C)}${X(3,0,0,C)}</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+return styles})();
+function fwGhaSheet(set){
+  const L=i=>{let s='';i++;while(i){const m=(i-1)%26;s=String.fromCharCode(65+m)+s;i=(i-m-1)/26}return s};
+  const xe=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const rows={},put=(r,c,cell)=>{(rows[r]=rows[r]||{})[c]=cell},merges=[],M=(a,b)=>merges.push(a+':'+b);
+  const S_=(r,c,t,st)=>put(r,c,`<c r="${L(c)}${r}" s="${st}" t="inlineStr"><is><t xml:space="preserve">${xe(t)}</t></is></c>`),B_=(r,c,st)=>put(r,c,`<c r="${L(c)}${r}" s="${st}"/>`),
+  N_=(r,c,n,st,f)=>put(r,c,`<c r="${L(c)}${r}" s="${st}">${f?`<f>${xe(f)}</f>`:''}<v>${Math.round((+n||0)*100)/100}</v></c>`);
+  const FILL=[6,6,6,6,6,7,7,7,7,8,8,8,8,7,7,6,6,8,19,9];
+  S_(1,0,'জনতা ব্যাংক পিএলসি.',1);M('A1','T1');S_(2,17,'পরিশিষ্ট-ঘ',2);M('R2','T2');
+  S_(3,0,'বিভাগীয় কার্যালয়ের নাম: '+set.doff,20);M('A3','T3');
+  S_(4,4,'উপজেলা: '+set.upz,20);M('E4','H4');S_(4,12,'জেলা: '+set.dist,20);M('M4','P4');
+  S_(5,0,FW_GSUBJ,3);M('A5','T5');S_(6,18,'(টাকার অংকে)',5);M('S6','T6');
+  for(let c=0;c<20;c++){B_(7,c,FILL[c]);B_(8,c,FILL[c])}
+  [[0,'ক্র: নং'],[1,'এরিয়ার নাম'],[2,'শাখার নাম'],[3,'ঋণের ধরণ /প্রকৃতি'],[4,'ঋণ সংখ্যা'],[5,'আসল'],[8,'মোট দায়'],[12,'মোট পরিশোধ'],[13,'লেজার বকেয়া'],[14,'আদায়যোগ্য আসল'],[17,'ইন্টারেস্ট সাসপেন্স এর পরিমাণ'],[18,'যাচিত CIBTCA এর পরিমাণ'],[19,'কস্ট অব ফান্ড পরিমাণ']].forEach(([c,t])=>{S_(7,c,t,FILL[c]);M(L(c)+7,L(c)+8)});
+  [[6,7,'আরোপিত দায়'],[9,11,'পরিশোধ'],[15,16,'অনারোপিত দায়']].forEach(([a,b,t])=>{S_(7,a,t,FILL[a]);M(L(a)+7,L(b)+7)});
+  [[6,'সুদ'],[7,'অন্যান্য খরচ'],[9,'আসল'],[10,'সুদ'],[11,'অন্যান্য খরচ'],[15,'সাধারণ সুদ'],[16,'দণ্ড সুদ']].forEach(([c,t])=>S_(8,c,t,FILL[c]));
+  for(let c=0;c<20;c++)S_(9,c,FW_GNUM[c]||toBn(c+1),10);
+  const D=set.data,r0=10,rl=r0+D.length-1,tr=rl+1;
+  D.forEach((d,i)=>{const r=r0+i,FM={8:`F${r}+G${r}+H${r}`,12:`J${r}+K${r}+L${r}`,13:`I${r}-M${r}`,14:`F${r}-J${r}`,18:`N${r}-O${r}-R${r}`};
+    N_(r,0,d[0],18);S_(r,1,d[1],12);S_(r,2,d[2],12);S_(r,3,d[3],11);N_(r,4,d[4],18);
+    for(let c=5;c<=19;c++)N_(r,c,d[c],13,FM[c])});
+  S_(tr,0,'সর্বমোট',14);for(let c=1;c<4;c++)B_(tr,c,14);M('A'+tr,'D'+tr);N_(tr,4,set.tot[0],18,'SUM(E'+r0+':E'+rl+')');
+  for(let c=5;c<=19;c++)N_(tr,c,set.tot[c-4],15,'SUM('+L(c)+r0+':'+L(c)+rl+')');
+  S_(tr+2,0,FW_GNOTE,16);M('A'+(tr+2),'T'+(tr+2));
+  [[2,4,FW_GSIGN[0]],[7,9,FW_GSIGN[1]],[11,13,FW_GSIGN[2]],[16,17,FW_GSIGN[3]]].forEach(([a,b,t])=>{S_(tr+8,a,t,17);M(L(a)+(tr+8),L(b)+(tr+8));S_(tr+9,a,'(নামসহ সীল মোহর)',17);M(L(a)+(tr+9),L(b)+(tr+9))});
+  const HT={1:22,2:18,3:18,4:18,5:34,6:18,7:30,8:36,9:28};for(let r=r0;r<=rl;r++)HT[r]=24;HT[tr]=22;HT[tr+2]=20;HT[tr+8]=18;HT[tr+9]=18;
+  const W=[6,13,16,9,7,12.5,12,11,14,12.5,11,11.5,14,12.5,12.5,11.5,11,12.5,13,12.5];
+  const xml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><sheetViews><sheetView workbookViewId="0" zoomScale="90"/></sheetViews><sheetFormatPr defaultRowHeight="15"/><cols>${W.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join('')}</cols><sheetData>${Object.keys(rows).map(Number).sort((a,b)=>a-b).map(r=>`<row r="${r}"${HT[r]?` ht="${HT[r]}" customHeight="1"`:''}>${Object.keys(rows[r]).map(Number).sort((a,b)=>a-b).map(c=>rows[r][c]).join('')}</row>`).join('')}</sheetData><mergeCells count="${merges.length}">${merges.map(m=>`<mergeCell ref="${m}"/>`).join('')}</mergeCells><pageMargins left="0.25" right="0.25" top="0.4" bottom="0.4" header="0.2" footer="0.2"/><pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="1"/></worksheet>`;
+  return{xml,pa:'T$'+(tr+9)};
+}
+function fwGhaXlsx(sets){
+  const used=new Set(),nm=sets.map((s,i)=>{let n=String(s.name).replace(/[\[\]:*?\/\\]/g,' ').trim().slice(0,28)||'Sheet'+(i+1);while(used.has(n.toLowerCase()))n=n.slice(0,25)+'-'+(i+1);used.add(n.toLowerCase());return n});
+  const sh=sets.map(fwGhaSheet),H='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+  const files=[['[Content_Types].xml',H+'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'+sh.map((_,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')+'<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>'],
+   ['_rels/.rels',H+'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
+   ['xl/workbook.xml',H+'<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>'+nm.map((n,i)=>`<sheet name="${n.replace(/&/g,'&amp;')}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join('')+'</sheets><definedNames>'+nm.map((n,i)=>`<definedName name="_xlnm.Print_Area" localSheetId="${i}">'${n.replace(/&/g,'&amp;')}'!$A$1:$${sh[i].pa}</definedName>`).join('')+'</definedNames><calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>'],
+   ['xl/_rels/workbook.xml.rels',H+'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+sh.map((_,i)=>`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join('')+`<Relationship Id="rId${sh.length+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`],
+   ['xl/styles.xml',FW_GSTY],...sh.map((s,i)=>['xl/worksheets/sheet'+(i+1)+'.xml',s.xml])];
+  return xZip(files);
+}
+A.fwGhaXl=async(by)=>{
   const rows=fwData();if(!rows.length||!FW.ga)return toast('Upload the Annexure-Ga (customer wise) Excel first.');
-  await gaLoadLib();const {data,tot}=fwGhaAoa(rows);
-  const aoa=[['জনতা ব্যাংক পিএলসি.'],['পরিশিষ্ট-ঘ'],['বিষয়ঃ নির্দেশ বিজ্ঞপ্তি নং- ১৪১১/২৬ তারিখ ০২/০৭/২০২৬ অনুযায়ী বিশেষ এক্সিট সুবিধার আওতায় কৃষি ও পল্লী ঋণসমূহের ৩০/০৬/২০২৬ জুন ভিত্তিক ক্ষতি হিসাবে শ্রেণিকৃত অনাদায়ী ঋণ হিসাবের তথ্যাদি।'],['(টাকার অংকে)'],FW_GH,FW_GH.map((_,i)=>i+1),...data,['','সর্বমোট','','',...tot]];
-  const ws=XLSX.utils.aoa_to_sheet(aoa);ws['!merges']=[0,1,2].map(r=>({s:{r,c:0},e:{r,c:19}}));
-  ws['!cols']=FW_GH.map((_,i)=>({wch:i<4?16:15}));
-  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Annexure-Gha');
-  XLSX.writeFile(wb,'JBRS_Annexure-Gha.xlsx');
+  const blob=fwGhaXlsx(fwGSets(rows,by)),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=by?'JBRS_Annexure-Gha_Branchwise.xlsx':'JBRS_Annexure-Gha.xlsx';document.body.appendChild(a);a.click();a.remove();toast('Excel downloaded.');
 };
 const FW_GA_HEAD=['ক্র.নং','ঋণ গ্রহীতার নাম','হিসাব নং','ঋণের ধরণ/প্রকৃতি','ঋণ বিতরণের তারিখ','ক্ষতি হিসাবে শ্রেণীকরণের তারিখ','আসল','আরোপিত দায়: সুদ','আরোপিত দায়: অন্যান্য খরচ','মোট দায়','পরিশোধ: আসল','পরিশোধ: সুদ','পরিশোধ: অন্যান্য খরচ','মোট পরিশোধ','লেজার বকেয়া','আদায়যোগ্য আসল','অনারোপিত সাধারণ সুদ','অনারোপিত দন্ড সুদ','ইন্টারেস্ট সাসপেন্সের পরিমাণ','যাচিত CIBTCA এর পরিমাণ','কস্ট অব ফান্ড এর পরিমাণ','অবলোপনকৃত কিনা?'];
 A.fwSave=async()=>{
