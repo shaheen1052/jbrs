@@ -1554,6 +1554,7 @@ function pageFwd(l){
   <div class="g" style="margin-top:8px"><div style="grid-column:span 2"><label>Note: signers (name|post per line)</label><textarea id="fwv_signs" rows="5" oninput="FW.signs=this.value;fwSV('signs',this.value)">${esc(FW.signs)}</textarea></div>
   <div><label>To</label><textarea id="fwv_to" rows="5" oninput="FW.to=this.value;fwSV('to',this.value);fwDraw()">${esc(FW.to)}</textarea></div>
   <div style="grid-column:span 2"><label>Subject</label><textarea id="fwv_sub" rows="5" oninput="FW.sub=this.value;fwSV('sub',this.value);fwDraw()">${esc(FW.sub)}</textarea></div></div></details>
+  <details class="card" style="margin-top:6px;padding:3px 12px" ontoggle="if(this.open)fwSaved()"><summary style="cursor:pointer;font-size:13px"><b>Saved list</b></summary><div id="fwsaved" style="margin:6px 0"></div></details>
   <div id="fwview" class="lfsc" style="margin-top:12px;overflow:auto"><p class="muted">Upload the Annexure-Ga Excel file(s), choose the report above and press View.</p></div>`;
 }
 const fwUpz=f=>f.upz!==undefined?f.upz:fwLoc(f.code).upz;
@@ -1879,6 +1880,14 @@ A.fwGaXl=async()=>{
   XLSX.writeFile(wb,'JBRS_Annexure-Ga_'+(FW.gbr||'all')+'.xlsx');
 };
 const FW_GA_HEAD=['ক্র.নং','ঋণ গ্রহীতার নাম','হিসাব নং','ঋণের ধরণ/প্রকৃতি','ঋণ বিতরণের তারিখ','ক্ষতি হিসাবে শ্রেণীকরণের তারিখ','আসল','আরোপিত দায়: সুদ','আরোপিত দায়: অন্যান্য খরচ','মোট দায়','পরিশোধ: আসল','পরিশোধ: সুদ','পরিশোধ: অন্যান্য খরচ','মোট পরিশোধ','লেজার বকেয়া','আদায়যোগ্য আসল','অনারোপিত সাধারণ সুদ','অনারোপিত দন্ড সুদ','ইন্টারেস্ট সাসপেন্সের পরিমাণ','যাচিত CIBTCA এর পরিমাণ','কস্ট অব ফান্ড এর পরিমাণ','অবলোপনকৃত কিনা?'];
+async function fwSaved(){
+  const el=$('#fwsaved');if(!el)return;el.innerHTML='<span class="muted small">Loading...</span>';
+  try{const j=await api('/ga/rows?office=all');const nm=c=>{const o=(S.offices||[]).find(x=>x.code===c);return c+(o?' - '+o.name.replace(/ Branch, Sirajganj$/,''):'')};
+    const b=(j.batches||[]).slice().sort((x,y)=>nm(x.office).localeCompare(nm(y.office),'en')||String(y.uploaded).localeCompare(String(x.uploaded)));
+    el.innerHTML=b.length?`<table class="fwft"><tr><th>Branch</th><th>File Name</th><th>Loans</th><th>Saved on</th><th></th></tr>${b.map(x=>`<tr><td>${esc(nm(x.office))}</td><td>${esc(x.fname)}</td><td>${x.nrows}</td><td>${esc(String(x.uploaded).slice(0,16).replace('T',' '))}</td><td><a href="#" onclick="run(()=>fwSavedDel('${esc(x.id)}'));return false">Remove</a></td></tr>`).join('')}</table>`:'<span class="muted small">Nothing saved yet.</span>';
+  }catch(e){el.innerHTML='<span class="muted small">'+esc(e.message)+'</span>'}
+}
+async function fwSavedDel(id){if(!confirm('Remove this saved file and its rows?'))return;await api('/ga/delete',{method:'POST',body:{id}});toast('Removed.');await fwSaved()}
 A.fwSave=async()=>{
   if(!FW.ga||!FW.files.length)return toast('Upload the Annexure-Ga (customer wise) Excel first.');
   const miss=FW.files.filter(f=>!f.code);if(miss.length)return toast('Select "Save to" branch for: '+miss.map(f=>f.name).join(', '));
@@ -1891,7 +1900,7 @@ A.fwSave=async()=>{
     for(const b of olds[i])await api('/ga/delete',{method:'POST',body:{id:b.id}});
     const rows=fwGaRows(f).map(r=>r.raw.map((c,k)=>k===0?r.raw[0]:(typeof c==='number'?c:String(c))));
     await api('/ga/upload',{method:'PUT',body:{office:f.code,label:'Annexure-Ga '+FW.d,fname:f.name,head:FW_GA_HEAD,rows}});n+=rows.length}
-  toast('Saved '+n+' loans of '+FW.files.length+' branch(es). See Annexure-Ga (All).');
+  toast('Saved '+n+' loans of '+FW.files.length+' branch(es). See Annexure-Ga (All).');{const d=$('#fwsaved');if(d&&d.closest('details').open)fwSaved()}
 };
 
 /* ================= JBRS ONLINE APP ================= */
