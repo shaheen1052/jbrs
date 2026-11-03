@@ -1683,7 +1683,7 @@ function fwShow(){
   const v=$('#fwview');if(!v)return;const rows=fwData();
   if(!rows.length){v.innerHTML='<p class="muted">No loan rows found.</p>';return}
   if(FW.rep!=='letter'&&!FW.ga){v.innerHTML='<p class="muted">This report needs Annexure-Ga (customer wise) files.</p>';return}
-  if(FW.rep==='gha'||FW.rep==='gabr'){const sets=FW.rep==='gha'?null:fwGaSets(rows);if(sets&&!sets.length){v.innerHTML='<p class="muted">No uploaded file is saved to this branch.</p>';return}v.innerHTML='<div style="overflow:auto">'+(sets?fwGaHtml(sets):fwGhaHtml(fwGSets(rows,false)))+'</div>';fwFitIn(v);const zf=Math.min(1,(v.clientWidth-4)/(297*96/25.4));v.querySelectorAll('.fwpage').forEach(e=>{e.style.zoom=zf;e.style.marginBottom='8px'});return}
+  if(FW.rep==='gha'||FW.rep==='gabr'){const sets=FW.rep==='gha'?null:fwGaSets(rows);if(sets&&!sets.length){v.innerHTML='<p class="muted">No uploaded file is saved to this branch.</p>';return}v.innerHTML='<div style="overflow:auto">'+(sets?fwGaHtml(sets):fwGhaHtml(fwGSets(rows,false)))+'</div>';fwFitZoom(v);return}
   v.innerHTML=FW.rep==='note'?fwNotePages(rows):fwPages(rows);fwFitIn(v);
 }
 A.fwView=async()=>{if(!FW.raw)return toast('Upload the Annexure-Ga Excel first.');FW.show=true;fwShow()};
@@ -1696,6 +1696,7 @@ A.fwGo=async w=>{
   return fwOut(fwPages(rows),w,'JBRS_Forwarding_AO.pdf');
 };
 const fwOver=(t,av,w,pg)=>t.scrollWidth>av+1||w.scrollHeight>pg.clientHeight-4||[...t.querySelectorAll('td,th')].some(c=>c.scrollWidth>c.clientWidth+1);
+async function fwFitZoom(v){if(document.fonts&&document.fonts.ready)await document.fonts.ready;fwFitIn(v);const zf=Math.min(1,(v.clientWidth-4)/(297*96/25.4));v.querySelectorAll('.fwpage').forEach(e=>{e.style.zoom=zf;e.style.marginBottom='8px'})}
 function fwFitIn(root){
   root.querySelectorAll('.fwt').forEach(t=>{if(t.style.fontSize)return;const w=t.closest('.fwin'),cs=getComputedStyle(w),av=w.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight),pg=t.closest('.lfpage');let f=8;t.style.fontSize=f+'pt';while(fwOver(t,av,w,pg)&&f>3.2){f-=.2;t.style.fontSize=f+'pt'}});
 }
@@ -1888,35 +1889,37 @@ const FW_GA_HEAD=['ক্র.নং','ঋণ গ্রহীতার নাম'
 async function fwSaved(){
   const el=$('#fwsaved');if(!el)return;el.innerHTML='<span class="muted small">Loading...</span>';
   try{const j=await api('/ga/rows?office=all');const nm=c=>{const o=(S.offices||[]).find(x=>x.code===c);return c+(o?' - '+o.name.replace(/ Branch, Sirajganj$/,''):'')};
-    const b=(j.batches||[]).slice().sort((x,y)=>nm(x.office).localeCompare(nm(y.office),'en')||String(y.uploaded).localeCompare(String(x.uploaded)));
-    el.innerHTML=b.length?`<table class="fwft"><tr><th>Branch</th><th>File Name</th><th>Loans</th><th>Saved on</th><th></th></tr>${b.map(x=>`<tr><td>${esc(nm(x.office))}</td><td>${esc(x.fname)}</td><td>${x.nrows}</td><td>${esc(String(x.uploaded).slice(0,16).replace('T',' '))}</td><td><a href="#" onclick="run(()=>fwSavedDel('${esc(x.id)}'));return false">Remove</a></td></tr>`).join('')}</table>`:'<span class="muted small">Nothing saved yet.</span>';
+    const b=(j.batches||[]).slice().sort((x,y)=>nm(x.office).localeCompare(nm(y.office),'en')||String(y.uploaded).localeCompare(String(x.uploaded)));FW.sv=b;
+    el.innerHTML=b.length?`<table class="fwft fwfx" style="width:100%"><colgroup><col style="width:190px"><col><col style="width:60px"><col style="width:140px"><col style="width:110px"></colgroup><tr><th>Branch</th><th>File Name</th><th>Loans</th><th>Saved on</th><th></th></tr>${b.map((x,i)=>`<tr><td title="${esc(nm(x.office))}">${esc(nm(x.office))}</td><td title="${esc(x.fname)}">${esc(x.fname)}</td><td>${x.nrows}</td><td>${esc(String(x.uploaded).slice(0,16).replace('T',' '))}</td><td><a href="#" onclick="fwSavedView(${i});return false">View</a> &nbsp; <a href="#" onclick="run(()=>fwSavedDel('${esc(x.id)}'));return false">Remove</a></td></tr>`).join('')}</table>`:'<span class="muted small">Nothing saved yet.</span>';
   }catch(e){el.innerHTML='<span class="muted small">'+esc(e.message)+'</span>'}
+}
+function fwSavedView(i){
+  const x=(FW.sv||[])[i];if(!x)return;const o=(S.offices||[]).find(q=>q.code===x.office),nm=o?o.name.replace(/ Branch, Sirajganj$/,''):x.office,tot=new Array(22).fill(0);
+  x.rows.forEach(r=>{for(let c=6;c<=20;c++){const v=gaNum(r[c]);if(!isNaN(v))tot[c]=fw2(tot[c]+fw2(v))}});
+  const bn=o&&(o.nameBn||'').split(/\s*,\s*/)[0].replace(/\s*শাখা$/,'')||nm,v=$('#fwview');FW.show=false;
+  v.innerHTML='<div style="overflow:auto">'+fwGaHtml([{br:bn,rs:x.rows,brs:x.rows.map(()=>bn),tot}])+'</div>';fwFitZoom(v);v.scrollIntoView({behavior:'smooth',block:'start'});
 }
 async function fwSavedDel(id){if(!confirm('Remove this saved file and its rows?'))return;await api('/ga/delete',{method:'POST',body:{id}});toast('Removed.');await fwSaved()}
 A.fwSave=async()=>{
   if(!FW.ga||!FW.files.length)return toast('Upload the Annexure-Ga (customer wise) Excel first.');
   const miss=FW.files.filter(f=>!f.code);if(miss.length)return toast('Select "Save to" branch for: '+miss.map(f=>f.name).join(', '));
-  const key=r=>fwEn(r[2]).replace(/\s+/g,''),clean=r=>r.map((c,k)=>typeof c==='number'?c:String(c));
-  const codes=[...new Set(FW.files.map(f=>f.code))],jobs=[];
-  for(const code of codes){
-    const fs=FW.files.filter(f=>f.code===code),nw=new Map(),extra=[];
-    fs.forEach(f=>fwGaRows(f).forEach(r=>{const k=key(r.raw);if(k)nw.set(k,clean(r.raw));else extra.push(clean(r.raw))}));
-    const j=await api('/ga/rows?office='+encodeURIComponent(code)),olds=(j.batches||[]).filter(b=>b.office===code);
-    const oldRows=olds.flatMap(b=>b.rows),same=[],keep=[];
-    oldRows.forEach(r=>{const k=key(r);if(k&&nw.has(k))same.push(fwEn(r[2]));else keep.push(r)});
-    jobs.push({code,fs,olds,keep,add:[...nw.values(),...extra],same:[...new Set(same)]});
+  const key=r=>fwEn(r[2]).replace(/\s+/g,''),clean=r=>r.map(c=>typeof c==='number'?c:String(c));
+  const st={},lines=[];
+  for(const code of new Set(FW.files.map(f=>f.code))){const j=await api('/ga/rows?office='+encodeURIComponent(code));st[code]=(j.batches||[]).filter(b=>b.office===code).map(b=>({id:b.id,fname:b.fname,label:b.label,rows:b.rows,dirty:0}))}
+  const nb=[];
+  for(const f of FW.files){
+    const rows=fwGaRows(f).map(r=>clean(r.raw)),ks=new Set(rows.map(key).filter(Boolean)),hit=new Set();
+    st[f.code].concat(nb.filter(x=>x.code===f.code)).forEach(b=>{const keep=b.rows.filter(r=>{const k=key(r);if(k&&ks.has(k)){hit.add(fwEn(r[2]));return false}return true});if(keep.length!==b.rows.length){b.rows=keep;b.dirty=1}});
+    if(hit.size)lines.push(f.name+' ('+officeName(f.code)+'): '+hit.size+' account(s) already saved will be replaced ('+[...hit].slice(0,6).join(', ')+(hit.size>6?', ...':'')+')');
+    nb.push({code:f.code,fname:f.name,label:'Annexure-Ga '+FW.d,rows,isNew:1});
   }
-  const lines=jobs.filter(x=>x.same.length).map(x=>officeName(x.code)+': '+x.same.length+' account(s) already saved will be replaced ('+x.same.slice(0,8).join(', ')+(x.same.length>8?', ...':'')+')');
-  if(lines.length&&!confirm(lines.join('\n')+'\n\nOnly these accounts are replaced; all other saved borrowers stay and new ones are added. Continue?'))return;
+  if(lines.length&&!confirm(lines.join('\n')+'\n\nOnly these accounts are replaced in the older saved files; every other borrower stays. Continue?'))return;
   let n=0,rp=0;
-  for(const x of jobs){
-    const rows=[...x.keep,...x.add].map((r,i)=>{r=r.slice();r[0]=i+1;return r});
-    for(const b of x.olds)await api('/ga/delete',{method:'POST',body:{id:b.id}});
-    await api('/ga/upload',{method:'PUT',body:{office:x.code,label:'Annexure-Ga '+FW.d,fname:[...new Set([...x.olds.map(b=>b.fname),...x.fs.map(f=>f.name)])].join(' + ').slice(0,120),head:FW_GA_HEAD,rows}});
-    n+=x.add.length;rp+=x.same.length;
-  }
-  toast('Saved: '+(n-rp)+' new and '+rp+' replaced loan(s) in '+jobs.length+' branch(es). See Annexure-Ga (All).');{const d=$('#fwsaved');if(d&&d.closest('details').open)fwSaved()}
+  for(const code in st)for(const b of st[code])if(b.dirty){await api('/ga/delete',{method:'POST',body:{id:b.id}});if(b.rows.length)await api('/ga/upload',{method:'PUT',body:{office:code,label:b.label,fname:b.fname,head:FW_GA_HEAD,rows:b.rows.map((r,i)=>{r=r.slice();r[0]=i+1;return r})}})}
+  for(const b of nb)if(b.rows.length){await api('/ga/upload',{method:'PUT',body:{office:b.code,label:b.label,fname:b.fname,head:FW_GA_HEAD,rows:b.rows.map((r,i)=>{r=r.slice();r[0]=i+1;return r})}});n+=b.rows.length}
+  toast('Saved '+n+' loan(s) from '+nb.length+' file(s). See Annexure-Ga (All).');{const d=$('#fwsaved');if(d&&d.closest('details').open)fwSaved()}
 };
+
 
 
 /* ================= JBRS ONLINE APP ================= */
