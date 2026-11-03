@@ -62,7 +62,7 @@ const fwUpz=f=>f.upz!==undefined?f.upz:fwLoc(f.code).upz;
 const fwUni=t=>{t=String(t==null?'':t).trim();return t&&!/[\u0980-\u09FF]/.test(t)&&/[A-Za-z\u2020\u2021\u02c6\u2030\u0153]/.test(t)?fwBijoy(t).trim():t};
 const fwGaRows=f=>{const out=[],n=v=>{v=gaNum(v);return isNaN(v)?0:fw2(v)};
   for(const r of f.aoa.slice(f.start)){
-    if(!/^\s*\d+\s*$/.test(String(r[0])))break;const nm=fwUni(r[1]);if(!nm)continue;
+    if(!/^\s*[\d\u09E6-\u09EF]+\s*$/.test(String(r[0])))break;const nm=fwUni(r[1]);if(!nm)continue;
     const imp=fw2(n(r[14])-n(r[15])),gen=n(r[16]),pen=n(r[17]),wo=String(r[21]).trim();
     out.push({br:f.br,code:f.code,upz:fwUpz(f),nm,loan:n(r[6]),imp,gen,pen,tot:fw2(imp+gen+pen),sus:n(r[18]),cib:n(r[19]),raw:(()=>{const q=r.slice(0,22);q[1]=nm;q[3]=fwUni(q[3]);return q})(),rem:wo&&!/^(না|নাই|no|n|-|0)$/i.test(wo)?'অবলোপন':FW.rem});
   }return out};
@@ -70,7 +70,7 @@ async function fwParse(f){
   const wb=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true});
   const sn=wb.SheetNames.find(n=>/customer|পরিশিষ্ট-গ|annexure/i.test(n)&&!/summ?ery/i.test(n))||wb.SheetNames[0];
   const aoa=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:'',raw:true}).map(r=>r.map(c=>c instanceof Date?gaDmy(c):c));
-  const d=fwDetect(aoa);return{name:f.name,aoa,ga:d.ga,start:d.start,br:d.br,code:''};
+  const d=fwDetect(aoa);return{name:f.name,aoa,ga:d.ga,start:d.start,br:d.br,upz:d.upz,code:''};
 }
 async function fwPick(inp){
   const fl=[...inp.files];if(!fl.length)return;await gaLoadLib();FW.fs={};
@@ -87,11 +87,16 @@ async function fwPick(inp){
   fwMapUi();fwDraw();
 }
 
+const fwEn=t=>String(t==null?'':t).trim().replace(/[০-৯]/g,d=>d.charCodeAt(0)-0x9E6);
 function fwDetect(a){
-  const nr=a.findIndex(r=>String(r[0]).trim()==='1'&&String(r[1]).trim()==='2'&&String(r[2]).trim()==='3'&&r.length>=20);
+  const nr=a.findIndex(r=>fwEn(r[0])==='1'&&fwEn(r[1])==='2'&&fwEn(r[2])==='3'&&r.length>=20);
   if(nr<0)return{ga:false};
-  let br='';for(const r of a.slice(0,nr)){const c=r.map(x=>String(x)).find(x=>/^kvLvi bvg/.test(x));if(c){br=fwBijoy(c.split(/\s+t\s*/)[1]||'').trim();break}}
-  return{ga:true,start:nr+1,br};
+  let br='',upz;for(const r of a.slice(0,nr)){for(const c0 of r){const c=String(c0);
+    if(!br&&/^kvLvi bvg/.test(c))br=fwBijoy(c.split(/\s+t\s*/)[1]||'').trim();
+    else if(!br&&/^\s*শাখার নাম\s*[:ঃ]/.test(c))br=c.replace(/^\s*শাখার নাম\s*[:ঃ]\s*/,'').split(',')[0].replace(/\s*শাখা\s*$/,'').trim();
+    const u=c.match(/^\s*উপজেলা\s*[:ঃ]\s*(.*)$/);if(u&&u[1].trim())upz=u[1].trim()}
+    if(br)break}
+  return{ga:true,start:nr+1,br,upz};
 }
 function fwGuess(){
   const h=(FW.raw[FW.hr]||[]).map(x=>String(x));FW.map={};const used=new Set();
