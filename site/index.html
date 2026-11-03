@@ -1565,7 +1565,7 @@ function fwGuess(){
 function fwMapUi(){
   if(FW.ga){$('#fwmap').innerHTML=`<div class="row" style="margin-top:10px;align-items:flex-end"><div class="muted small" style="flex:1 1 100%">Annexure-Ga format recognised. Interest columns are taken from the file (Imposed = ledger due - principal due; Unimposed general and penal; Interest suspense; CIBTCA).</div>
   <div style="flex:1 1 220px"><label>Branch name (read from the file - you can edit)</label><input value="${esc(FW.br)}" oninput="FW.br=this.value;fwDraw()"></div>
-  <div style="flex:0 0 160px"><label>Remarks (all rows)</label><input value="${esc(FW.rem)}" oninput="FW.rem=this.value;fwSV('rem',this.value);fwDraw()"></div></div><div id="fwref"></div>`;return}
+  <div style="flex:0 0 260px"><label>Remarks if not written off (written off = অবলোপন, from column 22)</label><input value="${esc(FW.rem)}" oninput="FW.rem=this.value;fwSV('rem',this.value);fwDraw()"></div></div><div id="fwref"></div>`;return}
   const h=FW.raw[FW.hr]||[];
   const opt=k=>`<option value="-1">- none -</option>${h.map((x,i)=>`<option value="${i}" ${FW.map[k]===i?'selected':''}>${i+1}. ${esc(String(x).slice(0,40)||'(blank)')}</option>`).join('')}`;
   $('#fwmap').innerHTML=`<div class="row" style="margin-top:10px;align-items:flex-end"><div style="flex:0 0 120px"><label>Header row no.</label><input type="number" min="1" value="${FW.hr+1}" onchange="FW.hr=Math.max(0,(+this.value||1)-1);fwGuess();fwMapUi();fwDraw()"></div>
@@ -1580,7 +1580,7 @@ function fwData(){
     for(const r of FW.raw.slice(FW.gaStart)){
       if(!/^\s*\d+\s*$/.test(String(r[0])))break;const nm=String(r[1]).trim();if(!nm)continue;
       const imp=n(r[14])-n(r[15]),gen=n(r[16]),pen=n(r[17]);
-      out.push({br:FW.br,nm,loan:n(r[6]),imp,gen,pen,tot:imp+gen+pen,sus:n(r[18]),cib:n(r[19]),rem:FW.rem});
+      out.push({br:FW.br,nm,loan:n(r[6]),imp,gen,pen,tot:imp+gen+pen,sus:n(r[18]),cib:n(r[19]),rem:(v=>v&&!/^(না|নাই|no|n|-|0)$/i.test(v)?'অবলোপন':FW.rem)(String(r[21]).trim())});
     }return out}const M=FW.map,g=(r,k)=>M[k]>=0?r[M[k]]:'';const out=[];
   FW.raw.slice(FW.hr+1).forEach(r=>{
     if(r.every(c=>String(c).trim()===''))return;
@@ -1609,7 +1609,7 @@ function fwPages(rows){
       <div class="fwsub"><b>বিষয়ঃ</b><span>${esc(FW.sub)}</span></div>
       <p>প্রিয় মহোদয়</p>
       <p class="j">শিরোনামে বর্ণিত সার্কুলারসমূহের নিদের্শনা অনুযায়ী অত্র এরিয়াধীন শাখাসমূহ হতে প্রাপ্ত সুদ মওকুফ প্রস্তাবসমূহ পর্যালোচনা ও যাচাই-বাছাই করতঃ অত্র এরিয়ার সুপারিশসহ নিম্নোক্ত ছক মোতাবেক আপনাদের সদয় অবগতি ও প্রয়োজনীয় ব্যবস্থা গ্রহণের নিমিত্তে এতদসঙ্গে প্রেরণ করা হলো।</p>
-      <table class="fwt" data-b="${esc(br)}" style="${FW.fs[br]?`font-size:${FW.fs[br]}pt`:''}"><colgroup><col style="width:4.5%"><col style="width:9%"><col style="width:17%"><col style="width:9.5%"><col style="width:9.5%"><col style="width:9.5%"><col style="width:9.5%"><col style="width:9.5%"><col style="width:9.5%"><col style="width:9.5%"><col style="width:5.5%"></colgroup><tr><th rowspan="2">ক্রঃ নং</th><th rowspan="2">শাখার নাম</th><th rowspan="2">গ্রাহকের নাম</th><th rowspan="2">ঋণের পরিমাণ</th><th colspan="4">সুদ মওকুফের জন্য সুপারিশকৃত সুদের পরিমাণ</th><th rowspan="2">ইন্টারেস্ট সাসপেন্স</th><th rowspan="2">যাচিত CIBTCA এর পরিমাণ</th><th rowspan="2">মন্তব্য</th></tr>
+      <table class="fwt" data-b="${esc(br)}" style="${FW.fs[br]?`font-size:${FW.fs[br]}pt`:''}"><colgroup><col style="width:4.5%"><col style="width:9%"><col style="width:16%"><col style="width:9.5%"><col style="width:9.5%"><col style="width:9.5%"><col style="width:9.5%"><col style="width:9.5%"><col style="width:9.5%"><col style="width:9.5%"><col style="width:8%"></colgroup><tr><th rowspan="2">ক্রঃ নং</th><th rowspan="2">শাখার নাম</th><th rowspan="2">গ্রাহকের নাম</th><th rowspan="2">ঋণের পরিমাণ</th><th colspan="4">সুদ মওকুফের জন্য সুপারিশকৃত সুদের পরিমাণ</th><th rowspan="2">ইন্টারেস্ট সাসপেন্স</th><th rowspan="2">যাচিত CIBTCA এর পরিমাণ</th><th rowspan="2">মন্তব্য</th></tr>
       <tr><th>আরোপিত<br>সুদ</th><th>অনারোপিত<br>সাধারণ সুদ</th><th>অনারোপিত<br>দন্ড সুদ</th><th>মোট</th></tr>
       ${rs.map((r,i)=>`<tr><td class="c">${toBn(i+1)}</td><td class="c">${esc(br)}</td><td>${esc(r.nm)}</td><td class="n">${fwN(r.loan)}</td><td class="n">${fwN(r.imp)}</td><td class="n">${fwN(r.gen)}</td><td class="n">${fwN(r.pen)}</td><td class="n">${fwN(r.tot)}</td><td class="n">${fwN(r.sus)}</td><td class="n">${fwN(r.cib)}</td><td class="c">${esc(r.rem)}</td></tr>`).join('')}
       <tr class="tt"><td colspan="3" class="c">মোট</td>${S_.map(v=>`<td class="n">${fwN(v)}</td>`).join('')}<td></td></tr></table>
