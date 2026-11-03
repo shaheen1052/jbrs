@@ -168,10 +168,12 @@ function MAINMENU(){
   const lp=TREE.find(p=>p.id==='loan').items.find(x=>x.group==='Loan Application');
   const ok=it=>it.group?it.items.length>0:true;
   const flt=items=>items.map(it=>it.group?{...it,items:flt(it.items)}:it).filter(ok);
-  const rep=TREE.map(p=>({group:p.name,items:p.items.filter(x=>x!==lp)}));
+  const iw=TREE.flatMap(p=>p.items).find(x=>x.group==='Interest waiver calculator');
+  const setP=it=>it.group?it.items.forEach(setP):(LEAVES[it.id]&&(LEAVES[it.id].pillar='Calculation Tools'));setP(iw);
+  const rep=TREE.map(p=>({group:p.name,items:p.items.filter(x=>x!==lp&&x!==iw)}));
   LEAVES.lf_dash=LEAVES.lf_dash||{id:'lf_dash',name:'Loan Dashboard',title:'Loan Dashboard',pillar:'Loan Application',tpl:'ldash'};
   LEAVES.st_dash=LEAVES.st_dash||{id:'st_dash',name:'Statements Dashboard',title:'Statements Dashboard',pillar:'Statements',tpl:'sdash'};
-  return[{id:'lapp',name:'Loan Application',items:[LEAVES.lf_dash,...flt(lp.items)],lvl:3},{id:'rep',name:'Statements',items:[LEAVES.st_dash,...rep],lvl:2}];
+  return[{id:'lapp',name:'Loan Application',items:[LEAVES.lf_dash,...flt(lp.items)],lvl:3},{id:'rep',name:'Statements',items:[LEAVES.st_dash,...rep],lvl:2},{id:'calc',name:'Calculation Tools',items:[iw],lvl:3}];
 }
 function menuItems(items,leafBtn,top){return items.map(it=>{
   if(!it.group)return leafBtn(it);
@@ -186,7 +188,7 @@ A.collapseAll=()=>{document.querySelectorAll('[id^="gl_"],[id^="pl_"]').forEach(
 A.openAll=()=>{document.querySelectorAll('[id^="gl_"],[id^="pl_"]').forEach(e=>{e.style.display='';S.open[e.id.slice(3)]=true});document.querySelectorAll('[id^="gc_"],[id^="pc_"]').forEach(e=>e.innerHTML='&minus;')};
 A.toggleAll=()=>{const els=[...document.querySelectorAll('[id^="gl_"],[id^="pl_"]')];const anyOpen=els.some(e=>e.style.display!=='none');if(anyOpen)A.collapseAll();else A.openAll();const any2=anyOpen?false:true;const b=$('#allbtn');if(b)b.innerHTML=any2?'&#8679; Collapse all':'&#8681; Open all'};
 A.togglePillar=id=>{const el=$('#pl_'+id);const hide=el.style.display!=='none';el.style.display=hide?'none':'';S.open[id]=!hide;const c=$('#pc_'+id);if(c)c.innerHTML=hide?'+':'&minus;'};
-const PCOL={lapp:['#2e7d32','#e8f5e9'],rep:['#1d5fa8','#e7f0fb'],dep:['#1d5fa8','#e7f0fb'],loan:['#2e7d32','#e8f5e9'],acc:['#6a3fb5','#f0ebfa'],rec:['#b55400','#fdf0e2'],aud:['#b42318','#fdecea'],_:['#0a7aa6','#e2f4fb']};
+const PCOL={calc:['#6a3fb5','#f0ebfa'],lapp:['#2e7d32','#e8f5e9'],rep:['#1d5fa8','#e7f0fb'],dep:['#1d5fa8','#e7f0fb'],loan:['#2e7d32','#e8f5e9'],acc:['#6a3fb5','#f0ebfa'],rec:['#b55400','#fdf0e2'],aud:['#b42318','#fdecea'],_:['#0a7aa6','#e2f4fb']};
 function setMain(h){const m=$('#main');if(m)m.innerHTML=h+`<div class="dev">${APP.dev}</div>`}
 
 /* ---------- dashboard ---------- */
@@ -223,6 +225,7 @@ function pageLeaf(){
   const l=LEAVES[S.view.leaf];const head=`<div class="muted small">${esc(l.pillar)}</div><h2>${esc(l.title)}</h2>`;
   if(l.tpl==='iwc')return pageIwc(l);
   if(l.tpl==='iwr')return pageIwr(l);
+  if(l.tpl==='gaall')return pageGaAll(l);
   if(l.tpl==='ldash')return pageLfDash();
   if(l.tpl==='sdash')return pageDash('Statements Dashboard');
   if(l.tpl==='lf')return isArea()?pageLfAo(l):pageLoanForms(l);

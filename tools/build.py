@@ -3,7 +3,7 @@ ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC=os.path.join(ROOT,'src','offline_base.html')
 GL=os.path.join(ROOT,'src','glance.js')
 APPJS=os.path.join(ROOT,'src','app_online.js')
-RCD=[os.path.join(ROOT,'src',f) for f in ('rcd3_data.js','rcd3.js','rcd4_data.js','rcd4cf_data.js','rcd4.js','loanforms.js')]
+RCD=[os.path.join(ROOT,'src',f) for f in ('rcd3_data.js','rcd3.js','rcd4_data.js','rcd4cf_data.js','rcd4.js','loanforms.js','gaall.js')]
 OUT=os.path.join(ROOT,'site','index.html')
 s=open(SRC,encoding='utf-8').read()
 style=re.search(r'<style>([\s\S]*?)</style>',s).group(1)
@@ -29,7 +29,7 @@ _LFM="G('Loan Application',["+",".join([
  "L('lf_reports','Loan Reports','lfrpt')"
 ])+"])"
 tree=tree.replace(_ln,"L('ln_sod','Secured overdraft'),L('ln_staff','Staff loan'),"+_LFM+"]}")
-tree=tree.replace(_old,"G('Interest waiver calculator',[L('rc_iwc','Data entry','iwc'),G('Report',[L('rc_iwga','Annexure-Ga','iwr'),L('rc_iwgha','Annexure-Gha','iwr')])])")
+tree=tree.replace(_old,"G('Interest waiver calculator',[L('rc_iwc','Data entry','iwc'),G('Report',[L('rc_iwga','Annexure-Ga','iwr'),L('rc_iwgha','Annexure-Gha','iwr')])]),L('rc_gaall','Annexure-Ga (All)','gaall')")
 _lb=tree.index('const LEAVES={};')
 tree=tree[:_lb]+"""const LEAVES={};
 function addLeaves(items,pillar,prefix){items.forEach(it=>{if(it.group)addLeaves(it.items,pillar,(prefix?prefix+' / ':'')+it.group);else LEAVES[it.id]={...it,pillar,title:prefix?prefix+' ('+it.name+')':it.name}})}
@@ -50,7 +50,7 @@ rcd='\n'.join(open(f,encoding='utf-8').read() for f in RCD)
 extra_css=""".top{position:sticky;top:0;z-index:60}
 .side{position:sticky;top:var(--topH,58px);height:calc(100vh - var(--topH,58px));align-self:flex-start}
 .lfmain{overflow:visible}
-.pghead{position:sticky;top:var(--topH,58px);z-index:20;background:var(--bg);padding:8px 0 6px;margin:-6px 0 10px;border-bottom:1px solid var(--line)}.pghead h2{margin:0;font-size:20px}.pghead .hrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.pghead .hrow h2{flex:1 1 auto}.pghead .bar{margin:0;gap:6px}.pghead button,.pghead select{height:28px;padding:2px 12px;font-size:13px;line-height:1.2;width:auto;min-width:0;max-width:240px}.pghead select{padding:2px 6px}
+.pghead{position:sticky;top:-20px;z-index:20;background:var(--bg);padding:8px 0 6px;margin:-6px 0 10px;border-bottom:1px solid var(--line)}.pghead h2{margin:0;font-size:20px}.pghead .hrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.pghead .hrow h2{flex:1 1 auto}.pghead .bar{margin:0;gap:6px}.pghead button,.pghead select{height:28px;padding:2px 12px;font-size:13px;line-height:1.2;width:auto;min-width:0;max-width:240px}.pghead select{padding:2px 6px}
 .lfform label{font-size:12px;margin:0 0 2px}.lfform input,.lfform select,.lfform textarea{padding:2px 7px;font-size:13px;height:28px;min-height:0;line-height:1.2}.lfform textarea{resize:vertical}
 .lfform .row{gap:6px 10px}.lfform .fc{flex:1 1 140px;max-width:210px}.lfform .fc.ad{flex:0 0 calc((100% - 20px)/3);max-width:none}.lfform .fc.ad textarea{height:54px}@media(max-width:760px){.lfform .fc.ad{flex:1 1 100%}}.lfform .fc.w{flex:1 1 100%;max-width:none}.lfform .fc.w2{flex:1 1 240px;max-width:330px}.lfform h3{font-size:14px;margin:0 0 6px}.lfform .card{padding:10px 12px}
 .ckrow span{flex:1}.ckrow{display:flex;gap:10px;align-items:flex-start;padding:7px 4px;border-bottom:1px solid var(--line);font-size:13.5px;color:var(--text);margin:0;cursor:pointer}.ckrow input{width:18px;height:18px;margin:2px 0 0;flex:0 0 auto;padding:0}
@@ -73,7 +73,7 @@ extra_css=""".top{position:sticky;top:0;z-index:60}
 @media print{#printArea.lf0{padding:0}#printArea .lfpad{padding:10mm 11mm}#printArea .lfpage .kt th,#printArea .lfpage .kt td{border:1px solid #333;padding:0 1.5mm;background:#fff}}
 .menubtn{background:transparent;border:1px solid rgba(255,255,255,.7);color:#fff;font-size:20px;line-height:1;padding:5px 11px;margin-right:6px}
 .sidebg{display:none}.layout.noside .side{display:none}
-@media (max-width:760px){.side{position:fixed;top:var(--topH,0px);left:0;bottom:0;height:auto;width:84%;max-width:330px;max-height:none;z-index:50;border-right:1px solid var(--line);border-bottom:none;box-shadow:0 0 30px rgba(0,0,0,.3);padding-top:16px}.layout:not(.noside) .sidebg{display:block;position:fixed;inset:var(--topH,0px) 0 0 0;background:rgba(0,0,0,.35);z-index:40}}
+@media (max-width:760px){.main{overflow:visible}.pghead{top:calc(var(--topH,0px) - 6px)}.side{position:fixed;top:var(--topH,0px);left:0;bottom:0;height:auto;width:84%;max-width:330px;max-height:none;z-index:50;border-right:1px solid var(--line);border-bottom:none;box-shadow:0 0 30px rgba(0,0,0,.3);padding-top:16px}.layout:not(.noside) .sidebg{display:block;position:fixed;inset:var(--topH,0px) 0 0 0;background:rgba(0,0,0,.35);z-index:40}}
 .b-NONE{background:#f1f1f1;color:#666}.b-NEW{background:#eef0ef;color:#4a5752}
 .stats .stat .n{font-size:28px}
 .side{padding:12px 10px}
