@@ -72,6 +72,7 @@ extra_css=""".top{position:sticky;top:0;z-index:60}
 .lfpage .ka{position:relative}.lfpage .kgn{position:absolute;right:0;margin-top:-5mm;width:23mm;border:1px solid #000;font-size:8pt;line-height:1.4;text-align:center;padding:1mm;box-sizing:border-box;height:25mm}
 .lfpage .kt{width:161.5mm;margin:1mm 0 0 -2mm;border-collapse:collapse}.lfpage .kt th,.lfpage .kt td{border:1px solid #333;padding:0 1.5mm;font-weight:400;font-size:11pt;line-height:1.3;vertical-align:top;background:#fff;color:#000}.lfpage .kt th{font-size:12pt;text-align:center}.lfpage .kt td:first-child{font-size:11.5pt}
 .lfpage .kbx{display:flex;margin-top:2.5mm;margin-left:-2mm;width:186mm}.lfpage .kb1,.lfpage .kb2{flex:1;border:1px solid #333;padding:2mm 2.5mm;min-height:38mm;box-sizing:border-box;line-height:1.5;font-size:12pt}.lfpage .kb2{margin-left:-1px}
+.lfpage .mgap .kl{min-height:13mm;line-height:6mm}
 .lfpage .kz{text-align:left;margin:0;line-height:7mm}.lfpage .kg{text-align:justify;margin:9mm 0 0;line-height:8.1mm}.lfpage .kq .kl{width:100mm;min-height:7mm;line-height:7mm}.lfpage .kb2k{flex:0 0 30mm}.lfpage .kc2{flex:0 0 4mm}
 .lfpdfhost{position:fixed;left:-400mm;top:0;z-index:-1}
 @media print{#printArea.lf0{padding:0}#printArea .lfpad{padding:10mm 11mm}#printArea .lfpage .kt th,#printArea .lfpage .kt td{border:1px solid #333;padding:0 1.5mm;background:#fff}}
