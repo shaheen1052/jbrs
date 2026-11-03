@@ -103,12 +103,12 @@ function fwPages(rows){
   Object.keys(by).forEach(br=>{
     const rs=by[br],n=rs.length,S_=['loan','imp','gen','pen','tot','sus','cib'].map(k=>rs.reduce((a,r)=>a+r[k],0));
     const cls=n<=12?'fw1':n<=20?'fw2':n<=30?'fw3':'fw4';
-    const ref=`${FW.pre}/${br}/${toBn(yr)}/${toBn(FW.ref[br]||'')}/${FW.suf}`;
+    const rn=String(FW.ref[br]||'').trim(),ref=esc(`${FW.pre}/${br}/${toBn(yr)}/`)+(rn?esc(toBn(rn)):'<span style="display:inline-block;width:11mm"></span>')+esc(`/${FW.suf}`);
     for(const copy of [0,1]){
       h+=`<div class="lfpage fwpage ${cls}"><div class="fwin">
       <div class="fwh"><img src="${LOGO}" alt=""><div class="fwl"><div class="fwb">জনতা ব্যাংক পিএলসি.</div><div>প্রধান কার্যালয়: জনতা ভবন</div><div>১১০ মতিঝিল বা/এ, পোষ্ট বক্স নম্বর : ৪৬৮, ঢাকা-১০০০, বাংলাদেশ।</div><div>SWIFT: JANBBDDH, Website: www.jb.com.bd</div><div>পিএবিএক্স : 02-223380042</div></div>
       <div class="fwr"><div class="fwa">এরিয়া অফিস, সিরাজগঞ্জ।</div><div>এস.এস. রোড, সিরাজগঞ্জ, বাংলাদেশ।</div><div>ফোন : 02588831078, 02588831342</div><div>E-mail: jb5038@janatabank-bd.com</div></div></div>
-      <div class="fwref"><span>সূত্রঃ ${esc(ref)}</span><span>তারিখঃ ${esc(toBn(d))} ইং</span></div>
+      <div class="fwref"><span>সূত্রঃ ${ref}</span><span>তারিখঃ ${esc(toBn(d))} ইং</span></div>
       <div class="fwto">${esc(FW.to).replace(/\n/g,'<br>')}</div>
       <div class="fwsub"><b>বিষয়ঃ</b><span>${esc(FW.sub)}</span></div>
       <p>প্রিয় মহোদয়</p>
