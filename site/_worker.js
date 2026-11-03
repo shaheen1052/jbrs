@@ -251,6 +251,16 @@ async function handle(req, env) {
     const it = (await db.prepare('SELECT item FROM iwc_cases WHERE office=? ORDER BY name').bind(u.office).all()).results;
     return json({ state: Object.fromEntries(st.map(x => [x.k, x.v])), items: it.map(x => JSON.parse(x.item)) });
   }
+  if (p === '/fw/wording' && m === 'GET') {
+    const r = await db.prepare('SELECT v FROM iwc_state WHERE office=? AND k=?').bind('fw:' + (u.office || 'admin'), 'fw_wording').first();
+    return json({ v: r ? r.v : '' });
+  }
+  if (p === '/fw/wording' && m === 'PUT') {
+    const b = await body(req);
+    if (typeof b.v !== 'string' || b.v.length > 30000) return err('Bad request.');
+    await db.prepare('INSERT OR REPLACE INTO iwc_state(office,k,v,updated) VALUES(?,?,?,?)').bind('fw:' + (u.office || 'admin'), 'fw_wording', b.v, iso()).run();
+    return json({ ok: true });
+  }
   if (p === '/iwc/state' && m === 'PUT') {
     if (!u.office) return err('The admin login has no calculator of its own.', 403);
     const b = await body(req);

@@ -160,7 +160,7 @@ function renderApp(){
   }catch(e){main=`<div class="card">${esc(e.message)}</div>`}
   shell(`<div class="top"><button class="menubtn" onclick="A.toggleSide()" title="Show / hide menu">&#9776;</button><img class="toplogo" src="${LOGO}" alt="JB"><div><div class="t1">${APP.name} (${APP.short})</div><div class="small" style="opacity:.85">${o?esc(o.name)+' &middot; '+LEVELS[o.level]:'Administrator'}</div></div><div class="sp"></div>
   <div class="who">${esc(u.name)} (${esc(u.id)})<br><b>${ROLES[u.role]}</b></div><button onclick="run(A.logout)">Log out</button></div>
-  <div class="layout ${sideOn()?'':'noside'}"><div class="sidebg" onclick="A.toggleSide()"></div><div class="side">${side}</div><div class="main${lfm?' lfmain':''}" id="main">${main}<div class="dev">${APP.dev}</div></div></div>`);
+  <div class="layout ${sideOn()?'':'noside'}"><div class="sidebg" onclick="A.toggleSide()"></div><div class="side">${side}</div><div class="main${lfm?' lfmain':''}" id="main">${main}</div></div>`);
   setTopH();
   if(v.after){const f=v.after;v.after=null;run(f)}
 }
@@ -191,7 +191,7 @@ A.openAll=()=>{document.querySelectorAll('[id^="gl_"],[id^="pl_"]').forEach(e=>{
 A.toggleAll=()=>{const els=[...document.querySelectorAll('[id^="gl_"],[id^="pl_"]')];const anyOpen=els.some(e=>e.style.display!=='none');if(anyOpen)A.collapseAll();else A.openAll();const any2=anyOpen?false:true;const b=$('#allbtn');if(b)b.innerHTML=any2?'&#8679; Collapse all':'&#8681; Open all'};
 A.togglePillar=id=>{const el=$('#pl_'+id);const hide=el.style.display!=='none';el.style.display=hide?'none':'';S.open[id]=!hide;const c=$('#pc_'+id);if(c)c.innerHTML=hide?'+':'&minus;';saveUi()};
 const PCOL={calc:['#6a3fb5','#f0ebfa'],lapp:['#2e7d32','#e8f5e9'],rep:['#1d5fa8','#e7f0fb'],dep:['#1d5fa8','#e7f0fb'],loan:['#2e7d32','#e8f5e9'],acc:['#6a3fb5','#f0ebfa'],rec:['#b55400','#fdf0e2'],aud:['#b42318','#fdecea'],_:['#0a7aa6','#e2f4fb']};
-function setMain(h){const m=$('#main');if(m)m.innerHTML=h+`<div class="dev">${APP.dev}</div>`}
+function setMain(h){const m=$('#main');if(m)m.innerHTML=h}
 
 /* ---------- dashboard ---------- */
 function pageHome(){
