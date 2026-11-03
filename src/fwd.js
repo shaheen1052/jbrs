@@ -45,8 +45,8 @@ function pageFwd(l){
   <span id="fwref" style="display:contents"></span>
   ${I('Meeting no.',FW.nn,"FW.nn=this.value;fwDraw()")}${I('Note date',FW.nd,"FW.nd=this.value;fwDraw()",'maxlength="10"')}
   <label class="chk" title="Ticked: files of different branches are put in ONE letter, ONE Note Sheet, ONE Gha. Unticked: a separate letter and Note Sheet for each branch."><input type="checkbox" ${FW.comb?'checked':''} onchange="FW.comb=this.checked;fwDraw()"> Combine letter</label></div>
-  <table class="fwft fwfx"><colgroup><col style="width:215px"><col style="width:230px"><col style="width:300px"><col style="width:230px"></colgroup><tr><th>Annexure-Ga</th><th>File Name</th><th>Branch</th><th>Save/Clear</th></tr>
-  <tr><td><input type="file" id="fw_f" accept=".xlsx,.xls,.csv" multiple onchange="run(()=>fwPick(this))" style="height:auto;padding:2px;width:100%"></td><td id="fwc1"></td><td id="fwc2"></td><td style="white-space:nowrap"><button class="pri" onclick="run(()=>A.fwSave())">Save</button> <a href="#" onclick="FW.files=[];FW.raw=null;FW.fs={};$('#fw_f').value='';fwMapUi();fwDraw();return false" style="margin-left:8px">Clear</a> <span id="fwx" style="margin-left:6px"></span></td></tr><tbody id="fwmap"></tbody></table></div>
+  <table class="fwft fwfx"><colgroup><col style="width:200px"><col style="width:200px"><col style="width:270px"><col style="width:140px"><col style="width:220px"></colgroup><tr><th>Annexure-Ga</th><th>File Name</th><th>Branch</th><th>Upazilla</th><th>Save/Clear</th></tr>
+  <tr><td><input type="file" id="fw_f" accept=".xlsx,.xls,.csv" multiple onchange="run(()=>fwPick(this))" style="height:auto;padding:2px;width:100%"></td><td id="fwc1"></td><td id="fwc2"></td><td id="fwc3"></td><td style="white-space:nowrap"><button class="pri" onclick="run(()=>A.fwSave())">Save</button> <a href="#" onclick="FW.files=[];FW.raw=null;FW.fs={};$('#fw_f').value='';fwMapUi();fwDraw();return false" style="margin-left:8px">Clear</a> <span id="fwx" style="margin-left:6px"></span></td></tr><tbody id="fwmap"></tbody></table></div>
   <details class="card" style="margin-top:6px;padding:3px 12px"><summary style="cursor:pointer;font-size:13px"><b>Wording</b></summary><div class="g" style="margin-top:8px">
   <div style="grid-column:span 2">${I('Letter Reference',FW.pre,"FW.pre=this.value;fwSV('pre',this.value);fwDraw()",'id="fwv_pre"')}</div>
   ${I('Ref suffix',FW.suf,"FW.suf=this.value;fwSV('suf',this.value);fwDraw()",'id="fwv_suf"')}
@@ -57,12 +57,13 @@ function pageFwd(l){
   <div style="grid-column:span 2"><label>Subject</label><textarea id="fwv_sub" rows="5" oninput="FW.sub=this.value;fwSV('sub',this.value);fwDraw()">${esc(FW.sub)}</textarea></div></div></details>
   <div id="fwview" class="lfsc" style="margin-top:12px;overflow:auto"><p class="muted">Upload the Annexure-Ga Excel file(s), choose the report above and press View.</p></div>`;
 }
+const fwUpz=f=>f.upz!==undefined?f.upz:fwLoc(f.code).upz;
 const fwUni=t=>{t=String(t==null?'':t).trim();return t&&!/[\u0980-\u09FF]/.test(t)&&/[A-Za-z\u2020\u2021\u02c6\u2030\u0153]/.test(t)?fwBijoy(t).trim():t};
 const fwGaRows=f=>{const out=[],n=v=>{v=gaNum(v);return isNaN(v)?0:v};
   for(const r of f.aoa.slice(f.start)){
     if(!/^\s*\d+\s*$/.test(String(r[0])))break;const nm=fwUni(r[1]);if(!nm)continue;
     const imp=n(r[14])-n(r[15]),gen=n(r[16]),pen=n(r[17]),wo=String(r[21]).trim();
-    out.push({br:f.br,code:f.code,nm,loan:n(r[6]),imp,gen,pen,tot:imp+gen+pen,sus:n(r[18]),cib:n(r[19]),raw:(()=>{const q=r.slice(0,22);q[1]=nm;q[3]=fwUni(q[3]);return q})(),rem:wo&&!/^(না|নাই|no|n|-|0)$/i.test(wo)?'অবলোপন':FW.rem});
+    out.push({br:f.br,code:f.code,upz:fwUpz(f),nm,loan:n(r[6]),imp,gen,pen,tot:imp+gen+pen,sus:n(r[18]),cib:n(r[19]),raw:(()=>{const q=r.slice(0,22);q[1]=nm;q[3]=fwUni(q[3]);return q})(),rem:wo&&!/^(না|নাই|no|n|-|0)$/i.test(wo)?'অবলোপন':FW.rem});
   }return out};
 async function fwParse(f){
   const wb=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true});
@@ -96,19 +97,20 @@ function fwGuess(){
   FW_F.forEach(([k,,re])=>{const i=h.findIndex((x,j)=>!used.has(j)&&re.test(x));if(i>=0){FW.map[k]=i;used.add(i)}else FW.map[k]=-1});
   if(FW.map.imp<0&&FW.map.gen>=0&&FW.map.pen>=0){}
 }
-const fwSel=(f,i)=>{const kids=childBranches();return`<select style="width:100%" onchange="FW.files[${i}].code=this.value;if(FW.show)fwShow()"><option value="">- branch -</option>${kids.map(k=>`<option value="${k.code}" ${f.code===k.code?'selected':''}>${k.code} - ${esc(k.name)}</option>`).join('')}</select>`};
+const fwSel=(f,i)=>{const kids=childBranches();return`<select style="width:100%" onchange="FW.files[${i}].code=this.value;FW.files[${i}].upz=undefined;const u=this.closest('tr').querySelector('.fwupz');if(u)u.value=fwUpz(FW.files[${i}]);if(FW.show)fwShow()"><option value="">- branch -</option>${kids.map(k=>`<option value="${k.code}" ${f.code===k.code?'selected':''}>${k.code} - ${esc(k.name)}</option>`).join('')}</select>`};
+const fwUp=(f,i)=>`<input class="fwupz" style="width:100%" value="${esc(fwUpz(f))}" oninput="FW.files[${i}].upz=this.value;if(FW.show)fwShow()">`;
 const fwXs=i=>`<a href="#" onclick="FW.files.splice(${i},1);FW.raw=FW.files.length?FW.files[0].aoa:null;fwMapUi();fwDraw();return false">&times;</a>`;
 function fwFilesUi(){
   const f=FW.files,nm=x=>`<div class="fwnm" title="${esc(x.name)}">${esc(x.name)} ${fwGaRows(x).length}</div>`;
-  $('#fwc1').innerHTML=f[0]?nm(f[0]):'';$('#fwc2').innerHTML=f[0]?fwSel(f[0],0):'';$('#fwx').innerHTML=f[0]?fwXs(0):'';
-  return f.slice(1).map((x,j)=>`<tr><td></td><td>${nm(x)}</td><td>${fwSel(x,j+1)}</td><td>${fwXs(j+1)}</td></tr>`).join('');
+  $('#fwc1').innerHTML=f[0]?nm(f[0]):'';$('#fwc2').innerHTML=f[0]?fwSel(f[0],0):'';$('#fwc3').innerHTML=f[0]?fwUp(f[0],0):'';$('#fwx').innerHTML=f[0]?fwXs(0):'';
+  return f.slice(1).map((x,j)=>`<tr><td></td><td>${nm(x)}</td><td>${fwSel(x,j+1)}</td><td>${fwUp(x,j+1)}</td><td>${fwXs(j+1)}</td></tr>`).join('');
 }
 function fwMapUi(){
   if(FW.ga){$('#fwmap').innerHTML=fwFilesUi();return}
-  $('#fwc1').innerHTML='';$('#fwc2').innerHTML='';$('#fwx').innerHTML='';
+  $('#fwc1').innerHTML='';$('#fwc2').innerHTML='';$('#fwc3').innerHTML='';$('#fwx').innerHTML='';
   const h=FW.raw[FW.hr]||[];
   const opt=k=>`<option value="-1">- none -</option>${h.map((x,i)=>`<option value="${i}" ${FW.map[k]===i?'selected':''}>${i+1}. ${esc(String(x).slice(0,40)||'(blank)')}</option>`).join('')}`;
-  $('#fwmap').innerHTML=`<tr><td colspan="4"><div class="row" style="margin-top:4px;align-items:flex-end"><div style="flex:0 0 120px"><label>Header row no.</label><input type="number" min="1" value="${FW.hr+1}" onchange="FW.hr=Math.max(0,(+this.value||1)-1);fwGuess();fwMapUi();fwDraw()"></div>
+  $('#fwmap').innerHTML=`<tr><td colspan="5"><div class="row" style="margin-top:4px;align-items:flex-end"><div style="flex:0 0 120px"><label>Header row no.</label><input type="number" min="1" value="${FW.hr+1}" onchange="FW.hr=Math.max(0,(+this.value||1)-1);fwGuess();fwMapUi();fwDraw()"></div>
   <div style="flex:1 1 220px"><label>Branch name (if the file has no branch column)</label><input value="${esc(FW.br)}" oninput="FW.br=this.value;fwDraw()"></div></div>
   <div class="muted small" style="margin:8px 0 4px">Match each letter column with a column of your Excel file (guessed automatically - please check):</div>
   <div class="row">${FW_F.map(([k,n])=>`<div style="flex:1 1 190px"><label>${n}</label><select onchange="FW.map['${k}']=+this.value;fwDraw()">${opt(k)}</select></div>`).join('')}</div></td></tr>`;
@@ -247,7 +249,7 @@ const FW_GFILL=['','','','','','#FCD5B4','#FCD5B4','#FCD5B4','#FCD5B4','#92D050'
 const FW_GSIGN=['এরিয়া অফিস সংশ্লিষ্ট কর্মকর্তা','এরিয়া অফিস প্রধান','বিভাগীয় কার্যালয় সংশ্লিষ্ট কর্মকর্তা','বিভাগীয় কার্যালয় প্রধান'];
 const fwLoc=code=>{const o=(S.offices||[]).find(x=>x.code===code);if(!o||!(o.nameBn||o.name_bn))return{upz:'',dist:''};const p=(o.nameBn||o.name_bn).split(/\s*,\s*/);return{upz:(p[0]||'').replace(/\s*শাখা$/,''),dist:p[1]||''}};
 const fwGSets=(rows,by)=>{
-  const mk=(rs,name)=>{const {data,tot}=fwGhaAoa(rs);const cs=[...new Set(rs.map(r=>r.code).filter(Boolean))],l=cs.length===1&&rs.every(r=>r.code)?fwLoc(cs[0]):{upz:'',dist:''};return{name,data,tot,doff:'বগুড়া',upz:l.upz,dist:l.dist}};
+  const mk=(rs,name)=>{const {data,tot}=fwGhaAoa(rs);const cs=[...new Set(rs.map(r=>r.code).filter(Boolean))],l=cs.length===1&&rs.every(r=>r.code)?fwLoc(cs[0]):{upz:'',dist:''};const us=[...new Set(rs.map(r=>r.upz).filter(Boolean))];if(cs.length===1)l.upz=us.length===1?us[0]:l.upz;return{name,data,tot,doff:'বগুড়া',upz:l.upz,dist:l.dist}};
   if(!by)return[mk(rows,'Annexure-Gha')];
   const o=[];[...new Set(rows.map(r=>r.br))].forEach(b=>o.push(mk(rows.filter(r=>r.br===b),b)));return o;
 };
