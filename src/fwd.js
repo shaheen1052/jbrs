@@ -1,5 +1,5 @@
 /* ================= Forwarding (AO): forwarding letter to Divisional Office from Annexure-Ga Excel ================= */
-const FW={files:[],comb:true,code:'',fname:'',nn:'',nd:'',fs:{},rem:'',d:'',ref:{},pre:'',suf:'',sig:'',des:'',to:'',aoff:'',raw:null,hr:0,map:{},br:''};
+const FW={rep:'letter',show:false,files:[],comb:true,code:'',fname:'',nn:'',nd:'',fs:{},rem:'',d:'',ref:{},pre:'',suf:'',sig:'',des:'',to:'',aoff:'',raw:null,hr:0,map:{},br:''};
 const FW_F=[['br','শাখার নাম (Branch)',/শাখা|branch/i],['nm','গ্রাহকের নাম (Customer)',/গ্রাহক|ঋণগ্রহীতা|ঋণ গ্রহীতা|name|customer|borrower/i],['loan','ঋণের পরিমাণ (Loan)',/ঋণের|ঋণ\s*স্থিতি|loan|limit/i],['imp','আরোপিত সুদ (Imposed)',/^(?!.*অনারোপিত).*আরোপিত|imposed|charged/i],['gen','অনারোপিত সাধারণ সুদ',/সাধারণ|general|unapplied.*gen|normal/i],['pen','অনারোপিত দন্ড সুদ',/দন্ড|দণ্ড|penal/i],['tot','মোট (Total)',/^মোট|^total/i],['sus','ইন্টারেস্ট সাসপেন্স',/সাসপেন্স|suspense/i],['cib','যাচিত CIBTCA',/cibtca|যাচিত/i],['rem','মন্তব্য (Remarks)',/মন্তব্য|remark|status/i]];
 
 const FW_BJ={A:'অ',B:'ই',C:'ঈ',D:'উ',E:'ঊ',F:'ঋ',G:'এ',H:'ঐ',I:'ও',J:'ঔ',K:'ক',L:'খ',M:'গ',N:'ঘ',O:'ঙ',P:'চ',Q:'ছ',R:'জ',S:'ঝ',T:'ঞ',U:'ট',V:'ঠ',W:'ড',X:'ঢ',Y:'ণ',Z:'ত',_:'থ','`':'দ',a:'ধ',b:'ন',c:'প',d:'ফ',e:'ব',f:'ভ',g:'ম',h:'য',i:'র',j:'ল',k:'শ',l:'ষ',m:'স',n:'হ',o:'ড়',p:'ঢ়',q:'য়',r:'ৎ',s:'ং',t:'ঃ',u:'ঁ',v:'া',x:'ী',y:'ু',z:'ু','~':'ূ','„':'ৃ','Š':'ৗ','¨':'্য','ª':'্র','Ö':'্র','|':'।','ÿ':'ক্ষ','Ä':'ঞ্জ','Ÿ':'জ্ঞ','¯':'স্','®':'ষ্ণ','¤':'ন্','¦':'ব্','œ':'স্ত','Ñ':'ঙ্গ','Ý':'ন্দ','Ø':'্ব'};
@@ -34,25 +34,24 @@ function fwInit(){
 function pageFwd(l){
   fwInit();
   const I=(lb,v,ev,ex='')=>`<div><label>${lb}</label><input value="${esc(v)}" oninput="${ev}" ${ex}></div>`;
-  return`<div class="pghead"><div class="hrow"><h2>Forwarding (AO)</h2><div class="hrow" id="fwctl" style="flex:1 1 auto;justify-content:flex-end"><div class="bar">
-  <div style="position:relative"><button class="pri" onclick="A.fwDd(event)">Download &#9662;</button><div id="fwdd" class="ddm" style="display:none"><button class="ddi" onclick="A.fwDd();run(()=>A.fwDo('pdf'))">Forwarding letter - PDF</button><button class="ddi" onclick="A.fwDd();run(()=>A.fwDo('print'))">Forwarding letter - Print</button><button class="ddi" onclick="A.fwDd();run(()=>A.fwNote())">Note Sheet</button><button class="ddi" onclick="A.fwDd();run(()=>A.fwGha())">Annexure-Gha (Excel)</button></div></div>
+  return`<div class="pghead"><div class="hrow"><h2>Forwarding (AO)</h2><div class="hrow" id="fwctl" style="flex:1 1 auto;justify-content:flex-end"><div class="bar"><select id="fwrep" onchange="FW.rep=this.value;FW.show=false;$('#fwview').innerHTML=''" style="height:32px"><option value="letter" ${FW.rep==='letter'?'selected':''}>Forwarding letter</option><option value="note" ${FW.rep==='note'?'selected':''}>Note Sheet</option><option value="gha" ${FW.rep==='gha'?'selected':''}>Annexure-Gha</option></select>
+  <button onclick="run(()=>A.fwView())">View</button><button class="pri" onclick="run(()=>A.fwGo())">Print / Download</button>
   <button onclick="run(()=>A.fwSave())">Save</button></div></div></div></div>
   <div class="card fwform" style="margin-top:12px"><div class="g">
   <div style="grid-column:span 2"><label>Excel files (Ga)</label><input type="file" id="fw_f" accept=".xlsx,.xls,.csv" multiple onchange="run(()=>fwPick(this))" style="height:auto"></div>
-  ${I('Letter date',FW.d,"FW.d=this.value;fwDraw()",'id="fw_d" maxlength="10"')}${I('Meeting no.',FW.nn,"FW.nn=this.value")}${I('Note date',FW.nd,"FW.nd=this.value",'maxlength="10"')}
-  <label class="chk"><input type="checkbox" ${FW.comb?'checked':''} onchange="FW.comb=this.checked;fwDraw()"> One letter for all branches</label></div>
+  <div style="grid-column:span 2">${I('Letter Reference',FW.pre,"FW.pre=this.value;fwSV('pre',this.value);fwDraw()")}</div>
+  ${I('Date',FW.d,"FW.d=this.value;fwDraw()",'id="fw_d" maxlength="10"')}${I('Meeting no.',FW.nn,"FW.nn=this.value;fwDraw()")}${I('Note date',FW.nd,"FW.nd=this.value;fwDraw()",'maxlength="10"')}
+  <label class="chk" title="Ticked: files of different branches are put in ONE letter, ONE Note Sheet, ONE Gha. Unticked: a separate letter and Note Sheet for each branch."><input type="checkbox" ${FW.comb?'checked':''} onchange="FW.comb=this.checked;fwDraw()"> Combine all branches in one letter</label></div>
   <div id="fwmap"></div></div>
   <details class="card" style="margin-top:12px"><summary><b>Wording</b> <span class="muted small">(saved on this computer)</span></summary><div class="g" style="margin-top:8px">
-  <div style="grid-column:span 2">${I('Ref prefix',FW.pre,"FW.pre=this.value;fwSV('pre',this.value);fwDraw()")}</div>${I('Ref suffix',FW.suf,"FW.suf=this.value;fwSV('suf',this.value);fwDraw()")}
+  ${I('Ref suffix',FW.suf,"FW.suf=this.value;fwSV('suf',this.value);fwDraw()")}
   ${I('Sign name',FW.sig,"FW.sig=this.value;fwSV('sig',this.value);fwDraw()")}${I('Post',FW.des,"FW.des=this.value;fwSV('des',this.value);fwDraw()")}
   <div style="grid-column:span 2">${I('Note: prepared by (name|post)',FW.prep,"FW.prep=this.value;fwSV('prep',this.value)")}</div></div>
   <div class="g" style="margin-top:8px"><div style="grid-column:span 2"><label>Note: signers (name|post per line)</label><textarea rows="5" oninput="FW.signs=this.value;fwSV('signs',this.value)">${esc(FW.signs)}</textarea></div>
   <div><label>To</label><textarea rows="5" oninput="FW.to=this.value;fwSV('to',this.value);fwDraw()">${esc(FW.to)}</textarea></div>
   <div style="grid-column:span 2"><label>Subject</label><textarea rows="5" oninput="FW.sub=this.value;fwSV('sub',this.value);fwDraw()">${esc(FW.sub)}</textarea></div></div></details>
-  <div id="fwview" class="lfsc" style="margin-top:12px;overflow:auto"><p class="muted">Upload one or more Annexure-Ga Excel files. Letters, Note Sheet and Gha are made from all of them.</p></div>`;
+  <div id="fwview" class="lfsc" style="margin-top:12px;overflow:auto"><p class="muted">Upload the Annexure-Ga Excel file(s), choose the report above and press View.</p></div>`;
 }
-A.fwDd=e=>{const m=$('#fwdd');if(!m)return;if(e){e.stopPropagation();m.style.display=m.style.display==='none'?'block':'none'}else m.style.display='none'};
-if(!window.__fwDd){window.__fwDd=1;document.addEventListener('click',()=>{const m=$('#fwdd');if(m)m.style.display='none'})}
 const fwGaRows=f=>{const out=[],n=v=>{v=gaNum(v);return isNaN(v)?0:v};
   for(const r of f.aoa.slice(f.start)){
     if(!/^\s*\d+\s*$/.test(String(r[0])))break;const nm=String(r[1]).trim();if(!nm)continue;
@@ -139,7 +138,7 @@ function fwPages(rows){
       <div class="fwsub"><b>বিষয়ঃ</b><span>${esc(FW.sub)}</span></div>
       <p>প্রিয় মহোদয়</p>
       <p class="j">শিরোনামে বর্ণিত সার্কুলারসমূহের নিদের্শনা অনুযায়ী অত্র এরিয়াধীন শাখাসমূহ হতে প্রাপ্ত সুদ মওকুফ প্রস্তাবসমূহ পর্যালোচনা ও যাচাই-বাছাই করতঃ অত্র এরিয়ার সুপারিশসহ নিম্নোক্ত ছক মোতাবেক আপনাদের সদয় অবগতি ও প্রয়োজনীয় ব্যবস্থা গ্রহণের নিমিত্তে এতদসঙ্গে প্রেরণ করা হলো।</p>
-      <table class="fwt" data-b="${esc(br)}" style="${FW.fs[br]?`font-size:${FW.fs[br]}pt`:''}"><colgroup><col style="width:4.5%"><col style="width:9%"><col style="width:16%"><col style="width:9.5%"><col style="width:9.5%"><col style="width:9.5%"><col style="width:9.5%"><col style="width:9.5%"><col style="width:9.5%"><col style="width:9.5%"><col style="width:8%"></colgroup><tr><th rowspan="2">ক্রঃ নং</th><th rowspan="2">শাখার নাম</th><th rowspan="2">গ্রাহকের নাম</th><th rowspan="2">ঋণের পরিমাণ</th><th colspan="4">সুদ মওকুফের জন্য সুপারিশকৃত সুদের পরিমাণ</th><th rowspan="2">ইন্টারেস্ট সাসপেন্স</th><th rowspan="2">যাচিত CIBTCA এর পরিমাণ</th><th rowspan="2">মন্তব্য</th></tr>
+      <table class="fwt" data-b="${esc(br)}"><colgroup><col style="width:4.5%"><col style="width:9%"><col style="width:16%"><col style="width:9.5%"><col style="width:9.5%"><col style="width:9.5%"><col style="width:9.5%"><col style="width:9.5%"><col style="width:9.5%"><col style="width:9.5%"><col style="width:8%"></colgroup><tr><th rowspan="2">ক্রঃ নং</th><th rowspan="2">শাখার নাম</th><th rowspan="2">গ্রাহকের নাম</th><th rowspan="2">ঋণের পরিমাণ</th><th colspan="4">সুদ মওকুফের জন্য সুপারিশকৃত সুদের পরিমাণ</th><th rowspan="2">ইন্টারেস্ট সাসপেন্স</th><th rowspan="2">যাচিত CIBTCA এর পরিমাণ</th><th rowspan="2">মন্তব্য</th></tr>
       <tr><th>আরোপিত<br>সুদ</th><th>অনারোপিত<br>সাধারণ সুদ</th><th>অনারোপিত<br>দন্ড সুদ</th><th>মোট</th></tr>
       ${rs.map((r,i)=>`<tr><td class="c">${toBn(i+1)}</td><td class="c">${esc(r.br)}</td><td>${esc(r.nm)}</td><td class="n">${fwN(r.loan)}</td><td class="n">${fwN(r.imp)}</td><td class="n">${fwN(r.gen)}</td><td class="n">${fwN(r.pen)}</td><td class="n">${fwN(r.tot)}</td><td class="n">${fwN(r.sus)}</td><td class="n">${fwN(r.cib)}</td><td class="c">${esc(r.rem)}</td></tr>`).join('')}
       <tr class="tt"><td colspan="3" class="c">মোট</td>${S_.map(v=>`<td class="n">${fwN(v)}</td>`).join('')}<td></td></tr></table>
@@ -154,16 +153,33 @@ function fwPages(rows){
 function fwDraw(){
   if(!FW.raw)return;const rows=fwData(),keys=Object.keys(fwBy(rows));
   const rf=$('#fwref');
-  if(rf&&rf.dataset.k!==keys.join('|')){rf.dataset.k=keys.join('|');rf.innerHTML=`<div class="g" style="margin-top:10px">${keys.map(b=>`<div><label>Ref no.${keys.length>1||b==='ALL'?' - '+esc(b==='ALL'?'all branches':b):''}</label><input value="${esc(FW.ref[b]||'')}" oninput="FW.ref[${esc(JSON.stringify(b)).replace(/"/g,'&quot;')}]=this.value;fwDraw()" placeholder="e.g. 1759"></div>`).join('')}</div>`}
-  const v=$('#fwview');if(!v)return;
-  FW.fs={};v.innerHTML=rows.length?fwPages(rows):'<p class="muted">No loan rows found. Check the header row number and the column matching above.</p>';
-  v.querySelectorAll('.fwt').forEach(t=>{const w=t.closest('.fwin'),cs=getComputedStyle(w),av=w.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);let f=8;const pg=t.closest('.lfpage');while(fwOver(t,av,w,pg)&&f>3.2){f-=.2;t.style.fontSize=f+'pt'}FW.fs[t.dataset.b]=Math.min(FW.fs[t.dataset.b]||9,f)});
-  v.querySelectorAll('.fwt').forEach(t=>{t.style.fontSize=FW.fs[t.dataset.b]+'pt'});
+  if(rf&&rf.dataset.k!==keys.join('|')){rf.dataset.k=keys.join('|');rf.innerHTML=`<div class="row" style="margin-top:10px;gap:10px">${keys.map(b=>`<div style="flex:0 0 130px"><label>Outward Number${keys.length>1||b==='ALL'?' - '+esc(b==='ALL'?'all':b):''}</label><input value="${esc(FW.ref[b]||'')}" oninput="FW.ref[${esc(JSON.stringify(b)).replace(/"/g,'&quot;')}]=this.value;fwDraw()" placeholder="e.g. 1759"></div>`).join('')}</div>`}
+  if(FW.show)fwShow();
 }
-
+function fwGhaAoa(rows){
+  const g={};rows.forEach(r=>{const ty=String(r.raw[3]).trim(),k=r.br+'|'+ty;(g[k]=g[k]||{br:r.br,ty,rs:[]}).rs.push(r.raw)});
+  const nn=v=>{v=gaNum(v);return isNaN(v)?0:v},idx=[6,7,8,9,10,11,12,13,14,15,16,17,18,19,20];
+  const data=[],tot=new Array(16).fill(0);
+  Object.values(g).forEach((x,i)=>{const sum=idx.map(c=>Math.round(x.rs.reduce((a,r)=>a+nn(r[c]),0)*100)/100);data.push([i+1,'সিরাজগঞ্জ',x.br,x.ty,x.rs.length,...sum]);tot[0]+=x.rs.length;sum.forEach((v,j)=>tot[j+1]=Math.round((tot[j+1]+v)*100)/100)});
+  return{data,tot};
+}
+function fwShow(){
+  const v=$('#fwview');if(!v)return;const rows=fwData();
+  if(!rows.length){v.innerHTML='<p class="muted">No loan rows found.</p>';return}
+  if(FW.rep!=='letter'&&!FW.ga){v.innerHTML='<p class="muted">This report needs Annexure-Ga (customer wise) files.</p>';return}
+  if(FW.rep==='gha'){const {data,tot}=fwGhaAoa(rows);v.innerHTML=`<div class="card" style="overflow:auto"><table class="fwft"><tr>${FW_GH.map(h=>`<th>${esc(h)}</th>`).join('')}</tr>${data.map(r=>`<tr>${r.map((c,i)=>`<td${typeof c==='number'&&i>3?' style="text-align:right"':''}>${typeof c==='number'&&i>4?fwN(c):esc(c)}</td>`).join('')}</tr>`).join('')}<tr style="font-weight:700"><td></td><td>সর্বমোট</td><td></td><td></td>${tot.map((c,i)=>`<td style="text-align:right">${i?fwN(c):c}</td>`).join('')}</tr></table></div>`;return}
+  v.innerHTML=FW.rep==='note'?fwNotePages(rows):fwPages(rows);fwFitIn(v);
+}
+A.fwView=async()=>{if(!FW.raw)return toast('Upload the Annexure-Ga Excel first.');FW.show=true;fwShow()};
+A.fwGo=async()=>{
+  if(!FW.raw)return toast('Upload the Annexure-Ga Excel first.');
+  if(FW.rep==='gha')return A.fwGha();
+  if(FW.rep==='note')return A.fwNote();
+  return A.fwDo('print');
+};
 const fwOver=(t,av,w,pg)=>t.scrollWidth>av+1||w.scrollHeight>pg.clientHeight-4||[...t.querySelectorAll('td,th')].some(c=>c.scrollWidth>c.clientWidth+1);
 function fwFitIn(root){
-  root.querySelectorAll('.fwt').forEach(t=>{if(t.style.fontSize)return;const w=t.closest('.fwin'),cs=getComputedStyle(w),av=w.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight),pg=t.closest('.lfpage');let f=7.5;t.style.fontSize=f+'pt';while(fwOver(t,av,w,pg)&&f>3.2){f-=.2;t.style.fontSize=f+'pt'}});
+  root.querySelectorAll('.fwt').forEach(t=>{if(t.style.fontSize)return;const w=t.closest('.fwin'),cs=getComputedStyle(w),av=w.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight),pg=t.closest('.lfpage');let f=8;t.style.fontSize=f+'pt';while(fwOver(t,av,w,pg)&&f>3.2){f-=.2;t.style.fontSize=f+'pt'}});
 }
 async function fwOut(html,w,fname){
   let win=null;if(w==='print'){try{win=window.open('','_blank')}catch(e){}}
@@ -214,11 +230,7 @@ A.fwNote=async()=>{
 const FW_GH=['ক্রঃ নং','এরিয়ার নাম','শাখার নাম','ঋণের ধরণ/প্রকৃতি','ঋণ সংখ্যা','আসল','আরোপিত দায়: সুদ','আরোপিত দায়: অন্যান্য খরচ','মোট দায় (৬+৭+৮)','পরিশোধ: আসল','পরিশোধ: সুদ','পরিশোধ: অন্যান্য খরচ','মোট পরিশোধ','লেজার বকেয়া (৯-১৩)','আদায়যোগ্য আসল (৬-১০)','অনারোপিত সাধারণ সুদ','অনারোপিত দন্ড সুদ','ইন্টারেস্ট সাসপেন্সের পরিমাণ','যাচিত CIBTCA এর পরিমাণ (১৪-১৫-১৮)','কস্ট অব ফান্ড এর পরিমাণ'];
 A.fwGha=async()=>{
   const rows=fwData();if(!rows.length||!FW.ga)return toast('Upload the Annexure-Ga (customer wise) Excel first.');
-  await gaLoadLib();
-  const g={};rows.forEach(r=>{const ty=String(r.raw[3]).trim(),k=r.br+'|'+ty;(g[k]=g[k]||{br:r.br,ty,rs:[]}).rs.push(r.raw)});
-  const nn=v=>{v=gaNum(v);return isNaN(v)?0:v},idx=[6,7,8,9,10,11,12,13,14,15,16,17,18,19,20];
-  const data=[],tot=new Array(16).fill(0);
-  Object.values(g).forEach((x,i)=>{const sum=idx.map(c=>Math.round(x.rs.reduce((a,r)=>a+nn(r[c]),0)*100)/100);data.push([i+1,'সিরাজগঞ্জ',x.br,x.ty,x.rs.length,...sum]);tot[0]+=x.rs.length;sum.forEach((v,j)=>tot[j+1]=Math.round((tot[j+1]+v)*100)/100)});
+  await gaLoadLib();const {data,tot}=fwGhaAoa(rows);
   const aoa=[['জনতা ব্যাংক পিএলসি.'],['পরিশিষ্ট-ঘ'],['বিষয়ঃ নির্দেশ বিজ্ঞপ্তি নং- ১৪১১/২৬ তারিখ ০২/০৭/২০২৬ অনুযায়ী বিশেষ এক্সিট সুবিধার আওতায় কৃষি ও পল্লী ঋণসমূহের ৩০/০৬/২০২৬ জুন ভিত্তিক ক্ষতি হিসাবে শ্রেণিকৃত অনাদায়ী ঋণ হিসাবের তথ্যাদি।'],['(টাকার অংকে)'],FW_GH,FW_GH.map((_,i)=>i+1),...data,['','সর্বমোট','','',...tot]];
   const ws=XLSX.utils.aoa_to_sheet(aoa);ws['!merges']=[0,1,2].map(r=>({s:{r,c:0},e:{r,c:19}}));
   ws['!cols']=FW_GH.map((_,i)=>({wch:i<4?16:15}));
