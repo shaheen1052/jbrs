@@ -1896,17 +1896,28 @@ async function fwSavedDel(id){if(!confirm('Remove this saved file and its rows?'
 A.fwSave=async()=>{
   if(!FW.ga||!FW.files.length)return toast('Upload the Annexure-Ga (customer wise) Excel first.');
   const miss=FW.files.filter(f=>!f.code);if(miss.length)return toast('Select "Save to" branch for: '+miss.map(f=>f.name).join(', '));
-  const dup=new Set(FW.files.map(f=>f.code));if(dup.size<FW.files.length)return toast('Two files point to the same branch. Check "Save to".');
-  const olds=[];for(const f of FW.files){const j=await api('/ga/rows?office='+encodeURIComponent(f.code));olds.push((j.batches||[]).filter(b=>b.office===f.code))}
-  const ex=FW.files.filter((f,i)=>olds[i].length).map(f=>officeName(f.code));
-  if(ex.length&&!confirm('Already saved for: '+ex.join(', ')+'. Replace with these files?'))return;
-  let n=0;
-  for(let i=0;i<FW.files.length;i++){const f=FW.files[i];
-    for(const b of olds[i])await api('/ga/delete',{method:'POST',body:{id:b.id}});
-    const rows=fwGaRows(f).map(r=>r.raw.map((c,k)=>k===0?r.raw[0]:(typeof c==='number'?c:String(c))));
-    await api('/ga/upload',{method:'PUT',body:{office:f.code,label:'Annexure-Ga '+FW.d,fname:f.name,head:FW_GA_HEAD,rows}});n+=rows.length}
-  toast('Saved '+n+' loans of '+FW.files.length+' branch(es). See Annexure-Ga (All).');{const d=$('#fwsaved');if(d&&d.closest('details').open)fwSaved()}
+  const key=r=>fwEn(r[2]).replace(/\s+/g,''),clean=r=>r.map((c,k)=>typeof c==='number'?c:String(c));
+  const codes=[...new Set(FW.files.map(f=>f.code))],jobs=[];
+  for(const code of codes){
+    const fs=FW.files.filter(f=>f.code===code),nw=new Map(),extra=[];
+    fs.forEach(f=>fwGaRows(f).forEach(r=>{const k=key(r.raw);if(k)nw.set(k,clean(r.raw));else extra.push(clean(r.raw))}));
+    const j=await api('/ga/rows?office='+encodeURIComponent(code)),olds=(j.batches||[]).filter(b=>b.office===code);
+    const oldRows=olds.flatMap(b=>b.rows),same=[],keep=[];
+    oldRows.forEach(r=>{const k=key(r);if(k&&nw.has(k))same.push(fwEn(r[2]));else keep.push(r)});
+    jobs.push({code,fs,olds,keep,add:[...nw.values(),...extra],same:[...new Set(same)]});
+  }
+  const lines=jobs.filter(x=>x.same.length).map(x=>officeName(x.code)+': '+x.same.length+' account(s) already saved will be replaced ('+x.same.slice(0,8).join(', ')+(x.same.length>8?', ...':'')+')');
+  if(lines.length&&!confirm(lines.join('\n')+'\n\nOnly these accounts are replaced; all other saved borrowers stay and new ones are added. Continue?'))return;
+  let n=0,rp=0;
+  for(const x of jobs){
+    const rows=[...x.keep,...x.add].map((r,i)=>{r=r.slice();r[0]=i+1;return r});
+    for(const b of x.olds)await api('/ga/delete',{method:'POST',body:{id:b.id}});
+    await api('/ga/upload',{method:'PUT',body:{office:x.code,label:'Annexure-Ga '+FW.d,fname:[...new Set([...x.olds.map(b=>b.fname),...x.fs.map(f=>f.name)])].join(' + ').slice(0,120),head:FW_GA_HEAD,rows}});
+    n+=x.add.length;rp+=x.same.length;
+  }
+  toast('Saved: '+(n-rp)+' new and '+rp+' replaced loan(s) in '+jobs.length+' branch(es). See Annexure-Ga (All).');{const d=$('#fwsaved');if(d&&d.closest('details').open)fwSaved()}
 };
+
 
 /* ================= JBRS ONLINE APP ================= */
 const APP={name:'JB Reporting System',short:'JBRS',version:'Online 1.0',bank:'Janata Bank PLC.',dev:'Developed by - Md. Shaheen Mahmud, Principal Officer, 024365'};
