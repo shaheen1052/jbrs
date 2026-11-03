@@ -25,7 +25,7 @@ const fwLS=(k,d)=>{try{return localStorage.getItem('jbrs_fw_'+k)||d}catch(e){ret
 const fwSV=(k,v)=>{try{localStorage.setItem('jbrs_fw_'+k,v)}catch(e){}};
 function fwInit(){
   if(FW.init)return;FW.init=1;
-  FW.rem=fwLS('rem','বিএল');FW.pre=fwLS('pre','এঃঅঃসিরাজ/এক্সিট পলিসি');FW.suf=fwLS('suf','এমএএইচ');FW.sig=fwLS('sig','আহমেদ তৈয়ব হাসান');FW.des=fwLS('des','উপ মহাব্যবস্থাপক');
+  FW.rem='বিএল';FW.pre=fwLS('pre','এঃঅঃসিরাজ/এক্সিট পলিসি');FW.suf=fwLS('suf','এমএএইচ');FW.sig=fwLS('sig','আহমেদ তৈয়ব হাসান');FW.des=fwLS('des','উপ মহাব্যবস্থাপক');
   FW.to=fwLS('to','মহাব্যবস্থাপক\nজনতা ব্যাংক পিএলসি.\nবিভাগীয় কার্যালয়\nবগুড়া।');
   FW.sub=fwLS('sub','বাংলাদেশ ব্যাংকের বিআরপিডি-১ সার্কুলার লেটার নং ২৩ তারিখ: ২৯/০৬/২০২৬ ইং এবং অত্র ব্যাংকের নির্দেশ বিজ্ঞপ্তি নং ১৪১১/২৬ তারিখ: ০২/০৭/২০২৬ ইং এর আলোকে রিটেইল কাস্টমার ডিপার্টমেন্ট-৩ এর ০৮/০৭/২০২৬ ইং তারিখের পত্র সূত্র নং আরসিডি-৩/কৃ. ও প. ঋণ/ এককালীন এক্সিট/ ২০২৬/ ২৫৭-৪০৭ এর পরামর্শক্রমে বিশেষ এক্সিট সুবিধার আওতায় সুদ মওকুফ প্রস্তাব প্রেরণ প্রসঙ্গে।');
   const t=new Date();FW.d=String(t.getDate()).padStart(2,'0')+'/'+String(t.getMonth()+1).padStart(2,'0')+'/'+t.getFullYear();
@@ -69,7 +69,7 @@ function fwGuess(){
 function fwMapUi(){
   if(FW.ga){$('#fwmap').innerHTML=`<div class="row" style="margin-top:10px;align-items:flex-end"><div class="muted small" style="flex:1 1 100%">Annexure-Ga format recognised. Interest columns are taken from the file (Imposed = ledger due - principal due; Unimposed general and penal; Interest suspense; CIBTCA).</div>
   <div style="flex:1 1 220px"><label>Branch name (read from the file - you can edit)</label><input value="${esc(FW.br)}" oninput="FW.br=this.value;fwDraw()"></div>
-  <div style="flex:0 0 260px"><label>Remarks if not written off (written off = অবলোপন, from column 22)</label><input value="${esc(FW.rem)}" oninput="FW.rem=this.value;fwSV('rem',this.value);fwDraw()"></div></div><div id="fwref"></div>`;return}
+  </div><div id="fwref"></div>`;return}
   const h=FW.raw[FW.hr]||[];
   const opt=k=>`<option value="-1">- none -</option>${h.map((x,i)=>`<option value="${i}" ${FW.map[k]===i?'selected':''}>${i+1}. ${esc(String(x).slice(0,40)||'(blank)')}</option>`).join('')}`;
   $('#fwmap').innerHTML=`<div class="row" style="margin-top:10px;align-items:flex-end"><div style="flex:0 0 120px"><label>Header row no.</label><input type="number" min="1" value="${FW.hr+1}" onchange="FW.hr=Math.max(0,(+this.value||1)-1);fwGuess();fwMapUi();fwDraw()"></div>
