@@ -1654,6 +1654,8 @@ const STATUS_BN={NONE:'শুরু হয়নি',DRAFT:'খসড়া',RET
 
 const S={token:null,user:null,offices:[],view:{},cur:null,dirty:false,idleTimer:null,autoTimer:null,open:{}};
 try{S.token=sessionStorage.getItem('jbrs_t')}catch(e){}
+let UI0=null;try{UI0=JSON.parse(sessionStorage.getItem('jbrs_ui')||'null');if(UI0&&UI0.o)S.open=UI0.o}catch(e){}
+const saveUi=()=>{try{sessionStorage.setItem('jbrs_ui',JSON.stringify({v:S.view,o:S.open}))}catch(e){}};
 // A is declared in the prelude
 
 /* ---------- helpers ---------- */
@@ -1693,7 +1695,7 @@ async function api(path,opt){
   return j;
 }
 function endSession(msg){
-  S.token=null;S.user=null;S.cur=null;S.dirty=false;try{sessionStorage.removeItem('jbrs_t')}catch(e){}
+  S.token=null;S.user=null;S.cur=null;S.dirty=false;try{sessionStorage.removeItem('jbrs_t');sessionStorage.removeItem('jbrs_ui')}catch(e){}
   clearTimeout(S.idleTimer);clearInterval(S.autoTimer);closeModal();showLogin(msg);
 }
 function armIdle(){clearTimeout(S.idleTimer);S.idleTimer=setTimeout(()=>{if(S.user){if(S.dirty)run(A.save);setTimeout(()=>run(A.logout),1500)}},IDLE_MIN*60000)}
@@ -1706,7 +1708,7 @@ async function boot(){
   shell(`<div class="center"><div class="muted">Connecting...</div></div>`);
   let st;try{st=await api('/status')}catch(e){shell(`<div class="center"><div class="card login">${brand()}<div class="note n-dan">${esc(e.message)}</div><button class="pri" onclick="boot()">Try again</button></div></div>`);return}
   if(st.needsSetup)return showSetup();
-  if(S.token){try{await loadMe();return go({page:'dash'})}catch(e){if(e.message==='Session ended')return}}
+  if(S.token){try{await loadMe();const v=UI0&&UI0.v&&UI0.v.page?UI0.v:{page:'dash'};UI0=null;return go(v)}catch(e){if(e.message==='Session ended')return}}
   showLogin();
 }
 async function loadMe(){
@@ -1779,7 +1781,7 @@ function go(v){
   if(IWC.pending.size&&!confirm('Calculator changes are still being saved online. Leave anyway?'))return;
   if(S.lf&&(S.lf.dirty||S.lf.aoDirty)){lfAsk(()=>{S.lf=null;go(v)});return}
   if(S.dirty&&!confirm('You have unsaved changes on this report. Leave without saving?'))return;
-  S.dirty=false;clearInterval(S.autoTimer);S.view=v;
+  S.dirty=false;clearInterval(S.autoTimer);S.view=v;saveUi();
   if(innerWidth<=760)S.side=false;   // on phones the menu closes after a choice
   renderApp();window.scrollTo(0,0);
 }
@@ -1828,11 +1830,11 @@ function menuItems(items,leafBtn,top){return items.map(it=>{
   const open=S.open[k]===undefined?has(it):S.open[k];
   return`<button class="nav gnav" onclick="A.toggleGroup('${k}')"><span>${esc(it.group)}</span><span class="caret" id="gc_${k}">${open?'&minus;':'+'}</span></button><div class="subleaves" id="gl_${k}" style="${open?'':'display:none'}">${menuItems(it.items,leafBtn,sub)}</div>`;
 }).join('')}
-A.toggleGroup=k=>{const el=$('#gl_'+k);const hide=el.style.display!=='none';el.style.display=hide?'none':'';S.open[k]=!hide;$('#gc_'+k).innerHTML=hide?'+':'&minus;'};
-A.collapseAll=()=>{document.querySelectorAll('[id^="gl_"],[id^="pl_"]').forEach(e=>{e.style.display='none';S.open[e.id.slice(3)]=false});document.querySelectorAll('[id^="gc_"],[id^="pc_"]').forEach(e=>e.innerHTML='+')};
-A.openAll=()=>{document.querySelectorAll('[id^="gl_"],[id^="pl_"]').forEach(e=>{e.style.display='';S.open[e.id.slice(3)]=true});document.querySelectorAll('[id^="gc_"],[id^="pc_"]').forEach(e=>e.innerHTML='&minus;')};
+A.toggleGroup=k=>{const el=$('#gl_'+k);const hide=el.style.display!=='none';el.style.display=hide?'none':'';S.open[k]=!hide;$('#gc_'+k).innerHTML=hide?'+':'&minus;';saveUi()};
+A.collapseAll=()=>{document.querySelectorAll('[id^="gl_"],[id^="pl_"]').forEach(e=>{e.style.display='none';S.open[e.id.slice(3)]=false});document.querySelectorAll('[id^="gc_"],[id^="pc_"]').forEach(e=>e.innerHTML='+');saveUi()};
+A.openAll=()=>{document.querySelectorAll('[id^="gl_"],[id^="pl_"]').forEach(e=>{e.style.display='';S.open[e.id.slice(3)]=true});document.querySelectorAll('[id^="gc_"],[id^="pc_"]').forEach(e=>e.innerHTML='&minus;');saveUi()};
 A.toggleAll=()=>{const els=[...document.querySelectorAll('[id^="gl_"],[id^="pl_"]')];const anyOpen=els.some(e=>e.style.display!=='none');if(anyOpen)A.collapseAll();else A.openAll();const any2=anyOpen?false:true;const b=$('#allbtn');if(b)b.innerHTML=any2?'&#8679; Collapse all':'&#8681; Open all'};
-A.togglePillar=id=>{const el=$('#pl_'+id);const hide=el.style.display!=='none';el.style.display=hide?'none':'';S.open[id]=!hide;const c=$('#pc_'+id);if(c)c.innerHTML=hide?'+':'&minus;'};
+A.togglePillar=id=>{const el=$('#pl_'+id);const hide=el.style.display!=='none';el.style.display=hide?'none':'';S.open[id]=!hide;const c=$('#pc_'+id);if(c)c.innerHTML=hide?'+':'&minus;';saveUi()};
 const PCOL={calc:['#6a3fb5','#f0ebfa'],lapp:['#2e7d32','#e8f5e9'],rep:['#1d5fa8','#e7f0fb'],dep:['#1d5fa8','#e7f0fb'],loan:['#2e7d32','#e8f5e9'],acc:['#6a3fb5','#f0ebfa'],rec:['#b55400','#fdf0e2'],aud:['#b42318','#fdecea'],_:['#0a7aa6','#e2f4fb']};
 function setMain(h){const m=$('#main');if(m)m.innerHTML=h+`<div class="dev">${APP.dev}</div>`}
 
