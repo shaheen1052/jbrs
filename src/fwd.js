@@ -336,7 +336,7 @@ const FW_GAFILL=['','','','','','','#FCD5B4','#FCD5B4','#FCD5B4','#FCD5B4','#92D
 const FW_GANUM={9:'১০= (৭+৮+৯)',13:'১৪=(১১+১২+১৩)',15:'১৬=(৭-১১)',19:'২০=(১৫-১৬-১৯)'};
 function fwGaSets(rows){
   const m=new Map();rows.forEach(r=>{const k=r.code||r.br;if(!m.has(k))m.set(k,{code:r.code,br:r.br,rs:[]});m.get(k).rs.push(r.raw)});
-  const g=[...m.values()].filter(x=>!FW.gbr||x.code===FW.gbr);if(!g.length)return[];
+  const g=[...m.values()].filter(x=>!FW.gbr||x.code===FW.gbr).sort((x,y)=>String(x.br).localeCompare(String(y.br),'bn'));if(!g.length)return[];
   const rs=[],brs=[],tot=new Array(22).fill(0);
   g.forEach(x=>x.rs.forEach(r=>{rs.push(r);brs.push(x.br);for(let c=6;c<=20;c++){const v=gaNum(r[c]);if(!isNaN(v))tot[c]=Math.round((tot[c]+v)*100)/100}}));
   return[{br:g.length===1?g[0].br:'',rs,brs,tot}];
