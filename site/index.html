@@ -1676,8 +1676,8 @@ const fwUni=t=>{t=String(t==null?'':t).trim();return t&&!/[\u0980-\u09FF]/.test(
 const fwGaRows=f=>{const out=[],n=v=>{v=gaNum(v);return isNaN(v)?0:fw2(v)};
   for(const r of f.aoa.slice(f.start)){
     if(!/^\s*[\d\u09E6-\u09EF]+\s*$/.test(String(r[0])))break;const nm=fwUni(r[1]);if(!nm)continue;
-    const imp=fw2(n(r[14])-n(r[15])),gen=n(r[16]),pen=n(r[17]),wo=String(r[21]).trim();
-    out.push({br:f.br,code:f.code,upz:fwUpz(f),nm,loan:n(r[6]),imp,gen,pen,tot:fw2(imp+gen+pen),sus:n(r[18]),cib:n(r[19]),raw:(()=>{const q=r.slice(0,22);q[1]=nm;q[3]=fwUni(q[3]);return q})(),rem:wo&&!/^(না|নাই|no|n|-|0)$/i.test(wo)?'অবলোপন':FW.rem});
+    const imp=fw2(n(r[14])-n(r[15])),gen=n(r[16]),pen=n(r[17]),wr=String(r[21]==null?'':r[21]).trim(),eng=/^(yes|no|y|n)$/i.test(wr),wo=eng?wr:fwUni(wr);
+    out.push({br:f.br,code:f.code,upz:fwUpz(f),nm,loan:n(r[6]),imp,gen,pen,tot:fw2(imp+gen+pen),sus:n(r[18]),cib:n(r[19]),raw:(()=>{const q=r.slice(0,22);q[1]=nm;q[3]=fwUni(q[3]);q[21]=wo;return q})(),rem:/^(হ্যাঁ|হ্যা|হাঁ|yes|y)$/i.test(wo.replace(/[\s।.]/g,''))?'অবলোপন':FW.rem});
   }return out};
 async function fwParse(f){
   const wb=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true});
