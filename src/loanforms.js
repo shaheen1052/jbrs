@@ -407,9 +407,10 @@ const lfMotoSample={a_name:'খালিদ বিন আজাদ',a_father:'�
  cmp_a:'57350.62',cmp_i:'1370',
  r_name:'মোঃ হুমায়ন কবির',r_desig:'সহকারী মহাব্যবস্থাপক',r_place:'সিরাজগঞ্জ কর্পোরেট শাখা, সিরাজগঞ্জ'};
 A.lfSample=()=>{const f=S.lf;if(f.d.a_name&&!confirm('Replace the entered data with the test data from the Word file?'))return;Object.assign(f.d,lfMotoSample);f.dirty=true;lfRender()};
+const lfMr=(l,v,l2,v2,c3)=>`<div class="mr${l2!==undefined?(c3?' mr2 mr3':' mr2'):''}"><span>${l}</span><b>ঃ</b><span class="mv">${esc(v||'')}</span>${l2!==undefined?`<span>${l2}</span><b>ঃ</b><span class="mv">${esc(v2||'')}</span>`:''}</div>`;
 const lfPg=(inner,n)=>lfPage(`<div class="ka">${inner}</div><div class="u" style="position:absolute;left:0;right:0;bottom:-2mm;text-align:center">${n}</div>`,'7mm 11mm 0 14mm');
-const lfSig=d=>`<div style="margin-left:96mm;line-height:6.4mm"><div style="margin-bottom:4mm">আবেদনকারীর স্বাক্ষর :</div>${lfLn('নাম :',d.a_name)}${lfLn('পদবী :',d.x_desig)}${lfLn('বর্তমান কর্মস্থল :',d.x_posting)}</div>`;
-const lfWit=(d,k)=>`<div style="margin-top:2mm;line-height:6mm"><div>${toBn(k)}. স্বাক্ষর &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</div>${[['নাম','_name'],['পদবী','_desig'],['বর্তমান কর্মস্থল','_place']].map(([l,s])=>`<div style="display:flex;gap:2mm;padding-left:4mm;width:110mm"><span style="flex:0 0 32mm">${l}</span><span>:</span><span style="flex:1;border-bottom:1px dotted #000;min-height:5.6mm">${esc(d['w'+k+s]||'')}</span></div>`).join('')}</div>`;
+const lfSig=d=>`<div class="sg" style="margin-left:92mm"><div style="margin-bottom:3mm">আবেদনকারীর স্বাক্ষর ঃ</div>${lfMr('নাম',d.a_name)}${lfMr('পদবী',d.x_desig)}${lfMr('বর্তমান কর্মস্থল',d.x_posting)}</div>`;
+const lfWit=(d,k)=>`<div style="margin-top:2mm;line-height:6mm"><div>${toBn(k)}. স্বাক্ষর</div><div class="sg" style="padding-left:4mm;width:120mm">${[['নাম','_name'],['পদবী','_desig'],['বর্তমান কর্মস্থল','_place']].map(([l,s])=>lfMr(l,d['w'+k+s])).join('')}</div></div>`;
 function lfDocMoto1(){
   const d=S.lf.d,amt=lfMon(d.l_amt)?lfMon(d.l_amt)+'/= ('+lfWd(d.l_amt)+') টাকা':'৫,০০,০০০/= (পাঁচ লক্ষ) টাকা';
   const p1=`<div class="kph">আবেদনকারীর<br>পাসপোর্ট সাইজের<br>সত্যায়িত ছবি</div>
@@ -419,18 +420,19 @@ function lfDocMoto1(){
   <div style="margin-top:5mm">প্রিয় মহোদয়,</div>
   <p class="kp">আমি নিম্নস্বাক্ষরকারী মোটর সাইকেল ক্রয়ের নিমিত্তে ''জনতা ব্যাংক কর্মচারী যানবাহন অগ্রিম নীতিমালা-২০০০'' এর আওতায় জারিকৃত নির্দেশ বিজ্ঞপ্তি নং ১৩১৮/২৫ তারিখ: ১৩-০২-২০২৫ এর প্রেক্ষিতে মোটর সাইকেল ঋণ নীতিমালায় জারিকৃত সকল নির্দেশ বিজ্ঞপ্তির শর্তাধীনে ${amt} মোটর সাইকেল ঋণের জন্য নিম্নে প্রয়োজনীয় তথ্যাদি উল্লেখপূর্বক আবেদন করছি ঃ</p>
   <div class="kh" style="margin-top:7mm"><span class="u">১। সাধারণ তথ্য ঃ</span></div><div class="mgap">
-  ${lfKR([['ক. নাম',d.a_name,0]])}${lfKR([['খ. পিতা/স্বামীর নাম',d.a_father,0]])}
-  ${lfKR([['গ. পদবী, ব্যাংক আইডি ও ব্যক্তিগত নথি নং',[d.x_desig,d.x_bankid?'আইডি-'+toBn(d.x_bankid):'',d.x_fileno?'নথি নং-'+toBn(d.x_fileno):''].filter(Boolean).join(', '),0]])}
-  ${lfKR([['ঘ. বর্তমান কর্মস্থল',d.x_posting,0]])}
-  ${lfKR([['ঙ. চাকুরীতে যোগদানের তারিখ',lfDate(d.x_join),0],['বেতন স্কেল',lfv(d,'x_scale'),0]])}
-  ${lfKR([['চ. চাকুরী স্থায়ীকরণের তারিখ',lfDate(d.x_perm),0],['মূল বেতন',lfMon(d.x_basic),0]])}
-  ${lfKR([['ছ. জন্ম তারিখ',lfDate(d.a_dob),0],['মোট বেতন (বেতন বিবরণীসহ)',lfMon(d.x_gross),0]])}
-  ${lfKR([['জ. স্বাভাবিকভাবে পি.আর.এল/অবসর গ্রহণের তারিখ',lfDate(d.x_ret),0],['টেকহোম পে',lfMon(d.x_takehome),0]])}
-  ${lfKR([['ঝ. মোবাইল নং',lfv(d,'a_mobile'),0]])}</div>`;
+  ${lfMr('ক. নাম',d.a_name)}${lfMr('খ. পিতা/স্বামীর নাম',d.a_father)}
+  ${lfMr('গ. পদবী, ব্যাংক আইডি ও ব্যক্তিগত নথি নং',[d.x_desig,d.x_bankid?'আইডি-'+toBn(d.x_bankid):'',d.x_fileno?'নথি নং-'+toBn(d.x_fileno):''].filter(Boolean).join(', '))}
+  ${lfMr('ঘ. বর্তমান কর্মস্থল',d.x_posting)}
+  ${lfMr('ঙ. চাকুরীতে যোগদানের তারিখ',lfDate(d.x_join),'বেতন স্কেল',lfv(d,'x_scale'))}
+  ${lfMr('চ. চাকুরী স্থায়ীকরণের তারিখ',lfDate(d.x_perm),'মূল বেতন',lfMon(d.x_basic))}
+  ${lfMr('ছ. জন্ম তারিখ',lfDate(d.a_dob),'মোট বেতন (বেতন বিবরণীসহ)',lfMon(d.x_gross))}
+  ${lfMr('জ. স্বাভাবিকভাবে পি.আর.এল/ অবসর গ্রহণের তারিখ',lfDate(d.x_ret),'টেকহোম পে',lfMon(d.x_takehome))}
+  ${lfMr('ঝ. মোবাইল নং',lfv(d,'a_mobile'))}
+  </div>`;
   const q=lfQuotes(d),mk=lfMon;
   const p2=`<div class="u" style="text-align:center">পাতা-২</div>
   <div class="kh" style="margin-top:6mm"><span class="u">২। ক্রয়ের জন্য প্রস্তাবিত মোটর সাইকেল এর বিবরণ ঃ</span></div>
-  ${lfKR([['যন্ত্রের নাম',d.m_name,0],['মডেল নম্বর',d.m_model,0]])}${lfKR([['প্রস্তুতকারক দেশের নাম',d.m_country,0],['সরবরাহকারী প্রতিষ্ঠানের নাম',d.m_vendor,0]])}
+  <div class="mgap">${lfMr('যন্ত্রের নাম',d.m_name,'মডেল নম্বর',d.m_model,1)}${lfMr('প্রস্তুতকারক দেশের নাম',d.m_country,'সরবরাহকারী প্রতিষ্ঠানের নাম',d.m_vendor,1)}</div>
   <div class="kh" style="margin-top:6mm"><span class="u">দরপত্র প্রদানকারী তিনটি প্রতিষ্ঠানের বিবরণ ঃ</span></div>
   <table class="kt" style="width:174mm;margin-left:0"><tr><th style="width:18mm">ক্রমিক নং</th><th>নাম ও ঠিকানা</th><th style="width:44mm">দরপত্রের উদ্ধৃত দর</th></tr>
   ${q.map((x,i)=>`<tr><td style="text-align:center">${toBn(i+1)}।</td><td>${esc([x.n,x.a].filter(Boolean).join(', '))}&nbsp;</td><td style="text-align:right">${x.r?mk(x.r)+'/= টাকা':''}&nbsp;</td></tr>`).join('')}</table>
@@ -438,8 +440,8 @@ function lfDocMoto1(){
   <div style="margin-top:2mm;display:flex;gap:30mm;padding-left:8mm"><span>নতুন ঃ ${d.m_cond==='রিকন্ডিশন'?'---':lfFf(lfMon(d.m_low)?lfMon(d.m_low)+'/= টাকা':'',34)}</span><span>রিকন্ডিশন ঃ ${d.m_cond==='রিকন্ডিশন'?lfFf(lfMon(d.m_low)?lfMon(d.m_low)+'/= টাকা':'',34):'---'}</span></div>
   <div class="kh" style="margin-top:7mm"><span class="u">৩। দায়দেনার বিবরণ ঃ</span></div>
   <table style="width:100%;border-collapse:collapse;margin-top:2mm;line-height:1.5">
-  ${[['ক) সিপিএফ/জিপিএফ ঋণ',d.cpf_a,'ক) মাসিক নির্ধারিত কিস্তি',lfNoi(d.cpf_i)],['খ) গৃহ নির্মাণ ঋণ',d.hb_a,'খ) মাসিক নির্ধারিত কিস্তি',lfNoi(d.hb_i)],['গ) কম্পিউটার অগ্রিম',d.cmp_a,'গ) মাসিক নির্ধারিত কিস্তি',lfNoi(d.cmp_i)]].map(r=>`<tr><td style="width:44mm;padding:2mm 0">${r[0]}</td><td style="width:44mm">: ${lfNoi(r[1])}</td><td style="width:50mm">${r[2]}</td><td>: ${r[3]}</td></tr>`).join('')}
-  <tr><td style="padding:2mm 0;vertical-align:top">ঘ) পূর্বে ভোগকৃত যানবাহন অগ্রিম</td><td style="vertical-align:top">: ${lfNoi(d.v_a)}</td><td style="vertical-align:top">ঘ) মঞ্জুরীর তারিখ<br>উত্তোলনের তারিখ</td><td style="vertical-align:top">: ${d.v_sd?lfDate(d.v_sd):'নাই'}<br>: ${d.v_wd?lfDate(d.v_wd):'নাই'}</td></tr></table>
+  ${[['ক) সিপিএফ/জিপিএফ ঋণ',d.cpf_a,'ক) মাসিক নির্ধারিত কিস্তি',lfNoi(d.cpf_i)],['খ) গৃহ নির্মাণ ঋণ',d.hb_a,'খ) মাসিক নির্ধারিত কিস্তি',lfNoi(d.hb_i)],['গ) কম্পিউটার অগ্রিম',d.cmp_a,'গ) মাসিক নির্ধারিত কিস্তি',lfNoi(d.cmp_i)]].map(r=>`<tr><td style="width:44mm;padding:2mm 0">${r[0]}</td><td style="width:44mm">ঃ ${lfNoi(r[1])}</td><td style="width:50mm">${r[2]}</td><td>ঃ ${r[3]}</td></tr>`).join('')}
+  <tr><td style="padding:2mm 0;vertical-align:top">ঘ) পূর্বে ভোগকৃত যানবাহন অগ্রিম</td><td style="vertical-align:top">ঃ ${lfNoi(d.v_a)}</td><td style="vertical-align:top">ঘ) মঞ্জুরীর তারিখ<br>উত্তোলনের তারিখ</td><td style="vertical-align:top">ঃ ${d.v_sd?lfDate(d.v_sd):"নাই"}<br>ঃ ${d.v_wd?lfDate(d.v_wd):'নাই'}</td></tr></table>
   <p class="kp" style="margin-top:8mm">(ভোগকৃত মোটর সাইকেল ঋণ উত্তোলনের তারিখ হতে ৫ বছর অতিক্রান্ত হয়েছে কিনা এ মর্মে ঋণ বিতরণকারী শাখা/ঋণের বর্তমান পরিচালিত শাখার প্রত্যয়নপত্র সংযুক্ত করতে হবে।)</p>`;
   const att=['চাকুরী স্থায়ীকরণ পত্রের সত্যায়িত ফটোকপি।','প্রধান কার্যালয় কর্তৃক নির্ধারিত সর্বশেষ বেতন নির্ধারণী পত্র।','জন্ম তারিখ নির্ধারণের ক্ষেত্রে এসএসসি/শিক্ষাগত যোগ্যতার সনদপত্র।','বর্তমান স্থিতিসহ জিপিএফ/সিপিএফ এর বিবরণী।','মোটর কার লোন/মোটর সাইকেল ঋণ/বাই-সাইকেল ঋণ/জিপিএফ/সিপিএফ/কম্পিউটার ঋণ/অন্যান্য ঋণ (যদি থাকে) এর বিবরণী।','সর্বশেষ বেতন বিবরণী।','BRTA কর্তৃক প্রদত্ত বৈধ ড্রাইভিং লাইসেন্স প্রদান করতে হবে।'];
   const p3=`<div class="u" style="text-align:center">পাতা-৩</div>
@@ -458,7 +460,7 @@ function lfDocMoto2(){
   const d=S.lf.d;
   const inner=`<div class="u" style="text-align:center;font-size:20pt;margin-top:14mm">ঘোষণা পত্র</div>
   <p class="kp" style="margin-top:12mm;line-height:8mm">আমি নিম্নস্বাক্ষরকারী এই মর্মে ঘোষণা করছি যে, অবসর, ইস্তফা, পদচ্যুতি, অপসারন অথবা অন্য কোন কারণে ব্যাংকের চাকুরী হতে অপসারিত হলে মোটর সাইকেল ঋণের সমুদয় পাওনা সুদ বা আসলে আমার প্রাপ্তব্য যাবতীয় পেনশন বেনিফিট, গ্রাচুইটিসহ ভবিষ্যৎ তহবিলে জমাকৃত টাকা হতে আদায় করে ঋণ হিসাবটি সমন্বয় করবার জন্য ব্যাংক কর্তৃপক্ষকে ক্ষমতা প্রদান করলাম।</p>
-  <div style="margin:16mm 0 0 64mm;line-height:8.4mm">${[['স্বাক্ষর ঃ',''],['নাম ঃ',d.a_name],['পদবী ঃ',d.x_desig],['বর্তমান কর্মস্থল ঃ',d.x_posting],['জিপিএফ/সিপিএফ নং ঃ',d.x_gpf]].map(([l,v])=>`<div style="display:flex;gap:2mm"><span style="flex:0 0 54mm;text-align:right">${l}</span><span style="flex:1;border-bottom:1px dotted #000;min-height:6mm">${esc(v||'')}</span></div>`).join('')}</div>
+  <div class="sg" style="margin:16mm 0 0 84mm">${[['স্বাক্ষর',''],['নাম',d.a_name],['পদবী',d.x_desig],['বর্তমান কর্মস্থল',d.x_posting],['জিপিএফ/সিপিএফ নং',d.x_gpf]].map(([l,v])=>lfMr(l,v)).join('')}</div>
   <div style="margin-top:14mm">স্বাক্ষী ঃ</div>${lfWit(d,1)}<div style="height:6mm"></div>${lfWit(d,2)}`;
   return lfFit(lfPage(inner,'8mm 11mm 0 14mm'));
 }
