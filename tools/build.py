@@ -3,7 +3,7 @@ ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC=os.path.join(ROOT,'src','offline_base.html')
 GL=os.path.join(ROOT,'src','glance.js')
 APPJS=os.path.join(ROOT,'src','app_online.js')
-RCD=[os.path.join(ROOT,'src',f) for f in ('rcd3_data.js','rcd3.js','rcd4_data.js','rcd4cf_data.js','rcd4.js','loanforms.js','gaall.js','fwd.js')]
+RCD=[os.path.join(ROOT,'src',f) for f in ('rcd3_data.js','rcd3.js','rcd4_data.js','rcd4cf_data.js','rcd4.js','loanforms.js','gaall.js','bijoy.js','fwd.js','an12.js')]
 OUT=os.path.join(ROOT,'site','index.html')
 s=open(SRC,encoding='utf-8').read()
 style=re.search(r'<style>([\s\S]*?)</style>',s).group(1)
@@ -29,7 +29,7 @@ _LFM="G('Loan Application',["+",".join([
  "L('lf_reports','Loan Reports','lfrpt')"
 ])+"])"
 tree=tree.replace(_ln,"L('ln_sod','Secured overdraft'),L('ln_staff','Staff loan'),"+_LFM+"]}")
-tree=tree.replace(_old,"G('Interest waiver calculator',[L('rc_iwc','Data entry','iwc'),G('Report',[L('rc_iwga','Annexure-Ga','iwr'),L('rc_iwgha','Annexure-Gha','iwr'),L('rc_gaall','Annexure-Ga (All)','gaall'),L('rc_fwd','Forwarding (AO)','fwd')])])")
+tree=tree.replace(_old,"G('Interest waiver calculator',[L('rc_iwc','Data entry','iwc'),G('Report',[L('rc_iwga','Annexure-Ga','iwr'),L('rc_iwgha','Annexure-Gha','iwr'),L('rc_gaall','Annexure-Ga (All)','gaall'),L('rc_an2','Annexure-2','an2'),L('rc_an1','Annexure-1','an1'),L('rc_fwd','Forwarding (AO)','fwd')])])")
 _lb=tree.index('const LEAVES={};')
 tree=tree[:_lb]+"""const LEAVES={};
 function addLeaves(items,pillar,prefix){items.forEach(it=>{if(it.group)addLeaves(it.items,pillar,(prefix?prefix+' / ':'')+it.group);else LEAVES[it.id]={...it,pillar,title:prefix?prefix+' ('+it.name+')':it.name}})}

@@ -2,26 +2,8 @@
 const FW={rep:'letter',show:false,files:[],comb:true,code:'',fname:'',nn:'',nd:'',fs:{},rem:'',d:'',ref:{},pre:'',suf:'',sig:'',des:'',to:'',aoff:'',raw:null,hr:0,map:{},br:''};
 const FW_F=[['br','শাখার নাম (Branch)',/শাখা|branch/i],['nm','গ্রাহকের নাম (Customer)',/গ্রাহক|ঋণগ্রহীতা|ঋণ গ্রহীতা|name|customer|borrower/i],['loan','ঋণের পরিমাণ (Loan)',/ঋণের|ঋণ\s*স্থিতি|loan|limit/i],['imp','আরোপিত সুদ (Imposed)',/^(?!.*অনারোপিত).*আরোপিত|imposed|charged/i],['gen','অনারোপিত সাধারণ সুদ',/সাধারণ|general|unapplied.*gen|normal/i],['pen','অনারোপিত দন্ড সুদ',/দন্ড|দণ্ড|penal/i],['tot','মোট (Total)',/^মোট|^total/i],['sus','ইন্টারেস্ট সাসপেন্স',/সাসপেন্স|suspense/i],['cib','যাচিত CIBTCA',/cibtca|যাচিত/i],['rem','মন্তব্য (Remarks)',/মন্তব্য|remark|status/i]];
 
-const FW_BJ={A:'অ',B:'ই',C:'ঈ',D:'উ',E:'ঊ',F:'ঋ',G:'এ',H:'ঐ',I:'ও',J:'ঔ',K:'ক',L:'খ',M:'গ',N:'ঘ',O:'ঙ',P:'চ',Q:'ছ',R:'জ',S:'ঝ',T:'ঞ',U:'ট',V:'ঠ',W:'ড',X:'ঢ',Y:'ণ',Z:'ত',_:'থ','`':'দ',a:'ধ',b:'ন',c:'প',d:'ফ',e:'ব',f:'ভ',g:'ম',h:'য',i:'র',j:'ল',k:'শ',l:'ষ',m:'স',n:'হ',o:'ড়',p:'ঢ়',q:'য়',r:'ৎ',s:'ং',t:'ঃ',u:'ঁ',v:'া',x:'ী',y:'ু',z:'ু','~':'ূ','„':'ৃ','Š':'ৗ','¨':'্য','ª':'্র','Ö':'্র','|':'।','ÿ':'ক্ষ','Ä':'ঞ্জ','Ÿ':'জ্ঞ','¯':'স্','®':'ষ্ণ','¤':'ন্','¦':'ব্','œ':'স্ত','Ñ':'ঙ্গ','Ý':'ন্দ','Ø':'্ব','ã':'ব্দ','¶':'ক্ষ','«':'্র','¬':'্ল','£':'ঙ্ক','¢':'ক্ক','¥':'ত্ব','±':'ক্ত','³':'ক্ষ','µ':'ড্ড'};
-const FW_PRE={'w':'ি','‡':'ে','†':'ে','‰':'ৈ'};
-function fwBijoy(t){
-  t=String(t).replace(/Av/g,'আ');let out='',pre='',i=0;const a=[...t];
-  while(i<a.length){
-    const c=a[i];
-    if(c==='©'&&!pre){let j=out.length-1;while(j>=2&&out[j-1]==='্')j-=2;if(j>=0)out=out.slice(0,j)+'র্'+out.slice(j);i++;continue}
-    if(FW_PRE[c]){pre+=FW_PRE[c];i++;continue}
-    const m=c==='আ'?'আ':FW_BJ[c];
-    if(m===undefined){out+=pre+c;pre='';i++;continue}
-    if(pre&&/^[ক-হড়ঢ়য়ৎ]/.test(m)){
-      let cl=m;i++;
-      while(i<a.length&&FW_BJ[a[i]]&&/^্/.test(FW_BJ[a[i]])){cl+=FW_BJ[a[i]];i++}
-      let sg=pre;if(pre==='ে'&&a[i]==='v'){sg='ো';i++}else if(pre==='ে'&&a[i]==='Š'){sg='ৌ';i++}
-      out+=cl+sg;pre='';continue;
-    }
-    out+=pre+m;pre='';i++;
-  }
-  return out+pre;
-}
+/* Bijoy -> Unicode: shared converter in bijoy.js */
+const fwBijoy=t=>bj2u(t);
 const fwLS=(k,d)=>{try{return localStorage.getItem('jbrs_fw_'+k)||d}catch(e){return d}};
 const FW_WK=['pre','suf','sig','des','to','sub','fin','prep','signs'];let fwTm=0;
 const fwSV=(k,v)=>{try{localStorage.setItem('jbrs_fw_'+k,v)}catch(e){}

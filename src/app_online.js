@@ -145,7 +145,7 @@ A.toggleSide=()=>{const L=$('.layout');if(!L)return;const on=L.classList.contain
 function renderApp(){
   const v=S.view,u=S.user,o=myOffice();
   const nav=(p,label)=>`<button class="nav topnav ${v.page===p?'on':''}" onclick="go({page:'${p}'})">${label}</button>`;
-  const leafBtn=l=>`<button class="nav ${v.leaf===l.id?'on':''}" onclick="go({page:'leaf',leaf:'${l.id}'})">${esc(l.name)}${!l.tpl?'<span class="pend">pending</span>':''}</button>`;
+  const leafBtn=l=>isBranch()&&l.id==='rc_an1'?'':`<button class="nav ${v.leaf===l.id?'on':''}" onclick="go({page:'leaf',leaf:'${l.id}'})">${esc(l.name)}${!l.tpl?'<span class="pend">pending</span>':''}</button>`;
   const side=`${nav('dash','Home')}
    <button class="nav" id="allbtn" style="font-size:12.5px;padding:4px 14px;color:var(--muted,#667)" onclick="A.toggleAll()">&#8679; Collapse all</button>
    ${isAdmin()?nav('users','Users and passwords')+nav('audit','Activity log'):''}
@@ -211,7 +211,10 @@ A.loadDash=async()=>{
     const r=j.reports.find(x=>x.period===p);const st=r?r.status:'NONE';
     $('#dashBody').outerHTML=`<div class="card"><h3 style="margin-top:0">At a glance (এক নজরে), ${fmtPeriod(p)}</h3><p><span class="badge b-${st}">${STATUS_TXT[st]}</span></p>
     ${r&&r.status==='RETURNED'?`<div class="note n-warn"><b>Returned by Area Office:</b> ${esc(r.note)}</div>`:''}
-    <button class="pri" onclick="A.openOwn('gl_branch','${p}')">${r?'Open report':'Start report'}</button></div>`;
+    <button class="pri" onclick="A.openOwn('gl_branch','${p}')">${r?'Open report':'Start report'}</button></div>
+    <div class="card" style="margin-top:12px"><h3 style="margin-top:0">Interest waiver: Annexure-2 (পরিশিষ্ট-০২)</h3><p class="muted">Loans classified as loss, as on 30/06/2026 (circular 1411/26). Upload your Annexure-Ga or enter the loans, mark RCD-3 / RCD-4 and send to the Area Office.</p><p id="dashAn"></p>
+    <button class="pri" onclick="go({page:'leaf',leaf:'rc_an2'})">Open Annexure-2</button></div>`;
+    api('/reports?leaf=rc_an2&office='+encodeURIComponent(S.user.office)).then(x=>{const q=x.reports.find(y=>y.period==='2026-06'),s=q?q.status:'NONE',e=$('#dashAn');if(e)e.innerHTML=`<span class="badge b-${s}">${STATUS_TXT[s]}</span>`}).catch(()=>{});
   }else{
     const kids=childBranches();
     const j=await api('/reports?leaf=gl_branch&period='+p);
@@ -229,6 +232,8 @@ function pageLeaf(){
   if(l.tpl==='iwr')return pageIwr(l);
   if(l.tpl==='gaall')return pageGaAll(l);
   if(l.tpl==='fwd')return pageFwd(l);
+  if(l.tpl==='an2')return pageAn2(l);
+  if(l.tpl==='an1')return pageAn1(l);
   if(l.tpl==='ldash')return pageLfDash();
   if(l.tpl==='sdash')return pageDash('Statements Dashboard');
   if(l.tpl==='lf')return isArea()?pageLfAo(l):pageLoanForms(l);
