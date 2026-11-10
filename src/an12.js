@@ -38,7 +38,7 @@ async function anReadFile(f){
     const cnt=a[nr].filter(c=>String(c).trim()!=='').length,uni=a.slice(0,nr).some(r=>r.some(c=>/[ঀ-৿]/.test(String(c))));
     const tx=v=>{v=v instanceof Date?gaDmy(v):String(v==null?'':v).trim();if(!v||/[ঀ-৿]/.test(v))return v;return(uni?bjLooks(v):/[A-Za-z¡-ÿ–-›]/.test(v))?bj2u(v).trim():v};
     const head=a.slice(0,nr).map(r=>r.map(tx).join(' ')).join(' ');
-    let k='';if(cnt>=21)k='ga';else if(cnt===19&&/গ্রহীতার নাম/.test(head)&&/হিসাব নং/.test(head))k='a2';
+    let k=cnt>=21?'ga':'';
     if(!k)continue;kind=k;
     const um=head.match(/উপজেলা\s*[:ঃ]\s*([^\s|,।]+)/);if(um&&!upz)upz=um[1];
     for(const r of a.slice(nr+1)){
@@ -246,8 +246,8 @@ function anRender(){
   const miss=rows.filter(r=>!r.rcd).length;
   $('#anbody').outerHTML=`<div id="anbody" class="card"><div><span class="badge b-${st}">${c.status==='NEW'?'New':STATUS_TXT[c.status]}</span> <span id="saveState" class="muted small"></span>
   ${c.status==='RETURNED'?`<div class="note n-warn"><b>Returned by Area Office:</b> ${esc(c.note)}</div>`:''}${c.status==='SUBMITTED'?`<div class="note n-ok">Sent to the Area Office on ${fmtDT(c.submitted)}. Locked; the Area Office can return it if a correction is needed.</div>`:''}
-  ${ed?`<div class="note n-info">Upload your Annexure-Ga (from the calculator) or an Annexure-2 Excel file, in Unicode or Bijoy (SutonnyMJ); or add the loans by hand. Grey columns are calculated. CIBTCA = লেজার বকেয়া − ইন্টারেস্ট সাসপেন্স (শূন্য for written-off loans); loans with zero CIBTCA go to the "Without CIBTCA" list. Choose RCD-3 or RCD-4 for every loan in the last column.${miss?` <b>${toBn(miss)} loan(s) still need RCD-3/RCD-4.</b>`:''}</div>`:''}</div>
-  ${ed?`<div class="bar" style="flex-wrap:wrap;gap:8px;align-items:center"><input type="file" id="anfile" accept=".xls,.xlsx,.csv" multiple style="display:none" onchange="run(()=>A.anUp(this))"><button onclick="$('#anfile').click()">Upload Excel</button><button onclick="A.anAdd()">Add borrower</button><span style="margin-left:6px">উপজেলা: <input style="width:120px" value="${esc(c.data.upz||'')}" onchange="AN.cur.data.upz=this.value.trim();markDirty()"></span></div>`:''}
+  ${ed?`<div class="note n-info">Upload your Annexure-Ga Excel file (Unicode or Bijoy/SutonnyMJ), or add the loans by hand. Grey columns are calculated. CIBTCA = লেজার বকেয়া − ইন্টারেস্ট সাসপেন্স (শূন্য for written-off loans); loans with zero CIBTCA go to the "Without CIBTCA" list. Choose RCD-3 or RCD-4 for every loan in the last column.${miss?` <b>${toBn(miss)} loan(s) still need RCD-3/RCD-4.</b>`:''}</div>`:''}</div>
+  ${ed?`<div class="bar" style="flex-wrap:wrap;gap:8px;align-items:center"><input type="file" id="anfile" accept=".xls,.xlsx,.csv" multiple style="display:none" onchange="run(()=>A.anUp(this))"><button onclick="$('#anfile').click()">Upload Annexure-Ga</button><button onclick="A.anAdd()">Add borrower</button><span style="margin-left:6px">উপজেলা: <input style="width:120px" value="${esc(c.data.upz||'')}" onchange="AN.cur.data.upz=this.value.trim();markDirty()"></span></div>`:''}
   <div class="gscroll" style="margin-top:8px"><table class="gt" id="antab"><tr><th>ক্র.</th>${AN_F.map(f=>`<th${f[2]==='c'?' class="gc"':''}>${esc(f[1])}</th>`).join('')}${ed?'<th></th>':''}</tr>
   ${rows.map((r,i)=>`<tr data-i="${i}"><td class="c">${toBn(i+1)}</td>${AN_F.map(f=>anCellIn(r,i,f)).join('')}${ed?`<td><a href="#" title="Remove" onclick="A.anDel(${i});return false">&times;</a></td>`:''}</tr>`).join('')}
   ${anTotRow(rows)}</table></div>
@@ -267,7 +267,7 @@ A.anAdd=()=>{AN.cur.data.rows.push({nm:'',ac:'',ty:'',dd:'',cd:'',p:0,i:0,o:0,pp
 A.anDel=i=>{const r=AN.cur.data.rows[i];if(!confirm('Remove '+(r.nm||'this row')+'?'))return;AN.cur.data.rows.splice(i,1);markDirty();anRender()};
 A.anUp=async inp=>{
   const fl=[...inp.files];inp.value='';if(!fl.length)return;let add=[],kinds=[];
-  for(const f of fl){const x=await anReadFile(f);if(!x.kind){toast(f.name+': not an Annexure-Ga or Annexure-2 file (the column-number row 1, 2, 3 ... was not found).');continue}
+  for(const f of fl){const x=await anReadFile(f);if(!x.kind){toast(f.name+': not an Annexure-Ga file (the column-number row 1, 2, 3 ... was not found).');continue}
     add=add.concat(x.rows);kinds.push(f.name+' ('+(x.kind==='ga'?'Annexure-Ga':'Annexure-2')+', '+x.rows.length+' loans)');if(x.upz&&!AN.cur.data.upz)AN.cur.data.upz=x.upz}
   if(!add.length)return toast('No loans found in the file.');
   const rows=AN.cur.data.rows,key=r=>String(r.ac||'').replace(/\D/g,''),idx={};rows.forEach((r,i)=>{if(key(r))idx[key(r)]=i});
