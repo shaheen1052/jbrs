@@ -27,6 +27,7 @@ function anDate(v){
   const m2=t.match(/^(\d{4})-(\d{2})-(\d{2})/);if(m2)return m2[3]+'/'+m2[2]+'/'+m2[1];
   return t;
 }
+const anAc=v=>{const t=anEnD(v).replace(/\s/g,'');return/^100\d{9}$/.test(t)?'0'+t:t};
 const anNum=v=>{const x=gaNum(v);return isNaN(x)?0:anR2(x)};
 
 /* ---------- reading Excel files: Annexure-Ga (calculator) or Annexure-2, Unicode or Bijoy ---------- */
@@ -47,7 +48,7 @@ async function anReadFile(f){
       if(!anEnD(tx(r[k==='ga'?2:4])).trim()&&!anNum(r[k==='ga'?6:8]))continue;
       if(k==='ga'){
         const w=tx(r[21]).replace(/[\s।.]/g,'');
-        out.push({nm,ac:anEnD(tx(r[2])),ty:tx(r[3]),dd:anDate(r[4]),cd:anDate(r[5]),p:anNum(r[6]),i:anNum(r[7]),o:anNum(r[8]),pp:anNum(r[10]),pi:anNum(r[11]),po:anNum(r[12]),
+        out.push({nm,ac:anAc(tx(r[2])),ty:tx(r[3]),dd:anDate(r[4]),cd:anDate(r[5]),p:anNum(r[6]),i:anNum(r[7]),o:anNum(r[8]),pp:anNum(r[10]),pi:anNum(r[11]),po:anNum(r[12]),
           g:anNum(r[16]),pe:anNum(r[17]),su:anNum(r[18]),cof:anNum(r[20]),wo:/^(হ্যাঁ|হ্যা|হাঁ|yes|y)$/i.test(w)?1:0,rcd:''});
       }else{
         const p=anNum(r[8]),paid=anNum(r[12]),pp=Math.min(p,paid);
@@ -233,7 +234,7 @@ function anErrors(send){const e=[];AN.cur.data.rows.forEach((r,i)=>{if(anEmpty(r
   Object.keys(r._bad||{}).forEach(k=>e.push([i,k,'সংখ্যা সঠিক নয়']));
   ['dd','cd'].forEach(k=>{if(r[k]&&!anDOk(r[k]))e.push([i,k,'তারিখ dd/mm/yyyy নয়'])});
   if(anDOk(r.dd)&&anDOk(r.cd)&&anDKey(r.cd)<anDKey(r.dd))e.push([i,'cd','বিতরণের তারিখের আগে']);
-  if(send){if(!r.nm)e.push([i,'nm','খালি']);if(!r.ac)e.push([i,'ac','খালি']);if(!r.dd)e.push([i,'dd','খালি']);if(!r.cd)e.push([i,'cd','খালি']);if(!r.rcd)e.push([i,'rcd','RCD-3 / RCD-4 বাছাই করুন'])}});return e}
+  if(send){if(!r.nm)e.push([i,'nm','খালি']);if(!r.ac)e.push([i,'ac','খালি']);if(!r.dd)e.push([i,'dd','খালি']);if(!r.cd)e.push([i,'cd','খালি']);if(!r.rcd)e.push([i,'rcd','RCD-3 / RCD-4 বাছাই করুন']);if(r.ac&&!/^0100\d{9}$/.test(r.ac))e.push([i,'ac','১৩ অঙ্কের হিসাব নং, ০১০০ দিয়ে শুরু, শুধু সংখ্যা'])}});return e}
 function anShowErr(e){AN.errOn=e.length?AN.errOn:0;document.querySelectorAll('#antab .anerr').forEach(x=>x.classList.remove('anerr'));
   e.forEach(([i,k])=>{const tr=document.querySelector(`#antab tr[data-i="${i}"]`);const td=tr&&tr.children[AN_F.findIndex(f=>f[0]===k)+1];if(td)td.classList.add('anerr')});
   const b=$('#anerr');if(b)b.innerHTML=e.length?`<div class="note n-warn"><b>Please correct the red cells:</b> ${e.slice(0,12).map(([i,k,m])=>'Row '+toBn(i+1)+': '+esc(AN_LBL[k])+' ('+m+')').join('; ')}${e.length>12?' ...':''}</div>`:''}
@@ -277,7 +278,7 @@ function anRender(){
 }
 A.anSet=(i,k,v)=>{
   const r=AN.cur.data.rows[i],f=AN_F.find(x=>x[0]===k);if(!r||!f)return;
-  if(f[2]==='n'){const raw=anEnD(v).trim(),x=gaNum(raw);r._bad=r._bad||{};if(raw&&(isNaN(x)||x<0))r._bad[k]=raw;else{delete r._bad[k];r[k]=raw?anR2(x):0}}else if(f[2]==='d')r[k]=anDate(v);else if(k==='ac')r[k]=anEnD(v).trim();else r[k]=typeof v==='string'?v.trim():v;
+  if(f[2]==='n'){const raw=anEnD(v).trim(),x=gaNum(raw);r._bad=r._bad||{};if(raw&&(isNaN(x)||x<0))r._bad[k]=raw;else{delete r._bad[k];r[k]=raw?anR2(x):0}}else if(f[2]==='d')r[k]=anDate(v);else if(k==='ac')r[k]=anAc(v);else r[k]=typeof v==='string'?v.trim():v;
   markDirty();const tr=document.querySelector(`#antab tr[data-i="${i}"]`);
   if(tr){const k2=anCalc(r);tr.querySelectorAll('td[data-c]').forEach(td=>td.textContent=toBn(k2[td.dataset.c].toFixed(2)));if(f[2]==='d'){const inp=tr.children[AN_F.indexOf(f)+1].querySelector('input');if(inp)inp.value=r[k]}}
   const t=$('#antot');if(t)t.outerHTML=anTotRow(AN.cur.data.rows);if(AN.errOn)anShowErr(anErrors(AN.errOn===2));
