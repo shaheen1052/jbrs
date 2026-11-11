@@ -8,11 +8,11 @@ const AN_N2='*বি.দ্র.: অবলোপনকৃত ঋণের ক্
 const AN_N1='*বি.দ্র.: অবলোপনকৃত ঋণের ক্ষেত্রে যাচিত CIBTCA এর পরিমাণ অবশ্যই শূণ্য(০) হবে এবং লেজার স্থিতি থাকলে তা মোট মওকুফযোগ্য টাকার সাথে যোগ করতে হবে।';
 const AN_NGA='বিঃ দ্রঃ- নির্দেশ বিজ্ঞপ্তি নং- ১৪১১/২৬ তারিখঃ ০২/০৭/২০২৬ মোতাবেক সুদ মওকুফের নিমিত্ত ২০ নং কলামে উল্লিখিত CIBTCA এর পরিমাণ সঠিক রয়েছে।';
 const AN_F=[ // data-entry columns: key, label, kind (t text, d date, n amount, c calculated, b yes/no, s RCD), width
- ['nm','ঋণ গ্রহীতার নাম','t',128],['ac','হিসাব নং','t',108],['ty','ঋণের ধরণ/ প্রকৃতি','t',56],['dd','ঋণ বিতরণের তারিখ','d',76],['cd','ক্ষতি হিসাবে শ্রেণীকরণের তারিখ','d',76],
+ ['nm','ঋণ গ্রহীতার নাম','t',170],['ac','হিসাব নং','t',130],['ty','ঋণের ধরণ/ প্রকৃতি','t',80],['dd','ঋণ বিতরণের তারিখ','d',100],['cd','ক্ষতি হিসাবে শ্রেণীকরণের তারিখ','d',100],
  ['p','আসল (মূলঋণ)','n'],['i','আরোপিত সুদ','n'],['o','আরোপিত অন্যান্য খরচ','n'],['tot','মোট দায়','c'],
  ['pp','পরিশোধ: আসল','n'],['pi','পরিশোধ: সুদ','n'],['po','পরিশোধ: অন্যান্য খরচ','n'],['paid','মোট পরিশোধ','c'],['led','লেজার বকেয়া','c'],
  ['g','অনারোপিত সাধারণ সুদ','n'],['pe','অনারোপিত দণ্ড সুদ','n'],['su','ইন্টারেস্ট সাসপেন্স','n'],['cib','যাচিত CIBTCA','c'],['cof','কস্ট অব ফান্ড','n'],
- ['wo','অবলোপনকৃত?','b',34],['rcd','RCD','s',64]];
+ ['wo','অবলোপনকৃত?','b',40],['rcd','RCD','s',86]];
 const anR2=v=>Math.round((+v||0)*100)/100;
 function anCalc(r){
   const n=k=>anR2(r[k]);const tot=anR2(n('p')+n('i')+n('o')),paid=anR2(n('pp')+n('pi')+n('po')),led=anR2(tot-paid),rp=anR2(n('p')-n('pp'));
@@ -236,10 +236,10 @@ function anErrors(send){const e=[];AN.cur.data.rows.forEach((r,i)=>{if(anEmpty(r
   if(anDOk(r.dd)&&anDOk(r.cd)&&anDKey(r.cd)<anDKey(r.dd))e.push([i,'cd','বিতরণের তারিখের আগে']);
   if(send){if(!r.nm)e.push([i,'nm','খালি']);if(!r.ac)e.push([i,'ac','খালি']);if(!r.dd)e.push([i,'dd','খালি']);if(!r.cd)e.push([i,'cd','খালি']);if(!r.rcd)e.push([i,'rcd','RCD-3 / RCD-4 বাছাই করুন']);if(r.ac&&!/^0100\d{9}$/.test(r.ac))e.push([i,'ac','১৩ অঙ্কের হিসাব নং, ০১০০ দিয়ে শুরু, শুধু সংখ্যা'])}});return e}
 function anShowErr(e){AN.errOn=e.length?AN.errOn:0;document.querySelectorAll('#antab .anerr').forEach(x=>x.classList.remove('anerr'));
-  e.forEach(([i,k])=>{const tr=document.querySelector(`#antab tr[data-i="${i}"]`);const td=tr&&tr.children[AN_F.findIndex(f=>f[0]===k)+1];if(td)td.classList.add('anerr')});
+  e.forEach(([i,k])=>{const tr=document.querySelector(`#antab tr[data-i="${i}"]`);const td=tr&&tr.children[AN_F.findIndex(f=>f[0]===k)+(anEd()?2:1)];if(td)td.classList.add('anerr')});
   const b=$('#anerr');if(b)b.innerHTML=e.length?`<div class="note n-warn"><b>Please correct the red cells:</b> ${e.slice(0,12).map(([i,k,m])=>'Row '+toBn(i+1)+': '+esc(AN_LBL[k])+' ('+m+')').join('; ')}${e.length>12?' ...':''}</div>`:''}
 function anDIn(el,ev){if(ev&&ev.inputType&&ev.inputType.startsWith('delete'))return;let v=anEnD(el.value).replace(/[.\-]/g,'/').replace(/[^\d\/]/g,'');if(/^\d{2}$/.test(v)||/^\d{1,2}\/\d{2}$/.test(v))v+='/';el.value=v.slice(0,10)}
-function anFit(){const t=$('#antab');if(!t)return;t.style.zoom=1;const w=t.parentElement.clientWidth-2,z=Math.min(1,w/t.scrollWidth);t.style.zoom=Math.max(.7,z)}
+function anFit(){const t=$('#antab'),g=$('#anscr'),top=$('#antop');if(!t||!g||!top)return;top.firstChild.style.width=t.scrollWidth+'px';top.style.display=t.scrollWidth>g.clientWidth+2?'':'none'}
 if(!window.anFitOn){window.anFitOn=1;window.addEventListener('resize',()=>{if($('#antab'))anFit()})}
 async function anOpen(){
   const j=await api('/report?office='+encodeURIComponent(S.user.office)+'&leaf='+AN.leaf+'&period='+AN.p);
@@ -255,32 +255,32 @@ function anCellIn(r,i,f){
   if(t==='b')return`<td class="c"><input type="checkbox" ${v?'checked':''} onchange="A.anSet(${i},'${k}',this.checked?1:0)"></td>`;
   if(t==='s')return`<td><select style="width:${w}px" onchange="A.anSet(${i},'${k}',this.value)"><option value="">-</option>${['RCD-3','RCD-4'].map(x=>`<option ${v===x?'selected':''}>${x}</option>`).join('')}</select></td>`;
   const val=t==='n'?(r._bad&&r._bad[k]!==undefined?r._bad[k]:v?String(v):''):(v||'');
-  return`<td><input class="gi${t==='n'?'':' gl'}" style="width:${w||66}px${t==='n'?';text-align:right':''}" value="${esc(val)}" ${t==='n'?'inputmode="decimal"':t==='d'?'placeholder="dd/mm/yyyy" maxlength="10" inputmode="numeric" oninput="anDIn(this,event)"':''} onchange="A.anSet(${i},'${k}',this.value)"></td>`;
+  return`<td><input class="gi${t==='n'?'':' gl'}" style="width:${w||92}px${t==='n'?';text-align:right':''}" value="${esc(val)}" ${t==='n'?'inputmode="decimal"':t==='d'?'placeholder="dd/mm/yyyy" maxlength="10" inputmode="numeric" oninput="anDIn(this,event)"':''} onchange="A.anSet(${i},'${k}',this.value)"></td>`;
 }
 function anTotRow(rows){const t={};AN_F.forEach(([k,,ty])=>{if(ty==='n'||ty==='c')t[k]=anR2(rows.reduce((s,r)=>s+(ty==='c'?anCalc(r)[k]:(+r[k]||0)),0))});
-  return`<tr class="gsum" id="antot"><td></td><td class="glab">মোট (${toBn(rows.filter(r=>!anEmpty(r)).length)} টি ঋণ)</td>${AN_F.slice(1).map(([k,,ty])=>ty==='n'||ty==='c'?`<td class="gn">${toBn(t[k].toFixed(2))}</td>`:'<td></td>').join('')}${anEd()?'<td></td>':''}</tr>`}
+  return`<tr class="gsum" id="antot">${anEd()?'<td></td>':''}<td></td><td class="glab">মোট (${toBn(rows.filter(r=>!anEmpty(r)).length)} টি ঋণ)</td>${AN_F.slice(1).map(([k,,ty])=>ty==='n'||ty==='c'?`<td class="gn">${toBn(t[k].toFixed(2))}</td>`:'<td></td>').join('')}</tr>`}
 function anRender(){
-  const sc=document.scrollingElement,y=sc.scrollTop,g0=document.querySelector('#anbody .gscroll'),sl=g0?g0.scrollLeft:0;
+  const sc=document.scrollingElement,y=sc.scrollTop,g0=$('#anscr'),sl=g0?g0.scrollLeft:0;
   const c=AN.cur,ed=anEd(),rows=c.data.rows,st=c.status==='NEW'?'NONE':c.status;
   const miss=rows.filter(r=>!r.rcd).length;
   $('#anbody').outerHTML=`<div id="anbody" class="card"><div><span class="badge b-${st}">${c.status==='NEW'?'New':STATUS_TXT[c.status]}</span> <span id="saveState" class="muted small"></span>
   ${c.status==='RETURNED'?`<div class="note n-warn"><b>Returned by Area Office:</b> ${esc(c.note)}</div>`:''}${c.status==='SUBMITTED'?`<div class="note n-ok">Sent to the Area Office on ${fmtDT(c.submitted)}. Locked; the Area Office can return it if a correction is needed.</div>`:''}
   ${ed?`<div class="note n-info">Upload your Annexure-Ga Excel file (Unicode or Bijoy/SutonnyMJ), or add the loans by hand. Grey columns are calculated. CIBTCA = লেজার বকেয়া − ইন্টারেস্ট সাসপেন্স (শূন্য for written-off loans); loans with zero CIBTCA go to the "Without CIBTCA" list. Choose RCD-3 or RCD-4 for every loan in the last column.${miss?` <b>${toBn(miss)} loan(s) still need RCD-3/RCD-4.</b>`:''}</div>`:''}</div>
   ${ed?`<div class="bar" style="flex-wrap:wrap;gap:8px;align-items:center"><input type="file" id="anfile" accept=".xls,.xlsx,.csv" multiple style="display:none" onchange="run(()=>A.anUp(this))"><button onclick="$('#anfile').click()">Upload Annexure-Ga</button><button onclick="A.anAdd()">Add borrower</button><span style="margin-left:6px">উপজেলা: <input style="width:120px" value="${esc(c.data.upz||'')}" onchange="AN.cur.data.upz=this.value.trim();markDirty()"></span></div>`:''}
-  <div id="anerr"></div><div class="gscroll" style="margin-top:8px"><table class="gt" id="antab"><tr><th>ক্র.</th>${AN_F.map(f=>`<th${f[2]==='c'?' class="gc"':''}>${esc(f[1])}</th>`).join('')}${ed?'<th></th>':''}</tr>
-  ${rows.map((r,i)=>`<tr data-i="${i}"><td class="c">${toBn(i+1)}</td>${AN_F.map(f=>anCellIn(r,i,f)).join('')}${ed?`<td><a href="#" title="Remove" onclick="A.anDel(${i});return false">&times;</a></td>`:''}</tr>`).join('')}
-  ${anTotRow(rows)}</table></div>
+  <div id="anerr"></div><div id="antop" class="antop" onscroll="$('#anscr').scrollLeft=this.scrollLeft"><div></div></div><div class="gscroll anscr" id="anscr" onscroll="$('#antop').scrollLeft=this.scrollLeft"><table class="gt" id="antab"><thead><tr>${ed?'<th></th>':''}<th>ক্র.</th>${AN_F.map(f=>`<th${f[2]==='c'?' class="gc"':''}>${esc(f[1])}</th>`).join('')}</tr></thead><tbody>
+  ${rows.map((r,i)=>`<tr data-i="${i}">${ed?`<td class="c"><a href="#" class="andel" title="Remove this row" onclick="A.anDel(${i});return false">&times;</a></td>`:''}<td class="c">${toBn(i+1)}</td>${AN_F.map(f=>anCellIn(r,i,f)).join('')}</tr>`).join('')}
+  ${anTotRow(rows)}</tbody></table></div>
   ${rows.length?'':'<p class="muted">No loans yet.</p>'}
   ${ed?`<div class="bar"><button onclick="run(A.anSave)">Save</button><button class="pri" onclick="run(A.anSubmit)">Send to Area Office</button></div>`:''}
   <h3 style="margin:16px 0 4px">Report</h3>${anBar([['a2','Annexure-2 (পরিশিষ্ট-০২)'],['ga','Annexure-Ga (পরিশিষ্ট-গ)']])}</div>`;
   if(ed){clearInterval(S.autoTimer);S.autoTimer=setInterval(()=>{if(S.dirty)run(()=>A.anSave(true))},60000)}
-  anFit();sc.scrollTop=y;const g1=document.querySelector('#anbody .gscroll');if(g1)g1.scrollLeft=sl;if(AN.errOn)anShowErr(anErrors(AN.errOn===2));
+  anFit();sc.scrollTop=y;const g1=$('#anscr');if(g1){g1.scrollLeft=sl;$('#antop').scrollLeft=sl}if(AN.errOn)anShowErr(anErrors(AN.errOn===2));
 }
 A.anSet=(i,k,v)=>{
   const r=AN.cur.data.rows[i],f=AN_F.find(x=>x[0]===k);if(!r||!f)return;
   if(f[2]==='n'){const raw=anEnD(v).trim(),x=gaNum(raw);r._bad=r._bad||{};if(raw&&(isNaN(x)||x<0))r._bad[k]=raw;else{delete r._bad[k];r[k]=raw?anR2(x):0}}else if(f[2]==='d')r[k]=anDate(v);else if(k==='ac')r[k]=anAc(v);else r[k]=typeof v==='string'?v.trim():v;
   markDirty();const tr=document.querySelector(`#antab tr[data-i="${i}"]`);
-  if(tr){const k2=anCalc(r);tr.querySelectorAll('td[data-c]').forEach(td=>td.textContent=toBn(k2[td.dataset.c].toFixed(2)));if(f[2]==='d'){const inp=tr.children[AN_F.indexOf(f)+1].querySelector('input');if(inp)inp.value=r[k]}}
+  if(tr){const k2=anCalc(r);tr.querySelectorAll('td[data-c]').forEach(td=>td.textContent=toBn(k2[td.dataset.c].toFixed(2)));if(f[2]==='d'){const inp=tr.children[AN_F.indexOf(f)+(anEd()?2:1)].querySelector('input');if(inp)inp.value=r[k]}}
   const t=$('#antot');if(t)t.outerHTML=anTotRow(AN.cur.data.rows);if(AN.errOn)anShowErr(anErrors(AN.errOn===2));
 };
 A.anAdd=()=>{AN.cur.data.rows.push(anBlank());anRender();const n=document.querySelector(`#antab tr[data-i="${AN.cur.data.rows.length-1}"] input`);if(n){n.scrollIntoView({block:'nearest'});n.focus()}};
