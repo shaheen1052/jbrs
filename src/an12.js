@@ -205,11 +205,34 @@ function anSpecs(){
   return anLists(gs.flatMap(g=>g.rows)).map(([list])=>{const sub=gs.map(g=>({...g,rows:anLists(g.rows).find(x=>x[0]===list)[1]})).filter(g=>g.rows.length);
     if(!sub.length)return null;return rep==='a1'?anSpec1(list,sub):anSpec2(list,null,sub)}).filter(Boolean);
 }
+/* preview: blurred overlay, wheel zoom, drag to move, Esc or click outside to close */
+function anClose(){const m=$('#anmodal');if(m)m.remove();document.removeEventListener('keydown',anEsc)}
+function anEsc(e){if(e.key==='Escape')anClose()}
+async function anPreview(html){
+  anClose();const m=document.createElement('div');m.id='anmodal';m.className='anmodal';
+  m.innerHTML='<div class="anmbar"><button onclick="anZoom(1/1.15)" title="Zoom out">&minus;</button><span id="anzv">100%</span><button onclick="anZoom(1.15)" title="Zoom in">+</button><button onclick="anZoom(0)">Fit</button><button class="pri" onclick="anClose()">Close</button></div><div class="anmwrap" id="anmwrap"><div id="anview" class="anmpages lfsc">'+html+'</div></div>';
+  document.body.appendChild(m);document.addEventListener('keydown',anEsc);
+  const w=$('#anmwrap'),v=$('#anview');if(document.fonts&&document.fonts.ready)await document.fonts.ready;fwFitIn(v);
+  let drag=null,moved=false;
+  w.addEventListener('wheel',e=>{e.preventDefault();anZoom(e.deltaY<0?1.12:1/1.12,e)},{passive:false});
+  w.addEventListener('mousedown',e=>{if(e.button)return;drag={x:e.clientX,y:e.clientY,l:w.scrollLeft,t:w.scrollTop};moved=false});
+  window.addEventListener('mousemove',e=>{if(!drag||!$('#anmodal'))return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.abs(dx)+Math.abs(dy)>4)moved=true;w.scrollLeft=drag.l-dx;w.scrollTop=drag.t-dy});
+  window.addEventListener('mouseup',()=>{drag=null});
+  w.addEventListener('click',e=>{if(!moved&&!e.target.closest('.lfpage'))anClose()});
+  anZoom(0);
+}
+function anZoom(f,e){
+  const w=$('#anmwrap'),v=$('#anview');if(!w||!v)return;const z0=+v.dataset.z||1;
+  const fit=Math.min(1,(w.clientWidth-40)/(297*96/25.4));let z=f===0?fit:Math.max(.3,Math.min(3,z0*f));
+  const r=w.getBoundingClientRect(),px=e?e.clientX-r.left:w.clientWidth/2,py=e?e.clientY-r.top:0,cx=(w.scrollLeft+px)/z0,cy=(w.scrollTop+py)/z0;
+  v.dataset.z=z;v.style.zoom=z;$('#anzv').textContent=Math.round(z*100)+'%';
+  if(f===0){w.scrollTop=0;w.scrollLeft=0}else{w.scrollLeft=cx*z-px;w.scrollTop=cy*z-py}
+}
 const anFile=ext=>{const rep=AN.rep||(isBranch()?'a2':'a1');return'JBRS_'+({a1:'Annexure-1',a2:'Annexure-2',ga:'Annexure-Ga'}[rep])+'_'+(AN.rcd==='all'?'All':AN.rcd)+'_'+(isBranch()?S.user.office:AN.br==='all'?'Sirajganj':AN.br)+ext};
 A.anOut=async w=>{
   if(isBranch()&&S.dirty)await A.anSave(true);
   const sp=anSpecs();if(!sp.length)return toast('No loans for '+(AN.rcd==='all'?'this report':AN.rcd)+' yet.');
-  if(w==='view'){const old=$('#anmodal');if(old)old.remove();const m=document.createElement('div');m.id='anmodal';m.className='anmodal';m.innerHTML='<div class="anmhead"><b>Preview</b><button class="pri" onclick="$(\'#anmodal\').remove()">Close</button></div><div class="anmbody lfsc" id="anview"></div>';document.body.appendChild(m);const v=$('#anview');v.innerHTML=anHtml(sp);await fwFitZoom(v);return}
+  if(w==='view')return anPreview(anHtml(sp));
   if(w==='xu'||w==='xs'){anSave(anXlsx(sp,w==='xs'),anFile(w==='xs'?'_SutonnyMJ.xlsx':'_Unicode.xlsx'));return toast('Excel downloaded.')}
   return fwOut(anHtml(sp),w==='print'?'print':'pdf',anFile('.pdf'),true);
 };
@@ -218,7 +241,7 @@ const anBarIn=opts=>{return`<div class="bar" style="flex-wrap:wrap;align-items:f
   <div><label>Report</label><select onchange="AN.rep=this.value">${opts.map(([v,t])=>`<option value="${v}" ${(AN.rep||opts[0][0])===v?'selected':''}>${t}</option>`).join('')}</select></div>
   <div><label>Department</label><select onchange="AN.rcd=this.value">${['RCD-3','RCD-4','all'].map(v=>`<option value="${v}" ${AN.rcd===v?'selected':''}>${v==='all'?'Both (RCD-3 + RCD-4)':v}</option>`).join('')}</select></div>
   ${isBranch()?'':`<div><label>Branch</label><select onchange="AN.br=this.value">${[['all','All branches'],...(AN.list||[]).map(x=>[x.code,x.code+' - '+anBn(x.code)])].map(([v,t])=>`<option value="${v}" ${AN.br===v?'selected':''}>${esc(t)}</option>`).join('')}</select></div>`}
-  <button onclick="run(()=>A.anOut('view'))">View</button><button onclick="run(()=>A.anOut('xu'))">Excel (Unicode)</button><button onclick="run(()=>A.anOut('xs'))">Excel (SutonnyMJ)</button><button class="pri" onclick="run(()=>A.anOut('pdf'))">PDF</button><button onclick="run(()=>A.anOut('print'))">Print</button></div>`};
+  <button onclick="run(()=>A.anOut('view'))">View</button><button onclick="run(()=>A.anOut('xu'))">Excel (Unicode)</button><button onclick="run(()=>A.anOut('xs'))">Excel (SutonnyMJ)</button><button class="pri" onclick="run(()=>A.anOut('pdf'))">PDF</button></div>`};
 
 /* ---------- branch page: Annexure-2 data entry ---------- */
 function pageAn2(l){
@@ -241,7 +264,7 @@ function anShowErr(e){AN.errOn=e.length?AN.errOn:0;document.querySelectorAll('#a
   e.forEach(([i,k])=>{const tr=document.querySelector(`#antab tr[data-i="${i}"]`);const td=tr&&tr.children[AN_F.findIndex(f=>f[0]===k)+(anEd()?2:1)];if(td)td.classList.add('anerr')});
   const b=$('#anerr');if(b)b.innerHTML=e.length?`<div class="note n-warn"><b>Please correct the red cells:</b> ${e.slice(0,12).map(([i,k,m])=>'Row '+toBn(i+1)+': '+esc(AN_LBL[k])+' ('+m+')').join('; ')}${e.length>12?' ...':''}</div>`:''}
 function anDIn(el,ev){if(ev&&ev.inputType&&ev.inputType.startsWith('delete'))return;let v=anEnD(el.value).replace(/[.\-]/g,'/').replace(/[^\d\/]/g,'');if(/^\d{2}$/.test(v)||/^\d{1,2}\/\d{2}$/.test(v))v+='/';el.value=v.slice(0,10)}
-function anFit(){const t=$('#antab'),g=$('#anscr'),top=$('#antop');if(!t||!g||!top)return;if($('#anbody.anpage'))g.style.height=Math.max(160,innerHeight-g.getBoundingClientRect().top-10)+'px';top.firstChild.style.width=t.scrollWidth+'px';top.style.display=t.scrollWidth>g.clientWidth+2?'':'none'}
+function anFit(){const t=$('#antab'),g=$('#anscr');if(!t||!g)return;if($('#anbody.anpage'))g.style.height=Math.max(160,innerHeight-g.getBoundingClientRect().top-10)+'px';}
 if(!window.anFitOn){window.anFitOn=1;window.addEventListener('resize',()=>{if($('#antab'))anFit()})}
 async function anOpen(){
   const j=await api('/report?office='+encodeURIComponent(S.user.office)+'&leaf='+AN.leaf+'&period='+AN.p);
@@ -269,12 +292,12 @@ function anRender(){
   <div class="anrow"><h2>Annexure-2 (পরিশিষ্ট-০২)</h2>${ed?`<input type="file" id="anfile" accept=".xls,.xlsx,.csv" multiple style="display:none" onchange="run(()=>A.anUp(this))"><button onclick="$('#anfile').click()">Upload Annexure-Ga</button><button onclick="A.anAdd()">Add borrower</button><span>উপজেলা: <input style="width:130px" value="${esc(c.data.upz||'')}" onchange="AN.cur.data.upz=this.value.trim();markDirty()"></span>`:''}</div>
   <div class="anrow"><span class="badge b-${st}">${c.status==='NEW'?'New':STATUS_TXT[c.status]}</span><span id="saveState" class="muted small"></span>${ed?`<button onclick="run(A.anSave)">Save</button><button class="pri" onclick="run(A.anSubmit)">Send to Area Office</button><button class="dan" onclick="run(A.anDelAll)">Delete all</button>`:''}<span class="anfill"></span>${anBar([['a2','Annexure-2'],['ga','Annexure-Ga']],1)}</div>
   ${c.status==='RETURNED'?`<div class="note n-warn"><b>Returned by Area Office:</b> ${esc(c.note)}</div>`:''}${c.status==='SUBMITTED'?`<div class="note n-ok">Sent to the Area Office on ${fmtDT(c.submitted)}. Locked; the Area Office can return it if a correction is needed.</div>`:''}
-  <div id="anerr"></div><div id="antop" class="antop" onscroll="$('#anscr').scrollLeft=this.scrollLeft"><div></div></div><div class="gscroll anscr" id="anscr" onscroll="$('#antop').scrollLeft=this.scrollLeft"><table class="gt" id="antab"><thead><tr>${ed?'<th></th>':''}<th>ক্র.</th>${AN_F.map(f=>`<th${f[2]==='c'?' class="gc"':''}>${esc(f[1])}</th>`).join('')}</tr></thead><tbody>
+  <div id="anerr"></div><div class="gscroll anscr" id="anscr"><table class="gt" id="antab"><thead><tr>${ed?'<th></th>':''}<th>ক্র.</th>${AN_F.map(f=>`<th${f[2]==='c'?' class="gc"':''}>${esc(f[1])}</th>`).join('')}</tr></thead><tbody>
   ${rows.map((r,i)=>`<tr data-i="${i}">${ed?`<td class="c"><a href="#" class="andel" title="Remove this row" onclick="A.anDel(${i});return false">&times;</a></td>`:''}<td class="c">${toBn(i+1)}</td>${AN_F.map(f=>anCellIn(r,i,f)).join('')}</tr>`).join('')}
   </tbody><tfoot>${anTotRow(rows)}</tfoot></table></div></div>`;
   if(ed){clearInterval(S.autoTimer);S.autoTimer=setInterval(()=>{if(S.dirty)run(()=>A.anSave(true),1)},60000)}
   document.documentElement.classList.add('annoscroll');window.scrollTo(0,0);
-  anFit();const g1=$('#anscr');if(g1){g1.scrollLeft=sl;g1.scrollTop=st0;$('#antop').scrollLeft=sl}if(AN.errOn)anShowErr(anErrors(AN.errOn===2));
+  anFit();const g1=$('#anscr');if(g1){g1.scrollLeft=sl;g1.scrollTop=st0}if(AN.errOn)anShowErr(anErrors(AN.errOn===2));
 }
 A.anDelAll=async()=>{
   const n=AN.cur.data.rows.filter(r=>!anEmpty(r)).length;if(!n)return toast('There are no loans to delete.');

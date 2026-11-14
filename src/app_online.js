@@ -133,7 +133,7 @@ A.setup=async()=>{
 const isBranch=()=>S.user.role==='BRANCH',isArea=()=>S.user.role==='AREA',isAdmin=()=>S.user.role==='ADMIN';
 const myOffice=()=>office(S.user.office);
 function childBranches(){return S.offices.filter(o=>o.level==='BR'&&(isAdmin()||o.parent===S.user.office)).sort((a,b)=>a.name.localeCompare(b.name))}
-function go(v){document.documentElement.classList.remove('annoscroll');const am=$('#anmodal');if(am)am.remove();
+function go(v){document.documentElement.classList.remove('annoscroll');if(typeof anClose==='function')anClose();
   if(IWC.pending.size&&!confirm('Calculator changes are still being saved online. Leave anyway?'))return;
   if(S.lf&&(S.lf.dirty||S.lf.aoDirty)){lfAsk(()=>{S.lf=null;go(v)});return}
   if(S.dirty&&!confirm('You have unsaved changes on this report. Leave without saving?'))return;
@@ -159,8 +159,8 @@ function renderApp(){
     if(v.page==='dash')main=pageHome();else if(v.page==='leaf')main=pageLeaf();else if(v.page==='report')main=pageReport();
     else if(v.page==='view')main=pageView();else if(v.page==='users')main=pageUsers();else if(v.page==='audit')main=pageAudit();else if(v.page==='settings')main=pageSettings();
   }catch(e){main=`<div class="card">${esc(e.message)}</div>`}
-  shell(`<div class="top"><button class="menubtn" onclick="A.toggleSide()" title="Show / hide menu">&#9776;</button><img class="toplogo" src="${LOGO}" alt="JB"><div><div class="t1">${APP.name} (${APP.short})</div><div class="small" style="opacity:.85">${o?esc(o.name)+' &middot; '+LEVELS[o.level]:'Administrator'}</div></div><div class="sp"></div>
-  <div class="who">${esc(u.name)} (${esc(u.id)})<br><b>${ROLES[u.role]}</b></div><button onclick="run(A.logout)">Log out</button></div>
+  shell(`<div class="top"><button class="menubtn" onclick="A.toggleSide()" title="Show / hide menu">&#9776;</button><img class="toplogo" src="${LOGO}" alt="JB"><div><div class="t1">${APP.name} (${APP.short})</div><div class="small" style="opacity:.85">${APP.bank}</div></div><div class="sp"></div>
+  <div class="who">${esc(u.name)} (${esc(u.id)})${o?'':'<br><b>'+ROLES[u.role]+'</b>'}</div><button onclick="run(A.logout)">Log out</button></div>
   <div class="layout ${sideOn()?'':'noside'}"><div class="sidebg" onclick="A.toggleSide()"></div><div class="side">${side}</div><div class="main${lfm?' lfmain':''}" id="main">${main}</div></div>`);
   setTopH();
   if(v.after){const f=v.after;v.after=null;run(f)}
