@@ -196,14 +196,15 @@ const anSave=(blob,name)=>{const a=document.createElement('a');a.href=URL.create
 const anFilt=rows=>AN.rcd==='all'?rows:rows.filter(r=>r.rcd===AN.rcd);
 function anGroups(){   // [{code,name,upz,dist,rows}] for the report in view
   const src=isBranch()?[{code:S.user.office,v:AN.cur?AN.cur.data:{}}]:(AN.list||[]).filter(x=>AN.br==='all'||x.code===AN.br);
-  return src.map(x=>{const l=fwLoc(x.code);return{code:x.code,name:anBn(x.code),upz:(x.v&&x.v.upz)||l.upz,dist:l.dist,rows:anFilt(((x.v&&x.v.rows)||[]).map(r=>({...r,dd:anFixY(r.dd),cd:anFixY(r.cd)})))}})
+  return src.map(x=>{const l=fwLoc(x.code);return{code:x.code,draft:x.draft,name:anBn(x.code),upz:(x.v&&x.v.upz)||l.upz,dist:l.dist,rows:anFilt(((x.v&&x.v.rows)||[]).filter(r=>r.nm||r.ac).map(r=>({...r,dd:anFixY(r.dd),cd:anFixY(r.cd)})))}})
     .filter(g=>g.rows.length).sort((a,b)=>String((office(a.code)||{}).name).localeCompare(String((office(b.code)||{}).name),'en'));
 }
 function anSpecs(){
   const gs=anGroups(),rep=AN.rep||(isBranch()?'a2':'a1');if(!gs.length)return[];
-  if(rep==='ga')return[anSpecGa(gs,!isBranch())];
+  const dn=gs.filter(g=>g.draft).map(g=>g.name),mark=sp=>{if(dn.length)sp.lines.splice(sp.lines.length-1,0,{t:'(খসড়া, শাখা থেকে এখনো পাঠানো হয়নি: '+dn.join(', ')+')',al:'l',sz:10});return sp};
+  if(rep==='ga')return[mark(anSpecGa(gs,!isBranch()))];
   return anLists(gs.flatMap(g=>g.rows)).map(([list])=>{const sub=gs.map(g=>({...g,rows:anLists(g.rows).find(x=>x[0]===list)[1]})).filter(g=>g.rows.length);
-    if(!sub.length)return null;return rep==='a1'?anSpec1(list,sub):anSpec2(list,null,sub)}).filter(Boolean);
+    if(!sub.length)return null;return mark(rep==='a1'?anSpec1(list,sub):anSpec2(list,null,sub))}).filter(Boolean);
 }
 /* preview: blurred overlay, wheel zoom, drag to move, Esc or click outside to close */
 function anClose(){const m=$('#anmodal');if(m)m.remove();document.removeEventListener('keydown',anEsc)}
@@ -340,16 +341,20 @@ A.anSubmit=async()=>{
 };
 
 /* ---------- Area Office page: Annexure-1 ---------- */
-function pageAn1(l){AN.rep='';AN.br='all';if(isBranch())return'<div class="card">Annexure-1 is prepared by the Area Office.</div>';S.view.after=anAreaLoad;return pageAn1Shell('Annexure-1 (পরিশিষ্ট-০১)')}
+function pageAn1(l){AN.rep='';AN.br='all';AN.incDraft=false;if(isBranch())return'<div class="card">Annexure-1 is prepared by the Area Office.</div>';S.view.after=anAreaLoad;return pageAn1Shell('Annexure-1 (পরিশিষ্ট-০১)')}
 const pageAn1Shell=t=>`<div class="pghead"><div class="hrow"><h2>${t}</h2></div></div><div id="anbody" class="card muted">Loading...</div>`;
 async function anAreaLoad(){
   const kids=childBranches(),[m,c]=await Promise.all([api('/reports?leaf='+AN.leaf+'&period='+AN.p),api('/collect?leaf='+AN.leaf+'&period='+AN.p)]);
   const by={};m.reports.forEach(r=>by[r.office]=r);
   AN.list=c.reports.filter(x=>kids.some(k=>k.code===x.office)).map(x=>({code:x.office,v:x.data||{}}));
-  const n=kids.filter(k=>by[k.code]&&by[k.code].status==='SUBMITTED').length,cnt=code=>{const x=AN.list.find(y=>y.code===code);return x&&x.v.rows?x.v.rows.length:''};
+  /* TEMPORARY (Area Office only): include branches' unsent drafts. Remove this block and the button to cancel. */
+  if(AN.incDraft){const dr=kids.filter(k=>by[k.code]&&by[k.code].status!=='SUBMITTED').map(k=>k.code);
+    const got=await Promise.all(dr.map(code=>api('/report?office='+encodeURIComponent(code)+'&leaf='+AN.leaf+'&period='+AN.p).then(j=>j.report&&j.report.data&&j.report.data.rows&&j.report.data.rows.length?{code,v:j.report.data,draft:1}:null).catch(()=>null)));
+    got.filter(Boolean).forEach(x=>AN.list.push(x))}
+  const n=kids.filter(k=>by[k.code]&&by[k.code].status==='SUBMITTED').length,cnt=code=>{const x=AN.list.find(y=>y.code===code);return x&&x.v.rows?x.v.rows.filter(r=>r.nm||r.ac).length:''};
   const rows=kids.slice().sort((a,b)=>a.name.localeCompare(b.name,'en')).map(k=>{const r=by[k.code],st=r?r.status:'NONE';
-    return`<tr><td>${k.code}</td><td class="bn">${esc(anBn(k.code))}</td><td><span class="badge b-${st}">${STATUS_TXT[st]}</span>${r&&st==='RETURNED'&&r.note?`<div class="muted small">${esc(r.note)}</div>`:''}</td><td class="c">${st==='SUBMITTED'?toBn(cnt(k.code)):''}</td><td class="small">${r?fmtDT(r.updated):''}</td><td>${st==='SUBMITTED'?`<button class="sm dan" onclick="A.returnPrompt('${k.code}','${AN.leaf}','${AN.p}')">Return</button>`:''}</td></tr>`}).join('');
-  $('#anbody').outerHTML=`<div id="anbody" class="card"><div class="note ${n===kids.length?'n-ok':'n-info'}"><b>${n} of ${kids.length}</b> branches have sent Annexure-2. Reports include sent (submitted) branches only.</div>
+    return`<tr><td>${k.code}</td><td class="bn">${esc(anBn(k.code))}</td><td><span class="badge b-${st}">${STATUS_TXT[st]}</span>${r&&st==='RETURNED'&&r.note?`<div class="muted small">${esc(r.note)}</div>`:''}</td><td class="c">${st==='SUBMITTED'||AN.incDraft?toBn(cnt(k.code)):''}</td><td class="small">${r?fmtDT(r.updated):''}</td><td>${st==='SUBMITTED'?`<button class="sm dan" onclick="A.returnPrompt('${k.code}','${AN.leaf}','${AN.p}')">Return</button>`:''}</td></tr>`}).join('');
+  $('#anbody').outerHTML=`<div id="anbody" class="card"><div class="note ${n===kids.length?'n-ok':'n-info'}"><b>${n} of ${kids.length}</b> branches have sent Annexure-2. ${AN.incDraft?'<b style="color:#b26a00">Reports now also include unsent drafts.</b>':'Reports include sent (submitted) branches only.'} <button class="sm" style="margin-left:8px" onclick="AN.incDraft=!AN.incDraft;run(anAreaLoad)">${AN.incDraft?'Hide unsent drafts':'Show unsent drafts too'}</button></div>
   <details${n?'':' open'}><summary style="cursor:pointer"><b>Branch status</b></summary><div class="gscroll"><table><tr><th>Code</th><th>Branch</th><th>Status</th><th>Loans</th><th>Last saved</th><th></th></tr>${rows}</table></div></details>
   <h3 style="margin:14px 0 4px">Report</h3>${anBar([['a1','Annexure-1 (পরিশিষ্ট-০১)'],['a2','Annexure-2 (পরিশিষ্ট-০২), branch-wise loans'],['ga','Annexure-Ga (পরিশিষ্ট-গ), all loans']])}</div>`;
 }

@@ -196,7 +196,8 @@ async function handle(req, env) {
     const row = await db.prepare('SELECT * FROM reports WHERE office=? AND leaf=? AND period=?').bind(office, leaf, period).first();
     if (!row) return json({ report: null });
     // Higher offices see another office's figures only after that office submits.
-    if (office !== u.office && row.status !== 'SUBMITTED' && u.role !== 'ADMIN') row.data = null;
+    // TEMPORARY: the Area Office may also read unsent Annexure-2 drafts (leaf rc_an2). Remove the leaf check to cancel.
+    if (office !== u.office && row.status !== 'SUBMITTED' && u.role !== 'ADMIN' && leaf !== 'rc_an2') row.data = null;
     else row.data = row.data ? JSON.parse(row.data) : null;
     return json({ report: row });
   }
