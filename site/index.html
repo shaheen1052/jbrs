@@ -2255,13 +2255,13 @@ const anNf=v=>toBn((+v||0).toFixed(2));
 function anHtml(specs,per){
   let h='';
   specs.forEach(sp=>{
-    const data=sp.body,PER=per||16,pn=Math.max(1,Math.ceil(data.length/PER));
+    const data=sp.body,pn=Math.max(1,Math.ceil(data.length/(per||22)));   // rows shared equally between pages
     for(let p=0;p<pn;p++){
-      const last=p===pn-1,rs=data.slice(p*PER,(p+1)*PER);
+      const last=p===pn-1,rs=data.slice(Math.round(p*data.length/pn),Math.round((p+1)*data.length/pn));
       const lines=sp.lines.map(l=>`<div style="text-align:${l.al==='r'?'right':l.al==='l'?'left':'center'};font-size:${Math.max(9,(l.sz||11)-2)}pt;${l.b?'font-weight:700;':''}${l.u?'text-decoration:underline;':''}${l.h?'margin:1.5mm 0;':''}">${esc(l.t).replace(/ {2,}/g,m=>'&nbsp;'.repeat(m.length))}</div>`).join('');
       const th=sp.head.map(row=>`<tr>${row.map(c=>`<th${c.cs?` colspan="${c.cs}"`:''}${c.rs?` rowspan="${c.rs}"`:''} style="${c.fill?'background:'+c.fill+';':''}${c.num?'font-size:.9em;':''}">${esc(c.v)}</th>`).join('')}</tr>`).join('');
       const td=rs.map(row=>`<tr style="${row.k==='s'?'background:'+AN_GREY+';font-weight:700':row.k==='t'?'background:'+AN_TOT+';font-weight:700':''}">${row.cells.map(c=>`<td${c.cs?` colspan="${c.cs}"`:''} style="text-align:${c.t==='n'?'right':c.t==='s'?'left;white-space:nowrap':'center'}">${c.t==='n'?anNf(c.v):c.t==='i'?toBn(c.v):esc(c.v)}</td>`).join('')}</tr>`).join('');
-      h+=`<div class="lfpage fwpage fwland" style="position:relative">${sp.draft?'<div class="anwm">DRAFT</div>':''}<div class="fwin" style="padding:8mm 8mm">${lines}${sp.label?`<div style="font-size:9pt;font-weight:700;margin-top:-4mm">তালিকা: ${esc(sp.label)}</div>`:''}${pn>1?`<div style="font-size:8.5pt;text-align:right">পাতা ${toBn(p+1)}/${toBn(pn)}</div>`:''}
+      h+=`<div class="lfpage fwpage fwland" style="position:relative">${sp.draft?'<div class="anwm">DRAFT</div>':''}<div class="fwin" style="padding:8mm 8mm 26mm">${lines}${sp.label?`<div style="font-size:9pt;font-weight:700;margin-top:-4mm">তালিকা: ${esc(sp.label)}</div>`:''}${pn>1?`<div style="font-size:8.5pt;text-align:right">পাতা ${toBn(p+1)}/${toBn(pn)}</div>`:''}
       <table class="fwt" style="table-layout:auto">${th}${td}</table>
       ${last?sp.notes.map(n=>`<p style="font-size:9.5pt;margin:3mm 0 0">${esc(n)}</p>`).join('')+(sp.signs.length?`<div style="display:flex;justify-content:space-around;margin-top:16mm;font-size:10pt;text-align:center">${sp.signs.map(t=>`<div>${esc(t)}<br>(নামসহ সীল মোহর)</div>`).join('')}</div>`:''):''}
       </div></div>`;
@@ -2332,7 +2332,7 @@ function anSpecs(){
   return anLists(gs.flatMap(g=>g.rows)).map(([list])=>{const sub=gs.map(g=>({...g,rows:anLists(g.rows).find(x=>x[0]===list)[1]})).filter(g=>g.rows.length);
     if(!sub.length)return null;return mark(rep==='a1'?anSpec1(list,sub):anSpec2(list,null,sub))}).filter(Boolean);
 }
-/* preview: blurred overlay, wheel zoom, drag to move, Esc or click outside to close */
+/* preview: blurred overlay, wheel scrolls (Ctrl+wheel zooms), drag to move, Esc or click outside to close */
 function anClose(){const m=$('#anmodal');if(m)m.remove();document.removeEventListener('keydown',anEsc)}
 function anEsc(e){if(e.key==='Escape')anClose()}
 async function anPreview(html){
@@ -2341,7 +2341,7 @@ async function anPreview(html){
   document.body.appendChild(m);document.addEventListener('keydown',anEsc);
   const w=$('#anmwrap'),v=$('#anview');if(document.fonts&&document.fonts.ready)await document.fonts.ready;fwFitIn(v);
   let drag=null,moved=false;
-  w.addEventListener('wheel',e=>{e.preventDefault();anZoom(e.deltaY<0?1.12:1/1.12,e)},{passive:false});
+  w.addEventListener('wheel',e=>{if(!e.ctrlKey)return;e.preventDefault();anZoom(e.deltaY<0?1.12:1/1.12,e)},{passive:false});
   w.addEventListener('mousedown',e=>{if(e.button)return;drag={x:e.clientX,y:e.clientY,l:w.scrollLeft,t:w.scrollTop};moved=false});
   window.addEventListener('mousemove',e=>{if(!drag||!$('#anmodal'))return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.abs(dx)+Math.abs(dy)>4)moved=true;w.scrollLeft=drag.l-dx;w.scrollTop=drag.t-dy});
   window.addEventListener('mouseup',()=>{drag=null});
