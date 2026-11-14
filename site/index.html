@@ -2381,7 +2381,8 @@ const anBlank=()=>({nm:'',ac:'',ty:'',dd:'',cd:'',p:0,i:0,o:0,pp:0,pi:0,po:0,g:0
 const anEmpty=r=>!r.nm&&!r.ac&&!r.ty&&!r.dd&&!r.cd&&!(r._bad&&Object.keys(r._bad).length)&&AN_NK.every(k=>!(+r[k]));
 function anDOk(t){const m=/^(\d{2})\/(\d{2})\/(\d{4})$/.exec(t||'');if(!m)return false;const d=+m[1],mo=+m[2],y=+m[3];return y>=1950&&y<=2100&&mo>=1&&mo<=12&&d>=1&&d<=new Date(y,mo,0).getDate()}
 const anDKey=t=>t.split('/').reverse().join('');
-function anErrors(send){const e=[];AN.cur.data.rows.forEach((r,i)=>{if(anEmpty(r))return;
+function anDups(){const m={};AN.cur.data.rows.forEach((r,i)=>{const k=String(r.ac||'').replace(/\D/g,'');if(k&&!anEmpty(r))(m[k]=m[k]||[]).push(i)});return Object.entries(m).filter(([,v])=>v.length>1)}
+function anErrors(send){const e=[];anDups().forEach(([,ix])=>ix.forEach(i=>e.push([i,'ac','একই হিসাব নং সারি '+ix.filter(j=>j!==i).map(j=>toBn(j+1)).join(', ')+' এ আছে'])));AN.cur.data.rows.forEach((r,i)=>{if(anEmpty(r))return;
   Object.keys(r._bad||{}).forEach(k=>e.push([i,k,'সংখ্যা সঠিক নয়']));
   ['dd','cd'].forEach(k=>{if(r[k]&&!anDOk(r[k]))e.push([i,k,'তারিখ dd/mm/yyyy নয়'])});
   if(anDOk(r.dd)&&anDOk(r.cd)&&anDKey(r.cd)<anDKey(r.dd))e.push([i,'cd','বিতরণের তারিখের আগে']);
@@ -2442,18 +2443,18 @@ A.anDel=i=>{const r=AN.cur.data.rows[i];if(!confirm('Remove '+(r.nm||'this row')
 A.anUp=async inp=>{
   const fl=[...inp.files];inp.value='';if(!fl.length)return;let add=[],kinds=[];
   for(const f of fl){const x=await anReadFile(f);if(!x.kind){toast(f.name+': not an Annexure-Ga file (the column-number row 1, 2, 3 ... was not found).');continue}
-    add=add.concat(x.rows);kinds.push(f.name+' ('+(x.kind==='ga'?'Annexure-Ga':'Annexure-2')+', '+x.rows.length+' loans)');if(x.upz&&!AN.cur.data.upz)AN.cur.data.upz=x.upz}
+    x.rows.forEach(r=>r._f=f.name);add=add.concat(x.rows);kinds.push(f.name+' ('+(x.kind==='ga'?'Annexure-Ga':'Annexure-2')+', '+x.rows.length+' loans)');if(x.upz&&!AN.cur.data.upz)AN.cur.data.upz=x.upz}
   if(!add.length)return toast('No loans found in the file.');
   AN.cur.data.rows=AN.cur.data.rows.filter(r=>!anEmpty(r));const rows=AN.cur.data.rows,key=r=>String(r.ac||'').replace(/\D/g,''),idx={};rows.forEach((r,i)=>{if(key(r))idx[key(r)]=i});
-  const rep=add.filter(r=>key(r)&&idx[key(r)]!==undefined);
-  if(!confirm(kinds.join('\n')+'\n\n'+add.length+' loan(s) read.'+(rep.length?' '+rep.length+' already in the list (same account number) will be replaced; their RCD choice is kept.':'')+'\n\nContinue?'))return;
-  add.forEach(r=>{const k=key(r);if(k&&idx[k]!==undefined){const o=rows[idx[k]];r.rcd=o.rcd||'RCD-3';if(!r.wo)r.wo=o.wo;rows[idx[k]]=r}else{rows.push(r);if(k)idx[k]=rows.length-1}});
-  markDirty();anRender();await A.anSave(true);toast(add.length+' loan(s) added. Choose RCD-3 / RCD-4 for each loan, then Save.');
+  if(!confirm(kinds.join('\n')+'\n\n'+add.length+' loan(s) read. They will be added to the list.\n\nContinue?'))return;
+  add.forEach(r=>rows.push(r));markDirty();anRender();
+  const d=anDups();if(d.length){AN.errOn=AN.errOn||1;await A.anSave(true);alert('Duplicate account numbers found - NOT SAVED.\n\n'+d.map(([ac,ix])=>ac+':  '+ix.map(i=>'row '+(i+1)+(rows[i]._f?' ('+rows[i]._f+')':'')).join(', ')).join('\n')+'\n\nThe rows are marked red. Delete or correct the wrong ones, then Save.');return}
+  await A.anSave(true);toast(add.length+' loan(s) added and saved. Mark RCD-4 loans if any.');
 };
 A.anSave=async quiet=>{
   const c=AN.cur;if(!c||!anEd())return;
   const e=anErrors(false);if(e.length){AN.errOn=AN.errOn||1;anShowErr(e);const s=$('#saveState');if(s)s.textContent='Not saved: correct the red cells.';if(quiet===true)return;throw new Error('Not saved. Please correct the red cells.')}
-  const data={...c.data,rows:c.data.rows.filter(r=>!anEmpty(r)).map(({_bad,...r})=>r)};
+  const data={...c.data,rows:c.data.rows.filter(r=>!anEmpty(r)).map(({_bad,_f,...r})=>r)};
   await api('/report',{method:'PUT',body:{leaf:AN.leaf,period:AN.p,data}});if(AN.errOn!==2)anShowErr([]);if(c.status==='NEW')c.status='DRAFT';S.dirty=false;
   const s=$('#saveState');if(s)s.textContent='Saved '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});if(quiet!==true)toast('Saved.');
 };
