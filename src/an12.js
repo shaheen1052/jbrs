@@ -23,11 +23,12 @@ const anEnD=t=>String(t==null?'':t).replace(/[০-৯]/g,d=>d.charCodeAt(0)-0x9E
 function anDate(v){
   if(v instanceof Date)return gaDmy(v);
   const t=anEnD(v).trim();const m=t.match(/^(\d{1,2})[.\/\-](\d{1,2})[.\/\-](\d{2,4})$/);
-  if(m){let y=+m[3];if(y<100)y+=2000;return String(m[1]).padStart(2,'0')+'/'+String(m[2]).padStart(2,'0')+'/'+y}
+  if(m){let y=+m[3];if(y<100)y+=y<=new Date().getFullYear()%100?2000:1900;return String(m[1]).padStart(2,'0')+'/'+String(m[2]).padStart(2,'0')+'/'+y}
   const m2=t.match(/^(\d{4})-(\d{2})-(\d{2})/);if(m2)return m2[3]+'/'+m2[2]+'/'+m2[1];
   return t;
 }
 const anAc=v=>{const t=anEnD(v).replace(/\s/g,'');return/^100\d{9}$/.test(t)?'0'+t:t};
+const anFixY=t=>{const m=/^(\d{2}\/\d{2}\/)(\d{4})$/.exec(t||'');return m&&+m[2]>new Date().getFullYear()?m[1]+(+m[2]-100):t};
 const anNum=v=>{const x=gaNum(v);return isNaN(x)?0:anR2(x)};
 
 /* ---------- reading Excel files: Annexure-Ga (calculator) or Annexure-2, Unicode or Bijoy ---------- */
@@ -49,11 +50,11 @@ async function anReadFile(f){
       if(k==='ga'){
         const w=tx(r[21]).replace(/[\s।.]/g,'');
         out.push({nm,ac:anAc(tx(r[2])),ty:tx(r[3]),dd:anDate(r[4]),cd:anDate(r[5]),p:anNum(r[6]),i:anNum(r[7]),o:anNum(r[8]),pp:anNum(r[10]),pi:anNum(r[11]),po:anNum(r[12]),
-          g:anNum(r[16]),pe:anNum(r[17]),su:anNum(r[18]),cof:anNum(r[20]),wo:/^(হ্যাঁ|হ্যা|হাঁ|yes|y)$/i.test(w)?1:0,rcd:''});
+          g:anNum(r[16]),pe:anNum(r[17]),su:anNum(r[18]),cof:anNum(r[20]),wo:/^(হ্যাঁ|হ্যা|হাঁ|yes|y)$/i.test(w)?1:0,rcd:'RCD-3'});
       }else{
         const p=anNum(r[8]),paid=anNum(r[12]),pp=Math.min(p,paid);
         out.push({nm,ac:anEnD(tx(r[4])),ty:tx(r[5]),dd:anDate(r[6]),cd:anDate(r[7]),p,i:anNum(r[9]),o:anNum(r[10]),pp,pi:anR2(paid-pp),po:0,
-          g:anNum(r[14]),pe:anNum(r[15]),su:anNum(r[16]),cof:anNum(r[18]),wo:0,rcd:''});
+          g:anNum(r[14]),pe:anNum(r[15]),su:anNum(r[16]),cof:anNum(r[18]),wo:0,rcd:'RCD-3'});
       }
     }
     if(k==='ga')break;   // the calculator file has one customer-wise sheet; Annexure-2 has CIBTCA + Without CIBTCA
@@ -195,7 +196,7 @@ const anSave=(blob,name)=>{const a=document.createElement('a');a.href=URL.create
 const anFilt=rows=>AN.rcd==='all'?rows:rows.filter(r=>r.rcd===AN.rcd);
 function anGroups(){   // [{code,name,upz,dist,rows}] for the report in view
   const src=isBranch()?[{code:S.user.office,v:AN.cur?AN.cur.data:{}}]:(AN.list||[]).filter(x=>AN.br==='all'||x.code===AN.br);
-  return src.map(x=>{const l=fwLoc(x.code);return{code:x.code,name:anBn(x.code),upz:(x.v&&x.v.upz)||l.upz,dist:l.dist,rows:anFilt((x.v&&x.v.rows)||[])}})
+  return src.map(x=>{const l=fwLoc(x.code);return{code:x.code,name:anBn(x.code),upz:(x.v&&x.v.upz)||l.upz,dist:l.dist,rows:anFilt(((x.v&&x.v.rows)||[]).map(r=>({...r,dd:anFixY(r.dd),cd:anFixY(r.cd)})))}})
     .filter(g=>g.rows.length).sort((a,b)=>String((office(a.code)||{}).name).localeCompare(String((office(b.code)||{}).name),'en'));
 }
 function anSpecs(){
@@ -226,8 +227,8 @@ function pageAn2(l){
   return`<div class="pghead"><div class="hrow"><h2>Annexure-2 (পরিশিষ্ট-০২)</h2></div></div><div class="muted small">Special exit facility, circular 1411/26: loans classified as loss, as on 30/06/2026.</div><div id="anbody" class="card muted" style="margin-top:10px">Loading...</div><div id="anview" class="lfsc" style="margin-top:12px;overflow:auto"></div>`;
 }
 const AN_NK=['p','i','o','pp','pi','po','g','pe','su','cof'],AN_LBL=Object.fromEntries(AN_F.map(f=>[f[0],f[1]]));
-const anBlank=()=>({nm:'',ac:'',ty:'',dd:'',cd:'',p:0,i:0,o:0,pp:0,pi:0,po:0,g:0,pe:0,su:0,cof:0,wo:0,rcd:''});
-const anEmpty=r=>!r.nm&&!r.ac&&!r.ty&&!r.dd&&!r.cd&&!r.rcd&&!r.wo&&!(r._bad&&Object.keys(r._bad).length)&&AN_NK.every(k=>!(+r[k]));
+const anBlank=()=>({nm:'',ac:'',ty:'',dd:'',cd:'',p:0,i:0,o:0,pp:0,pi:0,po:0,g:0,pe:0,su:0,cof:0,wo:0,rcd:'RCD-3'});
+const anEmpty=r=>!r.nm&&!r.ac&&!r.ty&&!r.dd&&!r.cd&&!(r._bad&&Object.keys(r._bad).length)&&AN_NK.every(k=>!(+r[k]));
 function anDOk(t){const m=/^(\d{2})\/(\d{2})\/(\d{4})$/.exec(t||'');if(!m)return false;const d=+m[1],mo=+m[2],y=+m[3];return y>=1950&&y<=2100&&mo>=1&&mo<=12&&d>=1&&d<=new Date(y,mo,0).getDate()}
 const anDKey=t=>t.split('/').reverse().join('');
 function anErrors(send){const e=[];AN.cur.data.rows.forEach((r,i)=>{if(anEmpty(r))return;
@@ -245,7 +246,8 @@ async function anOpen(){
   const j=await api('/report?office='+encodeURIComponent(S.user.office)+'&leaf='+AN.leaf+'&period='+AN.p);
   const r=j.report;AN.cur={status:r?r.status:'NEW',note:r&&r.note,submitted:r&&r.submitted,data:(r&&r.data)||{rows:[]}};
   if(!AN.cur.data.rows)AN.cur.data.rows=[];if(anEd()&&!AN.cur.data.rows.length)AN.cur.data.rows.push(anBlank());
-  S.dirty=false;if(anEd()){const L=$('.layout');if(L)L.classList.add('noside')}anRender();
+  let fx=false;if(anEd())AN.cur.data.rows.forEach(r=>{['dd','cd'].forEach(k=>{const v=anFixY(r[k]);if(v!==r[k]){r[k]=v;fx=true}});if(!r.rcd&&!anEmpty(r)){r.rcd='RCD-3';fx=true}});
+  S.dirty=fx;if(anEd()){const L=$('.layout');if(L)L.classList.add('noside')}anRender();
 }
 const anEd=()=>AN.cur&&canEdit(AN.cur);
 function anCellIn(r,i,f){
@@ -293,7 +295,7 @@ A.anUp=async inp=>{
   AN.cur.data.rows=AN.cur.data.rows.filter(r=>!anEmpty(r));const rows=AN.cur.data.rows,key=r=>String(r.ac||'').replace(/\D/g,''),idx={};rows.forEach((r,i)=>{if(key(r))idx[key(r)]=i});
   const rep=add.filter(r=>key(r)&&idx[key(r)]!==undefined);
   if(!confirm(kinds.join('\n')+'\n\n'+add.length+' loan(s) read.'+(rep.length?' '+rep.length+' already in the list (same account number) will be replaced; their RCD choice is kept.':'')+'\n\nContinue?'))return;
-  add.forEach(r=>{const k=key(r);if(k&&idx[k]!==undefined){const o=rows[idx[k]];r.rcd=o.rcd;if(!r.wo)r.wo=o.wo;rows[idx[k]]=r}else{rows.push(r);if(k)idx[k]=rows.length-1}});
+  add.forEach(r=>{const k=key(r);if(k&&idx[k]!==undefined){const o=rows[idx[k]];r.rcd=o.rcd||'RCD-3';if(!r.wo)r.wo=o.wo;rows[idx[k]]=r}else{rows.push(r);if(k)idx[k]=rows.length-1}});
   markDirty();anRender();await A.anSave(true);toast(add.length+' loan(s) added. Choose RCD-3 / RCD-4 for each loan, then Save.');
 };
 A.anSave=async quiet=>{
