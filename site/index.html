@@ -2255,9 +2255,9 @@ const anNf=v=>toBn((+v||0).toFixed(2));
 function anHtml(specs,per){
   let h='';
   specs.forEach(sp=>{
-    const data=sp.body,pn=Math.max(1,Math.ceil(data.length/(per||22)));   // rows shared equally between pages
+    const data=sp.body,PER=per||25,pn=Math.max(1,Math.ceil(data.length/PER));   // 25 rows on every page
     for(let p=0;p<pn;p++){
-      const last=p===pn-1,rs=data.slice(Math.round(p*data.length/pn),Math.round((p+1)*data.length/pn));
+      const last=p===pn-1,rs=data.slice(p*PER,(p+1)*PER);
       const lines=sp.lines.map(l=>`<div style="text-align:${l.al==='r'?'right':l.al==='l'?'left':'center'};font-size:${Math.max(9,(l.sz||11)-2)}pt;${l.b?'font-weight:700;':''}${l.u?'text-decoration:underline;':''}${l.h?'margin:1.5mm 0;':''}">${esc(l.t).replace(/ {2,}/g,m=>'&nbsp;'.repeat(m.length))}</div>`).join('');
       const th=sp.head.map(row=>`<tr>${row.map(c=>`<th${c.cs?` colspan="${c.cs}"`:''}${c.rs?` rowspan="${c.rs}"`:''} style="${c.fill?'background:'+c.fill+';':''}${c.num?'font-size:.9em;':''}">${esc(c.v)}</th>`).join('')}</tr>`).join('');
       const td=rs.map(row=>`<tr style="${row.k==='s'?'background:'+AN_GREY+';font-weight:700':row.k==='t'?'background:'+AN_TOT+';font-weight:700':''}">${row.cells.map(c=>`<td${c.cs?` colspan="${c.cs}"`:''} style="text-align:${c.t==='n'?'right':c.t==='s'?'left;white-space:nowrap':'center'}">${c.t==='n'?anNf(c.v):c.t==='i'?toBn(c.v):esc(c.v)}</td>`).join('')}</tr>`).join('');
