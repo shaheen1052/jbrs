@@ -23,7 +23,8 @@ function prevMonth(){const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-1);
 function toast(msg,err){const d=document.createElement('div');if(err)d.className='err';d.textContent=msg;$('#toast').appendChild(d);setTimeout(()=>d.remove(),err?6000:3500)}
 function modal(html){$('#modal').innerHTML=`<div class="modalbg"><div class="modal">${html}</div></div>`}
 function closeModal(){$('#modal').innerHTML=''}
-async function run(fn){try{await fn()}catch(e){console.error(e);if(e.message!=='Session ended')toast(e.message||String(e),true)}}
+let BUSY=0;function busy(on){BUSY=Math.max(0,BUSY+(on?1:-1));let b=$('#busy');if(!b){b=document.createElement('div');b.id='busy';b.innerHTML='<div><span class="spin"></span>Processing... please wait</div>';document.body.appendChild(b)}b.style.display=BUSY?'flex':'none'}
+async function run(fn,quiet){let on=false;const t=quiet?0:setTimeout(()=>{on=true;busy(1)},400);try{await fn()}catch(e){console.error(e);if(e.message!=='Session ended')toast(e.message||String(e),true)}finally{clearTimeout(t);if(on)busy(0)}}
 function shell(h){$('#app').innerHTML=h}
 const office=code=>S.offices.find(o=>o.code===code);
 const officeName=code=>{const o=office(code);return o?o.name:code};
@@ -132,7 +133,7 @@ A.setup=async()=>{
 const isBranch=()=>S.user.role==='BRANCH',isArea=()=>S.user.role==='AREA',isAdmin=()=>S.user.role==='ADMIN';
 const myOffice=()=>office(S.user.office);
 function childBranches(){return S.offices.filter(o=>o.level==='BR'&&(isAdmin()||o.parent===S.user.office)).sort((a,b)=>a.name.localeCompare(b.name))}
-function go(v){
+function go(v){document.documentElement.classList.remove('annoscroll');const am=$('#anmodal');if(am)am.remove();
   if(IWC.pending.size&&!confirm('Calculator changes are still being saved online. Leave anyway?'))return;
   if(S.lf&&(S.lf.dirty||S.lf.aoDirty)){lfAsk(()=>{S.lf=null;go(v)});return}
   if(S.dirty&&!confirm('You have unsaved changes on this report. Leave without saving?'))return;
