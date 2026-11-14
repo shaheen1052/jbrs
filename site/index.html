@@ -2166,7 +2166,7 @@ async function anReadFile(f){
     const cnt=a[nr].filter(c=>String(c).trim()!=='').length,uni=a.slice(0,nr).some(r=>r.some(c=>/[ঀ-৿]/.test(String(c))));
     const tx=v=>{v=v instanceof Date?gaDmy(v):String(v==null?'':v).trim();if(!v||/[ঀ-৿]/.test(v))return v;return(uni?bjLooks(v):/[A-Za-z¡-ÿ–-›]/.test(v))?bj2u(v).trim():v};
     const head=a.slice(0,nr).map(r=>r.map(tx).join(' ')).join(' ');
-    let k=cnt>=21&&/গ্রহীতার নাম/.test(head)&&/হিসাব নং/.test(head)&&!/(পরিশিষ্ট|পরিশিস্ট|Annexure)\s*[-–]?\s*(ঘ|Gha)/i.test(sn+' '+head)?'ga':'';
+    let k=cnt>=21&&/গ্রহীতার\s*নাম/.test(head)&&/হিসাব\s*(নং|নম্বর|নাম্বার|no)/i.test(head)&&!/(পরিশিষ্ট|পরিশিস্ট|Annexure)\s*[-–]?\s*(ঘ|Gha)/i.test(sn+' '+head)?'ga':'';
     if(!k)continue;kind=k;
     const um=head.match(/উপজেলা\s*[:ঃ]\s*([^\s|,।]+)/);if(um&&!upz)upz=um[1];
     for(const r of a.slice(nr+1)){
@@ -2449,14 +2449,14 @@ A.anUp=async inp=>{
   if(!confirm(kinds.join('\n')+'\n\n'+add.length+' loan(s) read. They will be added to the list.\n\nContinue?'))return;
   add.forEach(r=>rows.push(r));markDirty();anRender();
   const d=anDups();if(d.length){AN.errOn=AN.errOn||1;await A.anSave(true);alert('Duplicate account numbers found - NOT SAVED.\n\n'+d.map(([ac,ix])=>ac+':  '+ix.map(i=>'row '+(i+1)+(rows[i]._f?' ('+rows[i]._f+')':'')).join(', ')).join('\n')+'\n\nThe rows are marked red. Delete or correct the wrong ones, then Save.');return}
-  await A.anSave(true);toast(add.length+' loan(s) added and saved. Mark RCD-4 loans if any.');
+  if(await A.anSave(true))toast(add.length+' loan(s) added and saved. Mark RCD-4 loans if any.');else toast(add.length+' loan(s) added but NOT saved: correct the red cells, then Save.',true);
 };
 A.anSave=async quiet=>{
   const c=AN.cur;if(!c||!anEd())return;
   const e=anErrors(false);if(e.length){AN.errOn=AN.errOn||1;anShowErr(e);const s=$('#saveState');if(s)s.textContent='Not saved: correct the red cells.';if(quiet===true)return;throw new Error('Not saved. Please correct the red cells.')}
   const data={...c.data,rows:c.data.rows.filter(r=>!anEmpty(r)).map(({_bad,_f,...r})=>r)};
   await api('/report',{method:'PUT',body:{leaf:AN.leaf,period:AN.p,data}});if(AN.errOn!==2)anShowErr([]);if(c.status==='NEW')c.status='DRAFT';S.dirty=false;
-  const s=$('#saveState');if(s)s.textContent='Saved '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});if(quiet!==true)toast('Saved.');
+  const s=$('#saveState');if(s)s.textContent='Saved '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});if(quiet!==true)toast('Saved.');return true;
 };
 A.anSubmit=async()=>{
   const rows=AN.cur.data.rows.filter(r=>!anEmpty(r));if(!rows.length)throw new Error('Add the loans first.');
