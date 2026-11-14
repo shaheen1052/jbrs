@@ -40,7 +40,7 @@ async function anReadFile(f){
     const cnt=a[nr].filter(c=>String(c).trim()!=='').length,uni=a.slice(0,nr).some(r=>r.some(c=>/[ঀ-৿]/.test(String(c))));
     const tx=v=>{v=v instanceof Date?gaDmy(v):String(v==null?'':v).trim();if(!v||/[ঀ-৿]/.test(v))return v;return(uni?bjLooks(v):/[A-Za-z¡-ÿ–-›]/.test(v))?bj2u(v).trim():v};
     const head=a.slice(0,nr).map(r=>r.map(tx).join(' ')).join(' ');
-    let k=cnt>=21?'ga':'';
+    let k=cnt>=21&&/গ্রহীতার নাম/.test(head)&&/হিসাব নং/.test(head)&&!/(পরিশিষ্ট|পরিশিস্ট|Annexure)\s*[-–]?\s*(ঘ|Gha)/i.test(sn+' '+head)?'ga':'';
     if(!k)continue;kind=k;
     const um=head.match(/উপজেলা\s*[:ঃ]\s*([^\s|,।]+)/);if(um&&!upz)upz=um[1];
     for(const r of a.slice(nr+1)){
