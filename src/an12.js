@@ -230,14 +230,7 @@ function anZoom(f,e){
   if(f===0){w.scrollTop=0;w.scrollLeft=0}else{w.scrollLeft=cx*z-px;w.scrollTop=cy*z-py}
 }
 /* fast PDF: the browser's own print window (Save as PDF), text stays real text */
-async function anFast(html,name){
-  const host=document.createElement('div');host.className='lfpdfhost';host.innerHTML=html;document.body.appendChild(host);
-  if(document.fonts&&document.fonts.ready)await document.fonts.ready;fwFitIn(host);const body=host.innerHTML;host.remove();
-  let st=$('#anpg');if(!st){st=document.createElement('style');st.id='anpg';document.head.appendChild(st)}st.textContent='@page{size:A4 landscape;margin:0}';
-  const pa=$('#printArea'),t0=document.title;pa.className='lf0 anfast';pa.innerHTML=body;document.title=name;
-  const done=()=>{st.textContent='';document.title=t0;pa.innerHTML='';pa.className='';window.removeEventListener('afterprint',done)};
-  window.addEventListener('afterprint',done);toast('In the print window choose "Save as PDF" and click Save.');setTimeout(()=>window.print(),50);
-}
+const anFast=(html,name)=>fwFast(html,name,true);
 const anFile=ext=>{const rep=AN.rep||(isBranch()?'a2':'a1');return'JBRS_'+({a1:'Annexure-1',a2:'Annexure-2',ga:'Annexure-Ga'}[rep])+'_'+(AN.rcd==='all'?'All':AN.rcd)+'_'+(isBranch()?S.user.office:AN.br==='all'?'Sirajganj':AN.br)+ext};
 A.anOut=async w=>{
   const tw=w==='pdf'||w==='print'?(()=>{try{return window.open('','_blank')}catch(e){return null}})():null;   // open the tab while the click still counts

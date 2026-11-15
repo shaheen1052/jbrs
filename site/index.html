@@ -1740,7 +1740,7 @@ function pageFwd(l){
   fwInit();
   const I=(lb,v,ev,ex='')=>`<div><label>${lb}</label><input value="${esc(v)}" oninput="${ev}" ${ex}></div>`;
   return`<div class="pghead"><div class="hrow"><h2>Forwarding (AO)</h2><div class="hrow" id="fwctl" style="flex:1 1 auto;justify-content:flex-end"><div class="bar"><select id="fwrep" onchange="FW.rep=this.value;FW.show=false;$('#fwview').innerHTML='';$('#fwbr').style.display=this.value==='gabr'?'':'none';$('#fwxl').style.display=this.value==='gabr'?'':'none'" style="height:32px"><option value="letter" ${FW.rep==='letter'?'selected':''}>Forwarding letter</option><option value="note" ${FW.rep==='note'?'selected':''}>Note Sheet</option><option value="gha" ${FW.rep==='gha'?'selected':''}>Annexure-Gha</option><option value="gabr" ${FW.rep==='gabr'?'selected':''}>Annexure-Ga (Branchwise)</option></select><select id="fwbr" onchange="FW.gbr=this.value;FW.show=false;$('#fwview').innerHTML=''" style="height:32px;${FW.rep==='gabr'?'':'display:none'}"><option value="">All branches</option>${childBranches().map(k=>`<option value="${k.code}" ${FW.gbr===k.code?'selected':''}>${k.code} - ${esc(k.name.replace(/ Branch, Sirajganj$/,''))}</option>`).join('')}</select>
-  <button onclick="run(()=>A.fwView())">View</button><button onclick="run(()=>A.fwGo('print'))">Print</button><button class="pri" onclick="run(()=>A.fwGo('pdf'))">Download</button><button id="fwxl" onclick="run(()=>A.fwGaXl())" style="${FW.rep==='gabr'?'':'display:none'}">Excel</button></div></div></div></div>
+  <button onclick="run(()=>A.fwView())">View</button><button onclick="run(()=>A.fwGo('fast'))" title="Opens the print window - choose Save as PDF or a printer">Print to PDF</button><button class="pri" onclick="run(()=>A.fwGo('dl'))">Download</button><button id="fwxl" onclick="run(()=>A.fwGaXl())" style="${FW.rep==='gabr'?'':'display:none'}">Excel</button></div></div></div></div>
   <div class="card fwform" style="margin-top:8px;padding:8px 12px"><div class="fwr1">
   ${I('Letter Date',FW.d,"FW.d=this.value;fwDraw()",'id="fw_d" maxlength="10"')}
   <span id="fwref" style="display:contents"></span>
@@ -1892,11 +1892,15 @@ A.fwView=async()=>{if(!FW.raw)return toast('Upload the Annexure-Ga Excel first.'
 A.fwGo=async w=>{
   if(!FW.raw)return toast('Upload the Annexure-Ga Excel first.');
   const rows=fwData();if(!rows.length)return toast('No loan rows found.');
-  if(FW.rep==='gha')return fwOut(fwGhaHtml(fwGSets(rows,false)),w,'JBRS_Annexure-Gha.pdf',true);
-  if(FW.rep==='gabr'){const sets=fwGaSets(rows);if(!sets.length)return toast('No uploaded file is saved to this branch.');return fwOut(fwGaHtml(sets),w,'JBRS_Annexure-Ga_'+(FW.gbr||'all')+'.pdf',true)}
-  if(FW.rep==='note'){if(!FW.ga)return toast('The Note Sheet needs the Annexure-Ga (customer wise) file.');return fwOut(fwNotePages(rows),w,'JBRS_Note_Sheet.pdf')}
-  return fwOut(fwPages(rows),w,'JBRS_Forwarding_AO.pdf');
+  let h,f,land=false;
+  if(FW.rep==='gha'){h=fwGhaHtml(fwGSets(rows,false));f='JBRS_Annexure-Gha.pdf';land=true}
+  else if(FW.rep==='gabr'){const sets=fwGaSets(rows);if(!sets.length)return toast('No uploaded file is saved to this branch.');h=fwGaHtml(sets);f='JBRS_Annexure-Ga_'+(FW.gbr||'all')+'.pdf';land=true}
+  else if(FW.rep==='note'){if(!FW.ga)return toast('The Note Sheet needs the Annexure-Ga (customer wise) file.');h=fwNotePages(rows);f='JBRS_Note_Sheet.pdf'}
+  else{h=fwPages(rows);f='JBRS_Forwarding_AO.pdf'}
+  if(w==='fast')return fwFast(h,f.replace(/\.pdf$/,''),land);
+  return fwOut(h,w,f,land);
 };
+
 const fwOver=(t,av,w,pg)=>t.scrollWidth>av+1||w.scrollHeight>pg.clientHeight-4||[...t.querySelectorAll('td,th')].some(c=>c.scrollWidth>c.clientWidth+1);
 async function fwFitZoom(v){if(document.fonts&&document.fonts.ready)await document.fonts.ready;fwFitIn(v);const zf=Math.min(1,(v.clientWidth-4)/(297*96/25.4));v.querySelectorAll('.fwpage').forEach(e=>{e.style.zoom=zf;e.style.marginBottom='8px'})}
 function fwFitIn(root){
@@ -1905,9 +1909,18 @@ function fwFitIn(root){
 const FW_PDFS=2;
 /* reduce the page image to a few tones per colour so the PNG compresses well (text stays sharp) */
 function fwPost(c){const g=c.getContext('2d'),d=g.getImageData(0,0,c.width,c.height),a=d.data;for(let i=0;i<a.length;i+=4){for(let k=0;k<3;k++){const v=a[i+k];a[i+k]=v>244?255:Math.round(v/51)*51}}g.putImageData(d,0,0);return c}   // PDF image resolution (x screen); 2 keeps text sharp for printing with a much smaller file
+/* fast printing through the browser's own print window (Save as PDF or a printer): real text, about a second */
+async function fwFast(html,name,land){
+  const host=document.createElement('div');host.className='lfpdfhost';host.innerHTML=html;document.body.appendChild(host);
+  if(document.fonts&&document.fonts.ready)await document.fonts.ready;fwFitIn(host);const body=host.innerHTML;host.remove();
+  let st=$('#anpg');if(!st){st=document.createElement('style');st.id='anpg';document.head.appendChild(st)}st.textContent='@page{size:A4 '+(land?'landscape':'portrait')+';margin:0}';
+  const pa=$('#printArea'),t0=document.title;pa.className='lf0 anfast';pa.innerHTML=body;document.title=name;
+  const done=()=>{st.textContent='';document.title=t0;pa.innerHTML='';pa.className='';window.removeEventListener('afterprint',done)};
+  window.addEventListener('afterprint',done);toast('In the print window choose "Save as PDF" (or a printer) and click Save.');setTimeout(()=>window.print(),50);
+}
 async function fwOut(html,w,fname,land,win0){
   // PDF and Print open a new tab at once (it shows progress), then the finished PDF opens there and is downloaded
-  let win=win0||null;if(!win){try{win=window.open('','_blank')}catch(e){}}
+  let win=win0||null;if(!win&&w!=='dl'){try{win=window.open('','_blank')}catch(e){}}
   const say=t=>{toast(t);try{if(win&&!win.closed){const m=win.document.getElementById('fwm');if(m)m.textContent=t;else{win.document.title='Preparing PDF...';win.document.body.innerHTML='<div style="font:20px Arial,sans-serif;display:flex;height:90vh;align-items:center;justify-content:center;color:#37474f"><span id="fwm">'+t+'</span></div>'}}}catch(e){}};
   say('Preparing PDF... please wait');await lfLoadPdf();if(document.fonts&&document.fonts.ready)await document.fonts.ready;
   const host=document.createElement('div');host.className='lfpdfhost';host.innerHTML=html;document.body.appendChild(host);
@@ -2363,14 +2376,7 @@ function anZoom(f,e){
   if(f===0){w.scrollTop=0;w.scrollLeft=0}else{w.scrollLeft=cx*z-px;w.scrollTop=cy*z-py}
 }
 /* fast PDF: the browser's own print window (Save as PDF), text stays real text */
-async function anFast(html,name){
-  const host=document.createElement('div');host.className='lfpdfhost';host.innerHTML=html;document.body.appendChild(host);
-  if(document.fonts&&document.fonts.ready)await document.fonts.ready;fwFitIn(host);const body=host.innerHTML;host.remove();
-  let st=$('#anpg');if(!st){st=document.createElement('style');st.id='anpg';document.head.appendChild(st)}st.textContent='@page{size:A4 landscape;margin:0}';
-  const pa=$('#printArea'),t0=document.title;pa.className='lf0 anfast';pa.innerHTML=body;document.title=name;
-  const done=()=>{st.textContent='';document.title=t0;pa.innerHTML='';pa.className='';window.removeEventListener('afterprint',done)};
-  window.addEventListener('afterprint',done);toast('In the print window choose "Save as PDF" and click Save.');setTimeout(()=>window.print(),50);
-}
+const anFast=(html,name)=>fwFast(html,name,true);
 const anFile=ext=>{const rep=AN.rep||(isBranch()?'a2':'a1');return'JBRS_'+({a1:'Annexure-1',a2:'Annexure-2',ga:'Annexure-Ga'}[rep])+'_'+(AN.rcd==='all'?'All':AN.rcd)+'_'+(isBranch()?S.user.office:AN.br==='all'?'Sirajganj':AN.br)+ext};
 A.anOut=async w=>{
   const tw=w==='pdf'||w==='print'?(()=>{try{return window.open('','_blank')}catch(e){return null}})():null;   // open the tab while the click still counts
