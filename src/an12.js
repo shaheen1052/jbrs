@@ -231,11 +231,12 @@ function anZoom(f,e){
 }
 const anFile=ext=>{const rep=AN.rep||(isBranch()?'a2':'a1');return'JBRS_'+({a1:'Annexure-1',a2:'Annexure-2',ga:'Annexure-Ga'}[rep])+'_'+(AN.rcd==='all'?'All':AN.rcd)+'_'+(isBranch()?S.user.office:AN.br==='all'?'Sirajganj':AN.br)+ext};
 A.anOut=async w=>{
+  const tw=w==='pdf'||w==='print'?(()=>{try{return window.open('','_blank')}catch(e){return null}})():null;   // open the tab while the click still counts
   if(isBranch()&&S.dirty)await A.anSave(true);
-  const sp=anSpecs();if(!sp.length)return toast('No loans for '+(AN.rcd==='all'?'this report':AN.rcd)+' yet.');
+  const sp=anSpecs();if(!sp.length){if(tw)tw.close();return toast('No loans for '+(AN.rcd==='all'?'this report':AN.rcd)+' yet.')}
   if(w==='view')return anPreview(anHtml(sp));
   if(w==='xu'||w==='xs'){anSave(anXlsx(sp,w==='xs'),anFile(w==='xs'?'_SutonnyMJ.xlsx':'_Unicode.xlsx'));return toast('Excel downloaded.')}
-  return fwOut(anHtml(sp),w==='print'?'print':'pdf',anFile('.pdf'),true);
+  return fwOut(anHtml(sp),w==='print'?'print':'pdf',anFile('.pdf'),true,tw);
 };
 const anBar=(opts,inl)=>{if(!opts.some(o=>o[0]===AN.rep))AN.rep=opts[0][0];if(isBranch())AN.br='all';const h=anBarIn(opts);return inl?h.replace('Both (RCD-3 + RCD-4)','Both').replace(/<label>[^<]*<\/label>/g,'').replace('<div class="bar" style="flex-wrap:wrap;align-items:flex-end;gap:8px">','<div class="anbar2"><b>Report</b>'):h};
 const anBarIn=opts=>{return`<div class="bar" style="flex-wrap:wrap;align-items:flex-end;gap:8px">

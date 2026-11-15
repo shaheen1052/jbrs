@@ -186,14 +186,18 @@ function fwFitIn(root){
 const FW_PDFS=2;
 /* reduce the page image to a few tones per colour so the PNG compresses well (text stays sharp) */
 function fwPost(c){const g=c.getContext('2d'),d=g.getImageData(0,0,c.width,c.height),a=d.data;for(let i=0;i<a.length;i+=4){for(let k=0;k<3;k++){const v=a[i+k];a[i+k]=v>244?255:Math.round(v/51)*51}}g.putImageData(d,0,0);return c}   // PDF image resolution (x screen); 2 keeps text sharp for printing with a much smaller file
-async function fwOut(html,w,fname,land){
-  let win=null;if(w==='print'){try{win=window.open('','_blank')}catch(e){}}
-  toast('Preparing PDF...');await lfLoadPdf();if(document.fonts&&document.fonts.ready)await document.fonts.ready;
+async function fwOut(html,w,fname,land,win0){
+  // PDF and Print open a new tab at once (it shows progress), then the finished PDF opens there and is downloaded
+  let win=win0||null;if(!win){try{win=window.open('','_blank')}catch(e){}}
+  const say=t=>{toast(t);try{if(win&&!win.closed){const m=win.document.getElementById('fwm');if(m)m.textContent=t;else{win.document.title='Preparing PDF...';win.document.body.innerHTML='<div style="font:20px Arial,sans-serif;display:flex;height:90vh;align-items:center;justify-content:center;color:#37474f"><span id="fwm">'+t+'</span></div>'}}}catch(e){}};
+  say('Preparing PDF... please wait');await lfLoadPdf();if(document.fonts&&document.fonts.ready)await document.fonts.ready;
   const host=document.createElement('div');host.className='lfpdfhost';host.innerHTML=html;document.body.appendChild(host);
   try{fwFitIn(host);const {jsPDF}=window.jspdf;const pdf=new jsPDF({unit:'mm',format:'a4',orientation:land?'landscape':'portrait',compress:true});
     const pgs=[...host.querySelectorAll('.lfpage')];
-    for(let i=0;i<pgs.length;i++){const c=await html2canvas(pgs[i],{scale:FW_PDFS,backgroundColor:'#ffffff',logging:false});{const g=c.getContext('2d');g.setTransform(1,0,0,1,0,0);const pr=pgs[i].getBoundingClientRect(),S=FW_PDFS,R=v=>Math.round(v*S);g.strokeStyle='#000';g.lineWidth=2;g.lineJoin='miter';pgs[i].querySelectorAll('.fwt th,.fwt td').forEach(e=>{const r=e.getBoundingClientRect();if(!r.width)return;const x1=R(r.left-pr.left),y1=R(r.top-pr.top);g.strokeRect(x1,y1,R(r.right-pr.left)-x1,R(r.bottom-pr.top)-y1)})}if(i)pdf.addPage();pdf.addImage(fwPost(c),'PNG',0,0,land?297:210,land?210:297,undefined,'SLOW')}
-    if(w==='print'&&win){win.location.href=URL.createObjectURL(pdf.output('blob'));toast('Opened in a new tab - print or save from there.')}
+    for(let i=0;i<pgs.length;i++){if(pgs.length>1)say('Preparing PDF... page '+(i+1)+' of '+pgs.length);const c=await html2canvas(pgs[i],{scale:FW_PDFS,backgroundColor:'#ffffff',logging:false});{const g=c.getContext('2d');g.setTransform(1,0,0,1,0,0);const pr=pgs[i].getBoundingClientRect(),S=FW_PDFS,R=v=>Math.round(v*S);g.strokeStyle='#000';g.lineWidth=2;g.lineJoin='miter';pgs[i].querySelectorAll('.fwt th,.fwt td').forEach(e=>{const r=e.getBoundingClientRect();if(!r.width)return;const x1=R(r.left-pr.left),y1=R(r.top-pr.top);g.strokeRect(x1,y1,R(r.right-pr.left)-x1,R(r.bottom-pr.top)-y1)})}if(i)pdf.addPage();pdf.addImage(fwPost(c),'PNG',0,0,land?297:210,land?210:297,undefined,'SLOW')}
+    const url=URL.createObjectURL(pdf.output('blob'));
+    if(win&&!win.closed){if(w!=='print'){try{const a=win.document.createElement('a');a.href=url;a.download=fname;win.document.body.appendChild(a);a.click()}catch(e){pdf.save(fname)}}
+      setTimeout(()=>{try{win.location.href=url}catch(e){}},w==='print'?0:500);toast(w==='print'?'Opened in a new tab - print or save from there.':'PDF opened in a new tab and downloaded.')}
     else pdf.save(fname);
   }catch(e){if(win)win.close();throw e}finally{host.remove()}
 }
