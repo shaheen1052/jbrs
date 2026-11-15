@@ -2149,7 +2149,7 @@ const AN_F=[ // data-entry columns: key, label, kind (t text, d date, n amount, 
 const anR2=v=>Math.round((+v||0)*100)/100;
 function anCalc(r){
   const n=k=>anR2(r[k]);const tot=anR2(n('p')+n('i')+n('o')),paid=anR2(n('pp')+n('pi')+n('po')),led=anR2(tot-paid),rp=anR2(n('p')-n('pp'));
-  return{tot,paid,led,rp,cib:r.wo?0:anR2(led-n('su')),ga20:anR2(led-rp-n('su'))};
+  return{tot,paid,led,rp,cib:r.wo?0:anR2(led-n('su')),ga20:r.wo?0:anR2(led-rp-n('su'))};
 }
 const anBn=code=>{const o=office(code);if(!o)return code;return String(o.nameBn||o.name_bn||o.name).split(/\s*,\s*/)[0].replace(/\s*শাখা\s*$/,'').trim()};
 const anEnD=t=>String(t==null?'':t).replace(/[০-৯]/g,d=>d.charCodeAt(0)-0x9E6);
