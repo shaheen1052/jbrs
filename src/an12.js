@@ -229,12 +229,22 @@ function anZoom(f,e){
   v.dataset.z=z;v.style.zoom=z;$('#anzv').textContent=Math.round(z*100)+'%';
   if(f===0){w.scrollTop=0;w.scrollLeft=0}else{w.scrollLeft=cx*z-px;w.scrollTop=cy*z-py}
 }
+/* fast PDF: the browser's own print window (Save as PDF), text stays real text */
+async function anFast(html,name){
+  const host=document.createElement('div');host.className='lfpdfhost';host.innerHTML=html;document.body.appendChild(host);
+  if(document.fonts&&document.fonts.ready)await document.fonts.ready;fwFitIn(host);const body=host.innerHTML;host.remove();
+  let st=$('#anpg');if(!st){st=document.createElement('style');st.id='anpg';document.head.appendChild(st)}st.textContent='@page{size:A4 landscape;margin:0}';
+  const pa=$('#printArea'),t0=document.title;pa.className='lf0 anfast';pa.innerHTML=body;document.title=name;
+  const done=()=>{st.textContent='';document.title=t0;pa.innerHTML='';pa.className='';window.removeEventListener('afterprint',done)};
+  window.addEventListener('afterprint',done);toast('In the print window choose "Save as PDF" and click Save.');setTimeout(()=>window.print(),50);
+}
 const anFile=ext=>{const rep=AN.rep||(isBranch()?'a2':'a1');return'JBRS_'+({a1:'Annexure-1',a2:'Annexure-2',ga:'Annexure-Ga'}[rep])+'_'+(AN.rcd==='all'?'All':AN.rcd)+'_'+(isBranch()?S.user.office:AN.br==='all'?'Sirajganj':AN.br)+ext};
 A.anOut=async w=>{
   const tw=w==='pdf'||w==='print'?(()=>{try{return window.open('','_blank')}catch(e){return null}})():null;   // open the tab while the click still counts
   if(isBranch()&&S.dirty)await A.anSave(true);
   const sp=anSpecs();if(!sp.length){if(tw)tw.close();return toast('No loans for '+(AN.rcd==='all'?'this report':AN.rcd)+' yet.')}
   if(w==='view')return anPreview(anHtml(sp));
+  if(w==='fast')return anFast(anHtml(sp),anFile(''));
   if(w==='xu'||w==='xs'){anSave(anXlsx(sp,w==='xs'),anFile(w==='xs'?'_SutonnyMJ.xlsx':'_Unicode.xlsx'));return toast('Excel downloaded.')}
   return fwOut(anHtml(sp),w==='print'?'print':'pdf',anFile('.pdf'),true,tw);
 };
@@ -243,7 +253,7 @@ const anBarIn=opts=>{return`<div class="bar" style="flex-wrap:wrap;align-items:f
   <div><label>Report</label><select onchange="AN.rep=this.value">${opts.map(([v,t])=>`<option value="${v}" ${(AN.rep||opts[0][0])===v?'selected':''}>${t}</option>`).join('')}</select></div>
   <div><label>Department</label><select onchange="AN.rcd=this.value">${['RCD-3','RCD-4','all'].map(v=>`<option value="${v}" ${AN.rcd===v?'selected':''}>${v==='all'?'Both (RCD-3 + RCD-4)':v}</option>`).join('')}</select></div>
   ${isBranch()?'':`<div><label>Branch</label><select onchange="AN.br=this.value">${[['all','All branches'],...(AN.list||[]).map(x=>[x.code,x.code+' - '+anBn(x.code)])].map(([v,t])=>`<option value="${v}" ${AN.br===v?'selected':''}>${esc(t)}</option>`).join('')}</select></div>`}
-  <button onclick="run(()=>A.anOut('view'))">View</button><button onclick="run(()=>A.anOut('xu'))">Excel (Unicode)</button><button onclick="run(()=>A.anOut('xs'))">Excel (SutonnyMJ)</button><button class="pri" onclick="run(()=>A.anOut('pdf'))">PDF</button></div>`};
+  <button onclick="run(()=>A.anOut('view'))">View</button><button onclick="run(()=>A.anOut('xu'))">Excel (Unicode)</button><button onclick="run(()=>A.anOut('xs'))">Excel (SutonnyMJ)</button><button class="pri" onclick="run(()=>A.anOut('fast'))" title="Fast: opens the print window - choose Save as PDF">Save as PDF</button><button onclick="run(()=>A.anOut('pdf'))">PDF</button></div>`};
 
 /* ---------- branch page: Annexure-2 data entry ---------- */
 function pageAn2(l){
