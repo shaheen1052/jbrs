@@ -27,7 +27,7 @@ function anDate(v){
   const m2=t.match(/^(\d{4})-(\d{2})-(\d{2})/);if(m2)return m2[3]+'/'+m2[2]+'/'+m2[1];
   return t;
 }
-const anAc=v=>{const t=anEnD(v).replace(/\s/g,'');return/^100\d{9}$/.test(t)?'0'+t:t};
+const anAc=v=>{const t=anEnD(v).replace(/\s/g,'').replace(/^['‘’`]+/,'');return/^100\d{9}$/.test(t)?'0'+t:t};
 const anFixY=t=>{const m=/^(\d{2}\/\d{2}\/)(\d{4})$/.exec(t||'');return m&&+m[2]>new Date().getFullYear()?m[1]+(+m[2]-100):t};
 const anNum=v=>{const x=gaNum(v);return isNaN(x)?0:anR2(x)};
 
@@ -268,9 +268,9 @@ function anErrors(send){const e=[];anDups().forEach(([,ix])=>ix.forEach(i=>e.pus
   if(send){if(!r.nm)e.push([i,'nm','খালি']);if(!r.ac)e.push([i,'ac','খালি']);if(!r.dd)e.push([i,'dd','খালি']);if(!r.cd)e.push([i,'cd','খালি']);if(!r.rcd)e.push([i,'rcd','RCD-3 / RCD-4 বাছাই করুন']);if(r.ac&&!/^0100\d{9}$/.test(r.ac))e.push([i,'ac','১৩ অঙ্কের হিসাব নং, ০১০০ দিয়ে শুরু, শুধু সংখ্যা'])}});return e}
 function anShowErr(e){AN.errOn=e.length?AN.errOn:0;document.querySelectorAll('#antab .anerr').forEach(x=>x.classList.remove('anerr'));
   e.forEach(([i,k])=>{const tr=document.querySelector(`#antab tr[data-i="${i}"]`);const td=tr&&tr.children[AN_F.findIndex(f=>f[0]===k)+(anEd()?2:1)];if(td)td.classList.add('anerr')});
-  const b=$('#anerr');if(b)b.innerHTML=e.length?`<div class="note n-warn"><b>Please correct the red cells:</b> ${e.slice(0,12).map(([i,k,m])=>'Row '+toBn(i+1)+': '+esc(AN_LBL[k])+' ('+m+')').join('; ')}${e.length>12?' ...':''}</div>`:''}
+  const b=$('#anerr');if(b)b.innerHTML=e.length?`<div class="note n-warn"><b>Please correct the red cells:</b> ${e.slice(0,12).map(([i,k,m])=>'Row '+toBn(i+1)+': '+esc(AN_LBL[k])+' ('+m+')').join('; ')}${e.length>12?' ...':''}</div>`:'';anFit()}
 function anDIn(el,ev){if(ev&&ev.inputType&&ev.inputType.startsWith('delete'))return;let v=anEnD(el.value).replace(/[.\-]/g,'/').replace(/[^\d\/]/g,'');if(/^\d{2}$/.test(v)||/^\d{1,2}\/\d{2}$/.test(v))v+='/';el.value=v.slice(0,10)}
-function anFit(){const t=$('#antab'),g=$('#anscr');if(!t||!g)return;if($('#anbody.anpage'))g.style.height=Math.max(160,innerHeight-g.getBoundingClientRect().top-10)+'px';}
+function anFit(){const t=$('#antab'),g=$('#anscr');if(!t||!g)return;const pg=$('#anbody.anpage');if(pg)pg.style.height=Math.max(300,innerHeight-pg.getBoundingClientRect().top-8)+'px';}
 if(!window.anFitOn){window.anFitOn=1;window.addEventListener('resize',()=>{if($('#antab'))anFit()})}
 async function anOpen(){
   const j=await api('/report?office='+encodeURIComponent(S.user.office)+'&leaf='+AN.leaf+'&period='+AN.p);
