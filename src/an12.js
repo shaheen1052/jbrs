@@ -13,6 +13,7 @@ const AN_F=[ // data-entry columns: key, label, kind (t text, d date, n amount, 
  ['pp','পরিশোধ: আসল','n'],['pi','পরিশোধ: সুদ','n'],['po','পরিশোধ: অন্যান্য খরচ','n'],['paid','মোট পরিশোধ','c'],['led','লেজার বকেয়া','c'],
  ['g','অনারোপিত সাধারণ সুদ','n'],['pe','অনারোপিত দণ্ড সুদ','n'],['su','ইন্টারেস্ট সাসপেন্স','n'],['cib','যাচিত CIBTCA','c'],['cof','কস্ট অব ফান্ড','n'],
  ['wo','অবলোপনকৃত?','b',40],['rcd','RCD','s',86]];
+const anF=()=>AN.sp?[['br','শাখা','r',150],...AN_F]:AN_F;   // special report: one sheet for many branches
 const anR2=v=>Math.round((+v||0)*100)/100;
 function anCalc(r){
   const n=k=>anR2(r[k]);const tot=anR2(n('p')+n('i')+n('o')),paid=anR2(n('pp')+n('pi')+n('po')),led=anR2(tot-paid),rp=anR2(n('p')-n('pp'));
@@ -33,7 +34,7 @@ const anNum=v=>{const x=gaNum(v);return isNaN(x)?0:anR2(x)};
 
 /* ---------- reading Excel files: Annexure-Ga (calculator) or Annexure-2, Unicode or Bijoy ---------- */
 async function anReadFile(f){
-  await gaLoadLib();const wb=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true});const out=[];let kind='',upz='';
+  await gaLoadLib();const wb=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true});const out=[];let kind='',upz='',brn='';
   for(const sn of wb.SheetNames){
     const a=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:'',raw:true});
     const nr=a.findIndex(r=>anEnD(r[0]).trim()==='1'&&anEnD(r[1]).trim()==='2'&&anEnD(r[2]).trim()==='3');if(nr<0)continue;
@@ -42,6 +43,7 @@ async function anReadFile(f){
     const head=a.slice(0,nr).map(r=>r.map(tx).join(' ')).join(' ');
     let k=cnt>=21&&/গ্রহীতার\s*নাম/.test(head)&&/হিসাব\s*(নং|নম্বর|নাম্বার|no)/i.test(head)&&!/(পরিশিষ্ট|পরিশিস্ট|Annexure)\s*[-–]?\s*(ঘ|Gha)/i.test(sn+' '+head)?'ga':'';
     if(!k)continue;kind=k;
+    const bm=head.match(/শাখার\s*নাম\s*[:ঃ]\s*(.+?)\s*(?:উপজেলা|জেলা|$)/);if(bm&&!brn)brn=bm[1];
     const um=head.match(/উপজেলা\s*[:ঃ]\s*([^\s|,।]+)/);if(um&&!upz)upz=um[1];
     for(const r of a.slice(nr+1)){
       const nmi=k==='ga'?1:3,nm=tx(r[nmi]);const first=tx(r[0])+' '+tx(r[1])+' '+tx(r[2]);
@@ -59,7 +61,7 @@ async function anReadFile(f){
     }
     if(k==='ga')break;   // the calculator file has one customer-wise sheet; Annexure-2 has CIBTCA + Without CIBTCA
   }
-  return{rows:out,kind,upz};
+  return{rows:out,kind,upz,brn};
 }
 
 /* ---------- report specs (one per sheet / list) ---------- */
@@ -195,6 +197,9 @@ const anSave=(blob,name)=>{const a=document.createElement('a');a.href=URL.create
 /* ---------- building the chosen report ---------- */
 const anFilt=rows=>AN.rcd==='all'?rows:rows.filter(r=>r.rcd===AN.rcd);
 function anGroups(){   // [{code,name,upz,dist,rows}] for the report in view
+  if(AN.sp){const all=(AN.cur&&AN.cur.data.rows)||[],up=(AN.cur&&AN.cur.data.upzs)||{};return[...new Set(all.map(r=>r.br).filter(Boolean))].filter(c=>AN.br==='all'||c===AN.br)
+    .map(code=>{const l=fwLoc(code);return{code,name:anBn(code),upz:up[code]||l.upz,dist:l.dist,rows:anFilt(all.filter(r=>r.br===code&&(r.nm||r.ac)).map(r=>({...r,dd:anFixY(r.dd),cd:anFixY(r.cd)})))}})
+    .filter(g=>g.rows.length).sort((a,b)=>String((office(a.code)||{}).name).localeCompare(String((office(b.code)||{}).name),'en'))}
   const src=isBranch()?[{code:S.user.office,v:AN.cur?AN.cur.data:{}}]:(AN.list||[]).filter(x=>AN.br==='all'||x.code===AN.br);
   return src.map(x=>{const l=fwLoc(x.code);return{code:x.code,draft:x.draft,name:anBn(x.code),upz:(x.v&&x.v.upz)||l.upz,dist:l.dist,rows:anFilt(((x.v&&x.v.rows)||[]).filter(r=>r.nm||r.ac).map(r=>({...r,dd:anFixY(r.dd),cd:anFixY(r.cd)})))}})
     .filter(g=>g.rows.length).sort((a,b)=>String((office(a.code)||{}).name).localeCompare(String((office(b.code)||{}).name),'en'));
@@ -231,10 +236,10 @@ function anZoom(f,e){
 }
 /* fast PDF: the browser's own print window (Save as PDF), text stays real text */
 const anFast=(html,name)=>fwFast(html,name,true);
-const anFile=ext=>{const rep=AN.rep||(isBranch()?'a2':'a1');return'JBRS_'+({a1:'Annexure-1',a2:'Annexure-2',ga:'Annexure-Ga'}[rep])+'_'+(AN.rcd==='all'?'All':AN.rcd)+'_'+(isBranch()?S.user.office:AN.br==='all'?'Sirajganj':AN.br)+ext};
+const anFile=ext=>{const rep=AN.rep||(isBranch()?'a2':'a1');return'JBRS_'+(AN.sp?'Special_':'')+({a1:'Annexure-1',a2:'Annexure-2',ga:'Annexure-Ga'}[rep])+'_'+(AN.rcd==='all'?'All':AN.rcd)+'_'+(isBranch()?S.user.office:AN.br==='all'?'Sirajganj':AN.br)+ext};
 A.anOut=async w=>{
   const tw=w==='pdf'||w==='print'?(()=>{try{return window.open('','_blank')}catch(e){return null}})():null;   // open the tab while the click still counts
-  if(isBranch()&&S.dirty)await A.anSave(true);
+  if((isBranch()||AN.sp)&&S.dirty)await A.anSave(true);
   const sp=anSpecs();if(!sp.length){if(tw)tw.close();return toast('No loans for '+(AN.rcd==='all'?'this report':AN.rcd)+' yet.')}
   if(w==='view')return anPreview(anHtml(sp));
   if(w==='fast')return anFast(anHtml(sp),anFile(''));
@@ -250,24 +255,25 @@ const anBarIn=opts=>{return`<div class="bar" style="flex-wrap:wrap;align-items:f
 
 /* ---------- branch page: Annexure-2 data entry ---------- */
 function pageAn2(l){
-  AN.rep='';AN.br='all';
+  AN.rep='';AN.br='all';AN.sp=0;AN.leaf='rc_an2';
   if(!isBranch()){S.view.after=anAreaLoad;return pageAn1Shell('Annexure-2 (all branches)')}
   S.view.after=anOpen;
   return`<div id="anbody" class="anpage muted">Loading...</div>`;
 }
-const AN_NK=['p','i','o','pp','pi','po','g','pe','su','cof'],AN_LBL=Object.fromEntries(AN_F.map(f=>[f[0],f[1]]));
+const anKids=()=>childBranches().slice().sort((a,b)=>anBn(a.code).localeCompare(anBn(b.code),'bn'));
+const AN_NK=['p','i','o','pp','pi','po','g','pe','su','cof'],AN_LBL=Object.fromEntries([['br','শাখা'],...AN_F.map(f=>[f[0],f[1]])]);
 const anBlank=()=>({nm:'',ac:'',ty:'',dd:'',cd:'',p:0,i:0,o:0,pp:0,pi:0,po:0,g:0,pe:0,su:0,cof:0,wo:0,rcd:'RCD-3'});
 const anEmpty=r=>!r.nm&&!r.ac&&!r.ty&&!r.dd&&!r.cd&&!(r._bad&&Object.keys(r._bad).length)&&AN_NK.every(k=>!(+r[k]));
 function anDOk(t){const m=/^(\d{2})\/(\d{2})\/(\d{4})$/.exec(t||'');if(!m)return false;const d=+m[1],mo=+m[2],y=+m[3];return y>=1950&&y<=2100&&mo>=1&&mo<=12&&d>=1&&d<=new Date(y,mo,0).getDate()}
 const anDKey=t=>t.split('/').reverse().join('');
 function anDups(){const m={};AN.cur.data.rows.forEach((r,i)=>{const k=String(r.ac||'').replace(/\D/g,'');if(k&&!anEmpty(r))(m[k]=m[k]||[]).push(i)});return Object.entries(m).filter(([,v])=>v.length>1)}
-function anErrors(send){const e=[];anDups().forEach(([,ix])=>ix.forEach(i=>e.push([i,'ac','একই হিসাব নং সারি '+ix.filter(j=>j!==i).map(j=>toBn(j+1)).join(', ')+' এ আছে'])));AN.cur.data.rows.forEach((r,i)=>{if(anEmpty(r))return;
+function anErrors(send){const e=[];if(AN.sp)AN.cur.data.rows.forEach((r,i)=>{if(!anEmpty(r)&&!r.br)e.push([i,'br','শাখা বাছাই করুন'])});anDups().forEach(([,ix])=>ix.forEach(i=>e.push([i,'ac','একই হিসাব নং সারি '+ix.filter(j=>j!==i).map(j=>toBn(j+1)).join(', ')+' এ আছে'])));AN.cur.data.rows.forEach((r,i)=>{if(anEmpty(r))return;
   Object.keys(r._bad||{}).forEach(k=>e.push([i,k,'সংখ্যা সঠিক নয়']));
   ['dd','cd'].forEach(k=>{if(r[k]&&!anDOk(r[k]))e.push([i,k,'তারিখ dd/mm/yyyy নয়'])});
   if(anDOk(r.dd)&&anDOk(r.cd)&&anDKey(r.cd)<anDKey(r.dd))e.push([i,'cd','বিতরণের তারিখের আগে']);
   if(send){if(!r.nm)e.push([i,'nm','খালি']);if(!r.ac)e.push([i,'ac','খালি']);if(!r.dd)e.push([i,'dd','খালি']);if(!r.cd)e.push([i,'cd','খালি']);if(!r.rcd)e.push([i,'rcd','RCD-3 / RCD-4 বাছাই করুন']);if(r.ac&&!/^0100\d{9}$/.test(r.ac))e.push([i,'ac','১৩ অঙ্কের হিসাব নং, ০১০০ দিয়ে শুরু, শুধু সংখ্যা'])}});return e}
 function anShowErr(e){AN.errOn=e.length?AN.errOn:0;document.querySelectorAll('#antab .anerr').forEach(x=>x.classList.remove('anerr'));
-  e.forEach(([i,k])=>{const tr=document.querySelector(`#antab tr[data-i="${i}"]`);const td=tr&&tr.children[AN_F.findIndex(f=>f[0]===k)+(anEd()?2:1)];if(td)td.classList.add('anerr')});
+  e.forEach(([i,k])=>{const tr=document.querySelector(`#antab tr[data-i="${i}"]`);const td=tr&&tr.children[anF().findIndex(f=>f[0]===k)+(anEd()?2:1)];if(td)td.classList.add('anerr')});
   const b=$('#anerr');if(b)b.innerHTML=e.length?`<div class="note n-warn"><b>Please correct the red cells:</b> ${e.slice(0,12).map(([i,k,m])=>'Row '+toBn(i+1)+': '+esc(AN_LBL[k])+' ('+m+')').join('; ')}${e.length>12?' ...':''}</div>`:'';anFit()}
 function anDIn(el,ev){if(ev&&ev.inputType&&ev.inputType.startsWith('delete'))return;let v=anEnD(el.value).replace(/[.\-]/g,'/').replace(/[^\d\/]/g,'');if(/^\d{2}$/.test(v)||/^\d{1,2}\/\d{2}$/.test(v))v+='/';el.value=v.slice(0,10)}
 function anFit(){const t=$('#antab'),g=$('#anscr');if(!t||!g)return;const pg=$('#anbody.anpage');if(pg)pg.style.height=Math.max(300,innerHeight-pg.getBoundingClientRect().top-8)+'px';}
@@ -283,23 +289,24 @@ const anEd=()=>AN.cur&&canEdit(AN.cur);
 function anCellIn(r,i,f){
   const [k,,t,w]=f,v=r[k],ed=anEd();
   if(t==='c'){const x=anCalc(r)[k];return`<td class="gn gc" data-c="${k}">${toBn(x.toFixed(2))}</td>`}
+  if(t==='r'){if(!ed)return`<td>${esc(v?anBn(v):'')}</td>`;return`<td><select style="width:${w}px" onchange="A.anSet(${i},'br',this.value)"><option value="">-</option>${anKids().map(k2=>`<option value="${k2.code}" ${v===k2.code?'selected':''}>${esc(anBn(k2.code))}</option>`).join('')}</select></td>`}
   if(!ed){if(t==='b')return`<td class="c">${v?'হ্যাঁ':'না'}</td>`;if(t==='n')return`<td class="gn">${toBn((+v||0).toFixed(2))}</td>`;return`<td>${esc(t==='d'||k==='ac'?toBn(v||''):v||'')}</td>`}
   if(t==='b')return`<td class="c"><input type="checkbox" ${v?'checked':''} onchange="A.anSet(${i},'${k}',this.checked?1:0)"></td>`;
   if(t==='s')return`<td><select style="width:${w}px" onchange="A.anSet(${i},'${k}',this.value)"><option value="">-</option>${['RCD-3','RCD-4'].map(x=>`<option ${v===x?'selected':''}>${x}</option>`).join('')}</select></td>`;
   const val=t==='n'?(r._bad&&r._bad[k]!==undefined?r._bad[k]:v?String(v):''):(v||'');
   return`<td><input class="gi${t==='n'?'':' gl'}" style="width:${w||92}px${t==='n'?';text-align:right':''}" value="${esc(val)}" ${t==='n'?'inputmode="decimal"':t==='d'?'placeholder="dd/mm/yyyy" maxlength="10" inputmode="numeric" oninput="anDIn(this,event)"':''} onchange="A.anSet(${i},'${k}',this.value)"></td>`;
 }
-function anTotRow(rows){const t={};AN_F.forEach(([k,,ty])=>{if(ty==='n'||ty==='c')t[k]=anR2(rows.reduce((s,r)=>s+(ty==='c'?anCalc(r)[k]:(+r[k]||0)),0))});
-  return`<tr class="gsum" id="antot">${anEd()?'<td></td>':''}<td></td><td class="glab">মোট (${toBn(rows.filter(r=>!anEmpty(r)).length)} টি ঋণ)</td>${AN_F.slice(1).map(([k,,ty])=>ty==='n'||ty==='c'?`<td class="gn">${toBn(t[k].toFixed(2))}</td>`:'<td></td>').join('')}</tr>`}
+function anTotRow(rows){const t={};anF().forEach(([k,,ty])=>{if(ty==='n'||ty==='c')t[k]=anR2(rows.reduce((s,r)=>s+(ty==='c'?anCalc(r)[k]:(+r[k]||0)),0))});
+  return`<tr class="gsum" id="antot">${anEd()?'<td></td>':''}<td></td><td class="glab">মোট (${toBn(rows.filter(r=>!anEmpty(r)).length)} টি ঋণ)</td>${anF().slice(1).map(([k,,ty])=>ty==='n'||ty==='c'?`<td class="gn">${toBn(t[k].toFixed(2))}</td>`:'<td></td>').join('')}</tr>`}
 function anRender(){
   const g0=$('#anscr'),sl=g0?g0.scrollLeft:0,st0=g0?g0.scrollTop:0;
   const c=AN.cur,ed=anEd(),rows=c.data.rows,st=c.status==='NEW'?'NONE':c.status;
   $('#anbody').outerHTML=`<div id="anbody" class="anpage">
-  <div class="anrow"><h2>Annexure-2 (পরিশিষ্ট-০২)</h2>${ed?`<input type="file" id="anfile" accept=".xls,.xlsx,.csv" multiple style="display:none" onchange="run(()=>A.anUp(this))"><button onclick="$('#anfile').click()">Upload Annexure-Ga</button><button onclick="A.anAdd()">Add borrower</button><span>উপজেলা: <input style="width:130px" value="${esc(c.data.upz||'')}" onchange="AN.cur.data.upz=this.value.trim();markDirty()"></span>`:''}</div>
-  <div class="anrow"><span class="badge b-${st}">${c.status==='NEW'?'New':STATUS_TXT[c.status]}</span><span id="saveState" class="muted small"></span>${ed?`<button onclick="run(A.anSave)">Save</button><button class="pri" onclick="run(A.anSubmit)">Send to Area Office</button><button class="dan" onclick="run(A.anDelAll)">Delete all</button>`:''}<span class="anfill"></span>${anBar([['a2','Annexure-2'],['ga','Annexure-Ga']],1)}</div>
+  <div class="anrow"><h2>${AN.sp?'Annexure-1 & 2 (Special)':'Annexure-2 (পরিশিষ্ট-০২)'}</h2>${ed?`<input type="file" id="anfile" accept=".xls,.xlsx,.csv" multiple style="display:none" onchange="run(()=>A.anUp(this))"><button onclick="$('#anfile').click()">Upload Annexure-Ga</button><button onclick="A.anAdd()">Add borrower</button><span style="${AN.sp?'display:none':''}">উপজেলা: <input style="width:130px" value="${esc(c.data.upz||'')}" onchange="AN.cur.data.upz=this.value.trim();markDirty()"></span>`:''}</div>
+  <div class="anrow">${AN.sp?'':`<span class="badge b-${st}">${c.status==='NEW'?'New':STATUS_TXT[c.status]}</span>`}<span id="saveState" class="muted small"></span>${ed?`<button onclick="run(A.anSave)">Save</button>${AN.sp?'':'<button class="pri" onclick="run(A.anSubmit)">Send to Area Office</button>'}<button class="dan" onclick="run(A.anDelAll)">Delete all</button>`:''}<span class="anfill"></span>${(AN.sp?(AN.list=[...new Set(rows.map(r=>r.br).filter(Boolean))].map(code=>({code})),anBar([['a1','Annexure-1'],['a2','Annexure-2'],['ga','Annexure-Ga']],1)):anBar([['a2','Annexure-2'],['ga','Annexure-Ga']],1))}</div>
   ${c.status==='RETURNED'?`<div class="note n-warn"><b>Returned by Area Office:</b> ${esc(c.note)}</div>`:''}${c.status==='SUBMITTED'?`<div class="note n-ok">Sent to the Area Office on ${fmtDT(c.submitted)}. Locked; the Area Office can return it if a correction is needed.</div>`:''}
-  <div id="anerr"></div><div class="gscroll anscr" id="anscr"><table class="gt" id="antab"><thead><tr>${ed?'<th></th>':''}<th>ক্র.</th>${AN_F.map(f=>`<th${f[2]==='c'?' class="gc"':''}>${esc(f[1])}</th>`).join('')}</tr></thead><tbody>
-  ${rows.map((r,i)=>`<tr data-i="${i}">${ed?`<td class="c"><a href="#" class="andel" title="Remove this row" onclick="A.anDel(${i});return false">&times;</a></td>`:''}<td class="c">${toBn(i+1)}</td>${AN_F.map(f=>anCellIn(r,i,f)).join('')}</tr>`).join('')}
+  <div id="anerr"></div><div class="gscroll anscr" id="anscr"><table class="gt" id="antab"><thead><tr>${ed?'<th></th>':''}<th>ক্র.</th>${anF().map(f=>`<th${f[2]==='c'?' class="gc"':''}>${esc(f[1])}</th>`).join('')}</tr></thead><tbody>
+  ${rows.map((r,i)=>`<tr data-i="${i}">${ed?`<td class="c"><a href="#" class="andel" title="Remove this row" onclick="A.anDel(${i});return false">&times;</a></td>`:''}<td class="c">${toBn(i+1)}</td>${anF().map(f=>anCellIn(r,i,f)).join('')}</tr>`).join('')}
   </tbody><tfoot>${anTotRow(rows)}</tfoot></table></div></div>`;
   if(ed){clearInterval(S.autoTimer);S.autoTimer=setInterval(()=>{if(S.dirty)run(()=>A.anSave(true),1)},60000)}
   document.documentElement.classList.add('annoscroll');window.scrollTo(0,0);
@@ -311,17 +318,25 @@ A.anDelAll=async()=>{
   AN.cur.data.rows=[anBlank()];AN.errOn=0;S.dirty=true;anRender();await A.anSave(true);toast('All loans deleted.');
 };
 A.anSet=(i,k,v)=>{
-  const r=AN.cur.data.rows[i],f=AN_F.find(x=>x[0]===k);if(!r||!f)return;
+  const r=AN.cur.data.rows[i],f=anF().find(x=>x[0]===k);if(!r||!f)return;
   if(f[2]==='n'){const raw=anEnD(v).trim(),x=gaNum(raw);r._bad=r._bad||{};if(raw&&(isNaN(x)||x<0))r._bad[k]=raw;else{delete r._bad[k];r[k]=raw?anR2(x):0}}else if(f[2]==='d')r[k]=anDate(v);else if(k==='ac')r[k]=anAc(v);else r[k]=typeof v==='string'?v.trim():v;
   markDirty();const tr=document.querySelector(`#antab tr[data-i="${i}"]`);
-  if(tr){const k2=anCalc(r);tr.querySelectorAll('td[data-c]').forEach(td=>td.textContent=toBn(k2[td.dataset.c].toFixed(2)));if(f[2]==='d'){const inp=tr.children[AN_F.indexOf(f)+(anEd()?2:1)].querySelector('input');if(inp)inp.value=r[k]}}
+  if(tr){const k2=anCalc(r);tr.querySelectorAll('td[data-c]').forEach(td=>td.textContent=toBn(k2[td.dataset.c].toFixed(2)));if(f[2]==='d'){const inp=tr.children[anF().indexOf(f)+(anEd()?2:1)].querySelector('input');if(inp)inp.value=r[k]}}
   const t=$('#antot');if(t)t.outerHTML=anTotRow(AN.cur.data.rows);if(AN.errOn)anShowErr(anErrors(AN.errOn===2));
 };
 A.anAdd=()=>{AN.cur.data.rows.push(anBlank());anRender();const n=document.querySelector(`#antab tr[data-i="${AN.cur.data.rows.length-1}"] input`);if(n){n.scrollIntoView({block:'nearest'});n.focus()}};
 A.anDel=i=>{const r=AN.cur.data.rows[i];if(!confirm('Remove '+(r.nm||'this row')+'?'))return;AN.cur.data.rows.splice(i,1);if(!AN.cur.data.rows.length)AN.cur.data.rows.push(anBlank());markDirty();anRender()};
+function anFindBr(name,fn){
+  const n=t=>String(t||'').replace(/শাখা|branch|[\s.,()\-।]/gi,'').toLowerCase(),q=n(name),ks=anKids();
+  let k=q&&ks.find(k=>n(anBn(k.code))===q)||q&&ks.find(k=>n(anBn(k.code)).includes(q)||q.includes(n(anBn(k.code))))||q&&ks.find(k=>n((office(k.code)||{}).name).includes(q));
+  if(k)return k.code;
+  const c=prompt('Branch of "'+fn+'"'+(name?' ("'+name+'")':'')+' was not recognised.\nType the branch code (e.g. 0666):\n\n'+ks.map(k=>k.code+' '+anBn(k.code)).join(', '));
+  const m=String(c||'').trim();return ks.some(k=>k.code===m)?m:'';
+}
 A.anUp=async inp=>{
   const fl=[...inp.files];inp.value='';if(!fl.length)return;let add=[],kinds=[];
   for(const f of fl){const x=await anReadFile(f);if(!x.kind){toast(f.name+': not an Annexure-Ga file (the column-number row 1, 2, 3 ... was not found).');continue}
+    if(AN.sp){const code=anFindBr(x.brn,f.name);if(!code){toast(f.name+': branch not chosen; file skipped.',true);continue}x.rows.forEach(r=>r.br=code);AN.cur.data.upzs=AN.cur.data.upzs||{};if(x.upz)AN.cur.data.upzs[code]=x.upz}
     x.rows.forEach(r=>r._f=f.name);add=add.concat(x.rows);kinds.push(f.name+' ('+(x.kind==='ga'?'Annexure-Ga':'Annexure-2')+', '+x.rows.length+' loans)');if(x.upz&&!AN.cur.data.upz)AN.cur.data.upz=x.upz}
   if(!add.length)return toast('No loans found in the file.');
   AN.cur.data.rows=AN.cur.data.rows.filter(r=>!anEmpty(r));const rows=AN.cur.data.rows,key=r=>String(r.ac||'').replace(/\D/g,''),idx={};rows.forEach((r,i)=>{if(key(r))idx[key(r)]=i});
@@ -345,7 +360,13 @@ A.anSubmit=async()=>{
 };
 
 /* ---------- Area Office page: Annexure-1 ---------- */
-function pageAn1(l){AN.rep='';AN.br='all';AN.incDraft=false;if(isBranch())return'<div class="card">Annexure-1 is prepared by the Area Office.</div>';S.view.after=anAreaLoad;return pageAn1Shell('Annexure-1 (পরিশিষ্ট-০১)')}
+/* special report (Area Office only): its own data, uploaded Annexure-Ga of any branches, no link with branch Annexure-2 */
+function pageAnS(l){
+  if(isBranch())return'<div class="card">This report is prepared by the Area Office.</div>';
+  AN.rep='';AN.br='all';AN.sp=1;AN.leaf='rc_an12s';S.view.after=anOpen;
+  return`<div id="anbody" class="anpage muted">Loading...</div>`;
+}
+function pageAn1(l){AN.rep='';AN.br='all';AN.incDraft=false;AN.sp=0;AN.leaf='rc_an2';if(isBranch())return'<div class="card">Annexure-1 is prepared by the Area Office.</div>';S.view.after=anAreaLoad;return pageAn1Shell('Annexure-1 (পরিশিষ্ট-০১)')}
 const pageAn1Shell=t=>`<div class="pghead"><div class="hrow"><h2>${t}</h2></div></div><div id="anbody" class="card muted">Loading...</div>`;
 async function anAreaLoad(){
   const kids=childBranches(),[m,c]=await Promise.all([api('/reports?leaf='+AN.leaf+'&period='+AN.p),api('/collect?leaf='+AN.leaf+'&period='+AN.p)]);

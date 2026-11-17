@@ -146,7 +146,7 @@ A.toggleSide=()=>{const L=$('.layout');if(!L)return;const on=L.classList.contain
 function renderApp(){
   const v=S.view,u=S.user,o=myOffice();
   const nav=(p,label)=>`<button class="nav topnav ${v.page===p?'on':''}" onclick="go({page:'${p}'})">${label}</button>`;
-  const leafBtn=l=>isBranch()&&l.id==='rc_an1'?'':`<button class="nav ${v.leaf===l.id?'on':''}" onclick="go({page:'leaf',leaf:'${l.id}'})">${esc(l.name)}${!l.tpl?'<span class="pend">pending</span>':''}</button>`;
+  const leafBtn=l=>isBranch()&&(l.id==='rc_an1'||l.id==='rc_an12s')?'':`<button class="nav ${v.leaf===l.id?'on':''}" onclick="go({page:'leaf',leaf:'${l.id}'})">${esc(l.name)}${!l.tpl?'<span class="pend">pending</span>':''}</button>`;
   const side=`${nav('dash','Home')}
    <button class="nav" id="allbtn" style="font-size:12.5px;padding:4px 14px;color:var(--muted,#667)" onclick="A.toggleAll()">&#8679; Collapse all</button>
    ${isAdmin()?nav('users','Users and passwords')+nav('audit','Activity log'):''}
@@ -235,6 +235,7 @@ function pageLeaf(){
   if(l.tpl==='fwd')return pageFwd(l);
   if(l.tpl==='an2')return pageAn2(l);
   if(l.tpl==='an1')return pageAn1(l);
+  if(l.tpl==='an12s')return pageAnS(l);
   if(l.tpl==='ldash')return pageLfDash();
   if(l.tpl==='sdash')return pageDash('Statements Dashboard');
   if(l.tpl==='lf')return isArea()?pageLfAo(l):pageLoanForms(l);

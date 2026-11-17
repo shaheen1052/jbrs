@@ -29,7 +29,7 @@ _LFM="G('Loan Application',["+",".join([
  "L('lf_reports','Loan Reports','lfrpt')"
 ])+"])"
 tree=tree.replace(_ln,"L('ln_sod','Secured overdraft'),L('ln_staff','Staff loan'),"+_LFM+"]}")
-tree=tree.replace(_old,"G('Interest waiver calculator',[L('rc_iwc','Data entry','iwc'),G('Report',[L('rc_iwga','Annexure-Ga','iwr'),L('rc_iwgha','Annexure-Gha','iwr'),L('rc_gaall','Annexure-Ga (All)','gaall'),L('rc_an2','Annexure-2','an2'),L('rc_an1','Annexure-1','an1'),L('rc_fwd','Forwarding (AO)','fwd')])])")
+tree=tree.replace(_old,"G('Interest waiver calculator',[L('rc_iwc','Data entry','iwc'),G('Report',[L('rc_iwga','Annexure-Ga','iwr'),L('rc_iwgha','Annexure-Gha','iwr'),L('rc_gaall','Annexure-Ga (All)','gaall'),L('rc_an2','Annexure-2','an2'),L('rc_an1','Annexure-1','an1'),L('rc_an12s','Annexure-1 & 2 (Special)','an12s'),L('rc_fwd','Forwarding (AO)','fwd')])])")
 _lb=tree.index('const LEAVES={};')
 tree=tree[:_lb]+"""const LEAVES={};
 function addLeaves(items,pillar,prefix){items.forEach(it=>{if(it.group)addLeaves(it.items,pillar,(prefix?prefix+' / ':'')+it.group);else LEAVES[it.id]={...it,pillar,title:prefix?prefix+' ('+it.name+')':it.name}})}
