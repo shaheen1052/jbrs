@@ -122,6 +122,20 @@ function anSpecGa(groups,area){   // Annexure-Ga in the calculator format (branc
   const W=[6,...(area?[12]:[]),22,16,10,11,11,11.5,11.5,9,12,11,11,9,12,12,11.5,12,11,12,12.5,12,10];
   return{sheet:'Annexure-Ga',label:'',ncol:22+ex,W,lines,head,body,notes:[AN_NGA],signs:area?['এরিয়া অফিস সংশ্লিষ্ট কর্মকর্তা','এরিয়া অফিস প্রধান']:['কর্মকর্তা (সংশ্লিষ্ট শাখা)','ব্যবস্থাপক (সংশ্লিষ্ট শাখা)']};
 }
+function anSpecGaBr(groups){   // Annexure-Ga summed per branch: one row for each branch
+  const FILL=FW_GAFILL,H=(t,c,o)=>anHead(t,{fill:c===undefined?'':FILL[c]||'',...o});
+  const head=[[H('ক্র.নং.',0,{rs:2}),H('শাখার নাম',1,{rs:2}),H('ঋণ সংখ্যা',2,{rs:2}),H('আসল',6,{rs:2}),H('আরোপিত দায়',7,{cs:2}),H('মোট দায়',9,{rs:2}),H('পরিশোধ',10,{cs:3}),H('মোট পরিশোধ',13,{rs:2}),H('লেজার বকেয়া',14,{rs:2}),H('আদায়যোগ্য আসল',15,{rs:2}),H('অনারোপিত সুদ',undefined,{cs:2}),H('ইন্টারেস্ট সাসপেন্স এর পরিমাণ',18,{rs:2}),H('যাচিত CIBTCA এর পরিমাণ',19,{rs:2}),H('কস্ট অব ফান্ড এর পরিমাণ',20,{rs:2}),H('অবলোপনকৃত ঋণ সংখ্যা',undefined,{rs:2})],
+    [H('সুদ',7),H('অন্যান্য খরচ',8),H('আসল',10),H('সুদ',11),H('অন্যান্য খরচ',12),H('সাধারণ সুদ'),H('দণ্ড সুদ')],
+    Array.from({length:19},(_,c)=>anHead({6:'৭=(৪+৫+৬)',10:'১১=(৮+৯+১০)',11:'১২=(৭-১১)',12:'১৩=(৪-৮)',16:'১৭=(১২-১৩-১৬)'}[c]||toBn(c+1),{fill:'#D9D9D9',num:1}))];
+  const body=[],T=new Array(19).fill(0);let sl=0;
+  groups.forEach(g=>{const v=new Array(19).fill(0);
+    g.rows.forEach(r=>{const k=anCalc(r);v[2]++;[r.p,r.i,r.o,k.tot,r.pp,r.pi,r.po,k.paid,k.led,k.rp,r.g,r.pe,r.su,k.ga20,r.cof].forEach((x,j)=>v[3+j]+=+x||0);if(r.wo)v[18]++});
+    for(let c=3;c<18;c++)v[c]=anR2(v[c]);for(let c=2;c<19;c++)T[c]=anR2(T[c]+v[c]);sl++;
+    body.push({cells:[{v:sl,t:'i'},{v:g.name,t:'x'},{v:v[2],t:'i'},...v.slice(3,18).map(x=>({v:x,t:'n'})),{v:v[18],t:'i'}]})});
+  body.push({k:'t',cells:[{v:toBn(sl)+' টি শাখার সর্বমোট',t:'x',cs:2,b:1},{v:T[2],t:'i',b:1},...T.slice(3,18).map(v=>({v,t:'n',b:1})),{v:T[18],t:'i',b:1}]});
+  const lines=[{t:'জনতা ব্যাংক পিএলসি.',sz:16,b:1},{t:'পরিশিষ্ট-গ (শাখাভিত্তিক)',al:'r',sz:12,b:1,u:1},{t:AN_SUBJ,sz:12,b:1,u:1,h:36},{t:'এরিয়া অফিসের নামঃ '+AN.area,al:'l',sz:11,b:1},{t:'(টাকার অংকে)',al:'r',sz:11}];
+  return{sheet:'Annexure-Ga Branchwise',label:'',ncol:19,W:[6,18,8,13,12,10,13,13,12,11,13,13,13,12,12,12,13,12,10],lines,head,body,notes:[AN_NGA.replace('২০ নং কলামে','১৭ নং কলামে')],signs:['এরিয়া অফিস সংশ্লিষ্ট কর্মকর্তা','এরিয়া অফিস প্রধান']};
+}
 /* place header/body cells on a grid, honouring row and column spans */
 function anPlace(rows){const occ={},out=[];rows.forEach((cells,r)=>{let c=0;cells.forEach(cell=>{while(occ[r+','+c])c++;const cs=cell.cs||1,rs=cell.rs||1;
   for(let i=0;i<rs;i++)for(let j=0;j<cs;j++)occ[(r+i)+','+(c+j)]=1;out.push({r,c,cell});c+=cs})});return out}
@@ -208,6 +222,7 @@ function anSpecs(){
   const gs=anGroups(),rep=AN.rep||(isBranch()?'a2':'a1');if(!gs.length)return[];
   const dn=gs.filter(g=>g.draft).map(g=>g.name),mark=sp=>{if(dn.length){sp.draft=1;sp.lines.splice(sp.lines.length-1,0,{t:'(খসড়া, শাখা থেকে এখনো পাঠানো হয়নি: '+dn.join(', ')+')',al:'l',sz:10})}return sp};
   if(rep==='ga')return[mark(anSpecGa(gs,!isBranch()))];
+  if(rep==='gab')return[mark(anSpecGaBr(gs))];
   return anLists(gs.flatMap(g=>g.rows)).map(([list])=>{const sub=gs.map(g=>({...g,rows:anLists(g.rows).find(x=>x[0]===list)[1]})).filter(g=>g.rows.length);
     if(!sub.length)return null;return mark(rep==='a1'?anSpec1(list,sub):anSpec2(list,null,sub))}).filter(Boolean);
 }
@@ -236,7 +251,7 @@ function anZoom(f,e){
 }
 /* fast PDF: the browser's own print window (Save as PDF), text stays real text */
 const anFast=(html,name)=>fwFast(html,name,true);
-const anFile=ext=>{const rep=AN.rep||(isBranch()?'a2':'a1');return'JBRS_'+(AN.sp?'Special_':'')+({a1:'Annexure-1',a2:'Annexure-2',ga:'Annexure-Ga'}[rep])+'_'+(AN.rcd==='all'?'All':AN.rcd)+'_'+(isBranch()?S.user.office:AN.br==='all'?'Sirajganj':AN.br)+ext};
+const anFile=ext=>{const rep=AN.rep||(isBranch()?'a2':'a1');return'JBRS_'+(AN.sp?'Special_':'')+({a1:'Annexure-1',a2:'Annexure-2',ga:'Annexure-Ga',gab:'Annexure-Ga_Branchwise'}[rep])+'_'+(AN.rcd==='all'?'All':AN.rcd)+'_'+(isBranch()?S.user.office:AN.br==='all'?'Sirajganj':AN.br)+ext};
 A.anOut=async w=>{
   const tw=w==='pdf'||w==='print'?(()=>{try{return window.open('','_blank')}catch(e){return null}})():null;   // open the tab while the click still counts
   if((isBranch()||AN.sp)&&S.dirty)await A.anSave(true);
@@ -303,7 +318,7 @@ function anRender(){
   const c=AN.cur,ed=anEd(),rows=c.data.rows,st=c.status==='NEW'?'NONE':c.status;
   $('#anbody').outerHTML=`<div id="anbody" class="anpage">
   <div class="anrow"><h2>${AN.sp?'Annexure-1 & 2 (Special)':'Annexure-2 (পরিশিষ্ট-০২)'}</h2>${ed?`<input type="file" id="anfile" accept=".xls,.xlsx,.csv" multiple style="display:none" onchange="run(()=>A.anUp(this))"><button onclick="$('#anfile').click()">Upload Annexure-Ga</button><button onclick="A.anAdd()">Add borrower</button><span style="${AN.sp?'display:none':''}">উপজেলা: <input style="width:130px" value="${esc(c.data.upz||'')}" onchange="AN.cur.data.upz=this.value.trim();markDirty()"></span>`:''}</div>
-  <div class="anrow">${AN.sp?'':`<span class="badge b-${st}">${c.status==='NEW'?'New':STATUS_TXT[c.status]}</span>`}<span id="saveState" class="muted small"></span>${ed?`<button onclick="run(A.anSave)">Save</button>${AN.sp?'':'<button class="pri" onclick="run(A.anSubmit)">Send to Area Office</button>'}<button class="dan" onclick="run(A.anDelAll)">Delete all</button>`:''}<span class="anfill"></span>${(AN.sp?(AN.list=[...new Set(rows.map(r=>r.br).filter(Boolean))].map(code=>({code})),anBar([['a1','Annexure-1'],['a2','Annexure-2'],['ga','Annexure-Ga']],1)):anBar([['a2','Annexure-2'],['ga','Annexure-Ga']],1))}</div>
+  <div class="anrow">${AN.sp?'':`<span class="badge b-${st}">${c.status==='NEW'?'New':STATUS_TXT[c.status]}</span>`}<span id="saveState" class="muted small"></span>${ed?`<button onclick="run(A.anSave)">Save</button>${AN.sp?'':'<button class="pri" onclick="run(A.anSubmit)">Send to Area Office</button>'}<button class="dan" onclick="run(A.anDelAll)">Delete all</button>`:''}<span class="anfill"></span>${(AN.sp?(AN.list=[...new Set(rows.map(r=>r.br).filter(Boolean))].map(code=>({code})),anBar([['a1','Annexure-1'],['a2','Annexure-2'],['ga','Annexure-Ga'],['gab','Annexure-Ga (branch-wise)']],1)):anBar([['a2','Annexure-2'],['ga','Annexure-Ga']],1))}</div>
   ${c.status==='RETURNED'?`<div class="note n-warn"><b>Returned by Area Office:</b> ${esc(c.note)}</div>`:''}${c.status==='SUBMITTED'?`<div class="note n-ok">Sent to the Area Office on ${fmtDT(c.submitted)}. Locked; the Area Office can return it if a correction is needed.</div>`:''}
   <div id="anerr"></div><div class="gscroll anscr" id="anscr"><table class="gt" id="antab"><thead><tr>${ed?'<th></th>':''}<th>ক্র.</th>${anF().map(f=>`<th${f[2]==='c'?' class="gc"':''}>${esc(f[1])}</th>`).join('')}</tr></thead><tbody>
   ${rows.map((r,i)=>`<tr data-i="${i}">${ed?`<td class="c"><a href="#" class="andel" title="Remove this row" onclick="A.anDel(${i});return false">&times;</a></td>`:''}<td class="c">${toBn(i+1)}</td>${anF().map(f=>anCellIn(r,i,f)).join('')}</tr>`).join('')}
@@ -381,5 +396,5 @@ async function anAreaLoad(){
     return`<tr><td>${k.code}</td><td class="bn">${esc(anBn(k.code))}</td><td><span class="badge b-${st}">${STATUS_TXT[st]}</span>${r&&st==='RETURNED'&&r.note?`<div class="muted small">${esc(r.note)}</div>`:''}</td><td class="c">${st==='SUBMITTED'||AN.incDraft?toBn(cnt(k.code)):''}</td><td class="small">${r?fmtDT(r.updated):''}</td><td>${st==='SUBMITTED'?`<button class="sm dan" onclick="A.returnPrompt('${k.code}','${AN.leaf}','${AN.p}')">Return</button>`:''}</td></tr>`}).join('');
   $('#anbody').outerHTML=`<div id="anbody" class="card"><div class="note ${n===kids.length?'n-ok':'n-info'}"><b>${n} of ${kids.length}</b> branches have sent Annexure-2. ${AN.incDraft?'<b style="color:#b26a00">Reports now also include unsent drafts.</b>':'Reports include sent (submitted) branches only.'} <button class="sm" style="margin-left:8px" onclick="AN.incDraft=!AN.incDraft;run(anAreaLoad)">${AN.incDraft?'Hide unsent drafts':'Show unsent drafts too'}</button></div>
   <details${n?'':' open'}><summary style="cursor:pointer"><b>Branch status</b></summary><div class="gscroll"><table><tr><th>Code</th><th>Branch</th><th>Status</th><th>Loans</th><th>Last saved</th><th></th></tr>${rows}</table></div></details>
-  <h3 style="margin:14px 0 4px">Report</h3>${anBar([['a1','Annexure-1 (পরিশিষ্ট-০১)'],['a2','Annexure-2 (পরিশিষ্ট-০২), branch-wise loans'],['ga','Annexure-Ga (পরিশিষ্ট-গ), all loans']])}</div>`;
+  <h3 style="margin:14px 0 4px">Report</h3>${anBar([['a1','Annexure-1 (পরিশিষ্ট-০১)'],['a2','Annexure-2 (পরিশিষ্ট-০২), branch-wise loans'],['ga','Annexure-Ga (পরিশিষ্ট-গ), all loans'],['gab','Annexure-Ga (পরিশিষ্ট-গ), branch-wise: one row per branch']])}</div>`;
 }
