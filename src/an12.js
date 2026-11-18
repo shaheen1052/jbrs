@@ -294,7 +294,7 @@ function anDIn(el,ev){if(ev&&ev.inputType&&ev.inputType.startsWith('delete'))ret
 function anFit(){const t=$('#antab'),g=$('#anscr');if(!t||!g)return;const pg=$('#anbody.anpage');if(pg)pg.style.height=Math.max(300,innerHeight-pg.getBoundingClientRect().top-8)+'px';}
 if(!window.anFitOn){window.anFitOn=1;window.addEventListener('resize',()=>{if($('#antab'))anFit()})}
 async function anOpen(){
-  const j=await api('/report?office='+encodeURIComponent(S.user.office)+'&leaf='+AN.leaf+'&period='+AN.p);
+  const j=await api('/report?office='+encodeURIComponent(AN.sp?aoCode():S.user.office)+'&leaf='+AN.leaf+'&period='+AN.p);
   const r=j.report;AN.cur={status:r?r.status:'NEW',note:r&&r.note,submitted:r&&r.submitted,data:(r&&r.data)||{rows:[]}};
   if(!AN.cur.data.rows)AN.cur.data.rows=[];if(anEd()&&!AN.cur.data.rows.length)AN.cur.data.rows.push(anBlank());
   let fx=false;if(anEd())AN.cur.data.rows.forEach(r=>{['dd','cd'].forEach(k=>{const v=anFixY(r[k]);if(v!==r[k]){r[k]=v;fx=true}});if(!r.rcd&&!anEmpty(r)){r.rcd='RCD-3';fx=true}});

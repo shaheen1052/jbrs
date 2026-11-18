@@ -33,11 +33,15 @@ async function lfDecInfo(db, office, id) {
 const IWC_STATE_KEYS = ['exit-policy-v3', 'iw-typemap', 'iw-lang'];
 const MAX_IWC = 600000;
 let ready = false;
-async function init(db) {
+async function init(db, env) {
   if (ready) return;
   await db.batch(SCHEMA.map(s => db.prepare(s)));
+  // Divisional Office, Bogura: view-and-return login 'bogura', default password 12345678 (added once, never overwritten)
+  if (!(await db.prepare("SELECT 1 AS x FROM users WHERE id='bogura'").first()) && await db.prepare("SELECT 1 AS x FROM offices WHERE code='BOGURA'").first())
+    await db.prepare("INSERT OR IGNORE INTO users(id,office,role,name,hash,is_default,active,created) VALUES('bogura','BOGURA','DIV','Divisional Office, Bogura',?,1,1,?)").bind(await hashKey(BOGURA_KEY, env), iso()).run();
   ready = true;
 }
+const BOGURA_KEY = 'sAsCXmJ75hcK2AMwt2zln3ABl8/V3r0P1WYvh/1MelU=';   // browser key for bogura / 12345678
 
 const te = new TextEncoder();
 const hex = b => [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
@@ -84,7 +88,7 @@ async function readable(db, u) {
   if (u.role === 'ADMIN') return null; // null = all
   const all = (await db.prepare('SELECT code,parent FROM offices').all()).results;
   const out = new Set([u.office]);
-  if (u.role === 'AREA') {
+  if (u.role === 'AREA' || u.role === 'DIV') {
     let grew = true;
     while (grew) { grew = false; for (const o of all) if (o.parent && out.has(o.parent) && !out.has(o.code)) { out.add(o.code); grew = true; } }
   }
@@ -95,7 +99,7 @@ async function canRead(db, u, office) { const r = await readable(db, u); return 
 async function handle(req, env) {
   const db = env.DB;
   if (!db) return err('Database not connected. Add a D1 binding named DB in the Pages project settings.', 500);
-  await init(db);
+  await init(db, env);
   const url = new URL(req.url);
   const p = url.pathname.replace(/^\/api/, '');
   const m = req.method;
@@ -155,6 +159,7 @@ async function handle(req, env) {
   // ---------- logged in ----------
   const u = await session(req, db);
   if (!u) return err('Please log in again.', 401);
+  if (u.role === 'DIV' && m !== 'GET' && !['/logout', '/password', '/report/return'].includes(p)) return err('The divisional login can view and return reports only.', 403);
 
   if (p === '/me' && m === 'GET') {
     const offices = (await db.prepare('SELECT code,name,name_bn,level,parent FROM offices').all()).results;
@@ -197,7 +202,7 @@ async function handle(req, env) {
     if (!row) return json({ report: null });
     // Higher offices see another office's figures only after that office submits.
     // TEMPORARY: the Area Office may also read unsent Annexure-2 drafts (leaf rc_an2). Remove the leaf check to cancel.
-    if (office !== u.office && row.status !== 'SUBMITTED' && u.role !== 'ADMIN' && leaf !== 'rc_an2') row.data = null;
+    if (office !== u.office && row.status !== 'SUBMITTED' && u.role !== 'ADMIN' && leaf !== 'rc_an2' && !(u.role === 'DIV' && (await db.prepare('SELECT level FROM offices WHERE code=?').bind(office).first() || {}).level === 'AREA')) row.data = null;
     else row.data = row.data ? JSON.parse(row.data) : null;
     return json({ report: row });
   }

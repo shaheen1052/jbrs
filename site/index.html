@@ -489,7 +489,7 @@ async function r3s1(p,of){
   }
   const kids=RCD3_ORDER.filter(c=>childBranches().some(k=>k.code===c));
   const v=r3add(d.list.map(x=>x.v));
-  let own=null;if(isArea()){try{const j=await api('/report?office='+encodeURIComponent(S.user.office)+'&leaf='+R3LEAF+'&period='+p);own=j.report&&j.report.data&&j.report.data.v||null}catch(e){}}
+  let own=null;if(isArea()||isDiv()){try{const j=await api('/report?office='+encodeURIComponent(aoCode())+'&leaf='+R3LEAF+'&period='+p);own=j.report&&j.report.data&&j.report.data.v||null}catch(e){}}
   const alloc=own||{};R3DATA.forEach(r=>{if(alloc[r]&&alloc[r].C!=null&&alloc[r].C!==''){v[r]=v[r]||{};v[r].C=r3n(alloc[r].C)}});
   S.r3={p,v,alloc:JSON.parse(JSON.stringify(alloc))};
   const miss=kids.filter(k=>!d.list.some(x=>x.office===k));
@@ -730,7 +730,7 @@ async function r4fetch(p,of){
   const c=await api('/collect?leaf='+K.leaf+'&period='+p);
   return{list:c.reports.filter(x=>office(x.office)&&office(x.office).level==='BR').map(x=>({office:x.office,v:(x.data&&x.data.v)||{}}))};
 }
-async function r4own(p){if(!isArea())return null;try{const j=await api('/report?office='+encodeURIComponent(S.user.office)+'&leaf='+K.leaf+'&period='+p);return j.report&&j.report.data||null}catch(e){return null}}
+async function r4own(p){if(!isArea()&&!isDiv())return null;try{const j=await api('/report?office='+encodeURIComponent(aoCode())+'&leaf='+K.leaf+'&period='+p);return j.report&&j.report.data||null}catch(e){return null}}
 function r4note(d,kids){const miss=kids.filter(k=>!d.list.some(x=>x.office===k));return`<div class="note ${miss.length?'n-warn':'n-ok'}" style="font-family:inherit"><b>${toBn(d.list.length)} / ${toBn(kids.length)}</b> branches submitted.${miss.length?' Not yet: '+miss.map(c=>esc(RCD3_SHORT[c]||c)).join(', '):''}</div>`}
 const r4btns=(file,edit)=>`<div class="bar"><button class="pri" onclick="A.r3print()">Print</button><button onclick="r3csv('${file}')">Download Excel</button>${isArea()&&edit?(S.r4edit===edit?`<button class="pri" onclick="run(()=>A.r4saveAlloc('${edit}'))">Save allocation</button><button onclick="S.r4edit=null;go({...S.view,after:null})">Cancel</button>`:`<button onclick="S.r4edit='${edit}';go({...S.view,after:null})">Edit allocation</button>`):''}</div>`;
 async function r4s2(p,of){
@@ -2440,7 +2440,7 @@ function anDIn(el,ev){if(ev&&ev.inputType&&ev.inputType.startsWith('delete'))ret
 function anFit(){const t=$('#antab'),g=$('#anscr');if(!t||!g)return;const pg=$('#anbody.anpage');if(pg)pg.style.height=Math.max(300,innerHeight-pg.getBoundingClientRect().top-8)+'px';}
 if(!window.anFitOn){window.anFitOn=1;window.addEventListener('resize',()=>{if($('#antab'))anFit()})}
 async function anOpen(){
-  const j=await api('/report?office='+encodeURIComponent(S.user.office)+'&leaf='+AN.leaf+'&period='+AN.p);
+  const j=await api('/report?office='+encodeURIComponent(AN.sp?aoCode():S.user.office)+'&leaf='+AN.leaf+'&period='+AN.p);
   const r=j.report;AN.cur={status:r?r.status:'NEW',note:r&&r.note,submitted:r&&r.submitted,data:(r&&r.data)||{rows:[]}};
   if(!AN.cur.data.rows)AN.cur.data.rows=[];if(anEd()&&!AN.cur.data.rows.length)AN.cur.data.rows.push(anBlank());
   let fx=false;if(anEd())AN.cur.data.rows.forEach(r=>{['dd','cd'].forEach(k=>{const v=anFixY(r[k]);if(v!==r[k]){r[k]=v;fx=true}});if(!r.rcd&&!anEmpty(r)){r.rcd='RCD-3';fx=true}});
@@ -2548,7 +2548,7 @@ async function anAreaLoad(){
 /* ================= JBRS ONLINE APP ================= */
 const APP={name:'JB Reporting System',short:'JBRS',version:'Online 1.0',bank:'Janata Bank PLC.',dev:'Developed by - Md. Shaheen Mahmud, Principal Officer, 024365'};
 const LEVELS={HO:'Head Office',DIV:'Divisional Office',AREA:'Area Office',BR:'Branch'};
-const ROLES={ADMIN:'Admin',AREA:'Area Office',BRANCH:'Branch'};
+const ROLES={ADMIN:'Admin',DIV:'Divisional Office',AREA:'Area Office',BRANCH:'Branch'};
 const DEFAULT_PW='12345678';
 const IDLE_MIN=30;
 const STATUS_TXT={NONE:'Not started',DRAFT:'Draft (not submitted)',RETURNED:'Returned for correction',SUBMITTED:'Submitted'};
@@ -2677,9 +2677,11 @@ A.setup=async()=>{
 };
 
 /* ---------- navigation ---------- */
-const isBranch=()=>S.user.role==='BRANCH',isArea=()=>S.user.role==='AREA',isAdmin=()=>S.user.role==='ADMIN';
+const isBranch=()=>S.user.role==='BRANCH',isArea=()=>S.user.role==='AREA',isAdmin=()=>S.user.role==='ADMIN',isDiv=()=>S.user.role==='DIV';
+// the Area Office whose work this login sees (the divisional login looks at its area office)
+const aoCode=()=>isDiv()?((S.offices.find(o=>o.level==='AREA'&&o.parent===S.user.office)||{}).code||'5038'):S.user.office;
 const myOffice=()=>office(S.user.office);
-function childBranches(){return S.offices.filter(o=>o.level==='BR'&&(isAdmin()||o.parent===S.user.office)).sort((a,b)=>a.name.localeCompare(b.name))}
+function childBranches(){return S.offices.filter(o=>o.level==='BR'&&(isAdmin()||o.parent===S.user.office||(isDiv()&&(office(o.parent)||{}).parent===S.user.office))).sort((a,b)=>a.name.localeCompare(b.name))}
 function go(v){document.documentElement.classList.remove('annoscroll');if(typeof anClose==='function')anClose();
   if(IWC.pending.size&&!confirm('Calculator changes are still being saved online. Leave anyway?'))return;
   if(S.lf&&(S.lf.dirty||S.lf.aoDirty)){lfAsk(()=>{S.lf=null;go(v)});return}
@@ -2785,7 +2787,7 @@ function pageLeaf(){
   if(l.tpl==='an12s')return pageAnS(l);
   if(l.tpl==='ldash')return pageLfDash();
   if(l.tpl==='sdash')return pageDash('Statements Dashboard');
-  if(l.tpl==='lf')return isArea()?pageLfAo(l):pageLoanForms(l);
+  if(l.tpl==='lf')return isArea()||isDiv()?pageLfAo(l):pageLoanForms(l);
   if(l.tpl==='lfrpt')return pageLfRpt(l);
   if(l.tpl==='lfao')return pageLfAo(l);
   if(l.tpl==='lfrp')return pageLfRp(l);
@@ -2863,7 +2865,7 @@ function carryFrom(o0,prevP,p){
   Object.keys(g).forEach(k=>{if(g[k]===undefined)delete g[k]});
   return{g,g9:[],same:false};
 }
-const canEdit=r=>r.status==='NEW'||r.status==='DRAFT'||r.status==='RETURNED';
+const canEdit=r=>!isDiv()&&(r.status==='NEW'||r.status==='DRAFT'||r.status==='RETURNED');
 function pageReport(){
   const r=S.cur;if(!r)return'<div class="card">Report not open.</div>';
   const l=LEAVES[r.leaf],ed=canEdit(r);

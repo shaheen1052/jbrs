@@ -1,7 +1,7 @@
 /* ================= JBRS ONLINE APP ================= */
 const APP={name:'JB Reporting System',short:'JBRS',version:'Online 1.0',bank:'Janata Bank PLC.',dev:'Developed by - Md. Shaheen Mahmud, Principal Officer, 024365'};
 const LEVELS={HO:'Head Office',DIV:'Divisional Office',AREA:'Area Office',BR:'Branch'};
-const ROLES={ADMIN:'Admin',AREA:'Area Office',BRANCH:'Branch'};
+const ROLES={ADMIN:'Admin',DIV:'Divisional Office',AREA:'Area Office',BRANCH:'Branch'};
 const DEFAULT_PW='12345678';
 const IDLE_MIN=30;
 const STATUS_TXT={NONE:'Not started',DRAFT:'Draft (not submitted)',RETURNED:'Returned for correction',SUBMITTED:'Submitted'};
@@ -130,9 +130,11 @@ A.setup=async()=>{
 };
 
 /* ---------- navigation ---------- */
-const isBranch=()=>S.user.role==='BRANCH',isArea=()=>S.user.role==='AREA',isAdmin=()=>S.user.role==='ADMIN';
+const isBranch=()=>S.user.role==='BRANCH',isArea=()=>S.user.role==='AREA',isAdmin=()=>S.user.role==='ADMIN',isDiv=()=>S.user.role==='DIV';
+// the Area Office whose work this login sees (the divisional login looks at its area office)
+const aoCode=()=>isDiv()?((S.offices.find(o=>o.level==='AREA'&&o.parent===S.user.office)||{}).code||'5038'):S.user.office;
 const myOffice=()=>office(S.user.office);
-function childBranches(){return S.offices.filter(o=>o.level==='BR'&&(isAdmin()||o.parent===S.user.office)).sort((a,b)=>a.name.localeCompare(b.name))}
+function childBranches(){return S.offices.filter(o=>o.level==='BR'&&(isAdmin()||o.parent===S.user.office||(isDiv()&&(office(o.parent)||{}).parent===S.user.office))).sort((a,b)=>a.name.localeCompare(b.name))}
 function go(v){document.documentElement.classList.remove('annoscroll');if(typeof anClose==='function')anClose();
   if(IWC.pending.size&&!confirm('Calculator changes are still being saved online. Leave anyway?'))return;
   if(S.lf&&(S.lf.dirty||S.lf.aoDirty)){lfAsk(()=>{S.lf=null;go(v)});return}
@@ -238,7 +240,7 @@ function pageLeaf(){
   if(l.tpl==='an12s')return pageAnS(l);
   if(l.tpl==='ldash')return pageLfDash();
   if(l.tpl==='sdash')return pageDash('Statements Dashboard');
-  if(l.tpl==='lf')return isArea()?pageLfAo(l):pageLoanForms(l);
+  if(l.tpl==='lf')return isArea()||isDiv()?pageLfAo(l):pageLoanForms(l);
   if(l.tpl==='lfrpt')return pageLfRpt(l);
   if(l.tpl==='lfao')return pageLfAo(l);
   if(l.tpl==='lfrp')return pageLfRp(l);
@@ -316,7 +318,7 @@ function carryFrom(o0,prevP,p){
   Object.keys(g).forEach(k=>{if(g[k]===undefined)delete g[k]});
   return{g,g9:[],same:false};
 }
-const canEdit=r=>r.status==='NEW'||r.status==='DRAFT'||r.status==='RETURNED';
+const canEdit=r=>!isDiv()&&(r.status==='NEW'||r.status==='DRAFT'||r.status==='RETURNED');
 function pageReport(){
   const r=S.cur;if(!r)return'<div class="card">Report not open.</div>';
   const l=LEAVES[r.leaf],ed=canEdit(r);

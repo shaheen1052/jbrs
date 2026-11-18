@@ -108,7 +108,7 @@ async function r3s1(p,of){
   }
   const kids=RCD3_ORDER.filter(c=>childBranches().some(k=>k.code===c));
   const v=r3add(d.list.map(x=>x.v));
-  let own=null;if(isArea()){try{const j=await api('/report?office='+encodeURIComponent(S.user.office)+'&leaf='+R3LEAF+'&period='+p);own=j.report&&j.report.data&&j.report.data.v||null}catch(e){}}
+  let own=null;if(isArea()||isDiv()){try{const j=await api('/report?office='+encodeURIComponent(aoCode())+'&leaf='+R3LEAF+'&period='+p);own=j.report&&j.report.data&&j.report.data.v||null}catch(e){}}
   const alloc=own||{};R3DATA.forEach(r=>{if(alloc[r]&&alloc[r].C!=null&&alloc[r].C!==''){v[r]=v[r]||{};v[r].C=r3n(alloc[r].C)}});
   S.r3={p,v,alloc:JSON.parse(JSON.stringify(alloc))};
   const miss=kids.filter(k=>!d.list.some(x=>x.office===k));

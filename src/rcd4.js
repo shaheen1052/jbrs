@@ -96,7 +96,7 @@ async function r4fetch(p,of){
   const c=await api('/collect?leaf='+K.leaf+'&period='+p);
   return{list:c.reports.filter(x=>office(x.office)&&office(x.office).level==='BR').map(x=>({office:x.office,v:(x.data&&x.data.v)||{}}))};
 }
-async function r4own(p){if(!isArea())return null;try{const j=await api('/report?office='+encodeURIComponent(S.user.office)+'&leaf='+K.leaf+'&period='+p);return j.report&&j.report.data||null}catch(e){return null}}
+async function r4own(p){if(!isArea()&&!isDiv())return null;try{const j=await api('/report?office='+encodeURIComponent(aoCode())+'&leaf='+K.leaf+'&period='+p);return j.report&&j.report.data||null}catch(e){return null}}
 function r4note(d,kids){const miss=kids.filter(k=>!d.list.some(x=>x.office===k));return`<div class="note ${miss.length?'n-warn':'n-ok'}" style="font-family:inherit"><b>${toBn(d.list.length)} / ${toBn(kids.length)}</b> branches submitted.${miss.length?' Not yet: '+miss.map(c=>esc(RCD3_SHORT[c]||c)).join(', '):''}</div>`}
 const r4btns=(file,edit)=>`<div class="bar"><button class="pri" onclick="A.r3print()">Print</button><button onclick="r3csv('${file}')">Download Excel</button>${isArea()&&edit?(S.r4edit===edit?`<button class="pri" onclick="run(()=>A.r4saveAlloc('${edit}'))">Save allocation</button><button onclick="S.r4edit=null;go({...S.view,after:null})">Cancel</button>`:`<button onclick="S.r4edit='${edit}';go({...S.view,after:null})">Edit allocation</button>`):''}</div>`;
 async function r4s2(p,of){
