@@ -556,6 +556,11 @@ Object.assign(LF_TYPES.cfpersonal,{ownDocs:true,docs:[
 
 /* ================= Data Entry (Area Office) ================= */
 const LF_AO=[lfT('ao_mno','সভার নম্বর (Meeting No.)'),lfD('ao_mdate','সভার তারিখ'),lfT('ao_slref','মঞ্জুরিপত্র স্মারক নম্বর'),lfD('ao_sldate','মঞ্জুরিপত্রের তারিখ'),lfN('ao_amt','মঞ্জুরিকৃত ঋণের পরিমাণ (টাকা)'),lfS('ao_months','কিস্তির সংখ্যা (মাস)',['12','24','36','48','60','72','84','96']),lfT('ao_rate','সুদের হার (% বার্ষিক)'),lfT('ao_nsref','নোটশীট স্মারক নম্বর'),lfD('ao_nsdate','নোটশীটের তারিখ'),lfA('ao_cond','মঞ্জুরির শর্তাবলি'),lfA('ao_rem','মন্তব্য/সুপারিশ')];
+const lfIsStaff=l=>{const t=lfTypeOfLeaf(l.id);return ['stfhouse','stfmoto','stfcomp','execcar'].includes(t)};
+function pageLfStaffArea(l){
+  const ao=S.view.aom==='ao',tb=(k,t)=>`<button class="${(k==='ao')===ao?'pri':''}" onclick="go({...S.view,aom:'${k}',lfid:null,lfoff:null,rst:null,after:null})">${t}</button>`;
+  return`<div class="bar" style="margin-bottom:10px">${tb('entry','Data entry (own staff application)')}${tb('ao','Approval (Area Office)')}</div>`+(ao?pageLfAo(l):pageLoanForms(l));
+}
 function pageLfAo(l){
   const type=lfTypeOfLeaf(l.id);
   S.view.after=()=>lfAoLoad(type);

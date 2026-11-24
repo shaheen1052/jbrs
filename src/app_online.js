@@ -240,7 +240,7 @@ function pageLeaf(){
   if(l.tpl==='an12s')return pageAnS(l);
   if(l.tpl==='ldash')return pageLfDash();
   if(l.tpl==='sdash')return pageDash('Statements Dashboard');
-  if(l.tpl==='lf')return isArea()||isDiv()?pageLfAo(l):pageLoanForms(l);
+  if(l.tpl==='lf')return isDiv()?pageLfAo(l):isArea()?(lfIsStaff(l)?pageLfStaffArea(l):pageLfAo(l)):pageLoanForms(l);
   if(l.tpl==='lfrpt')return pageLfRpt(l);
   if(l.tpl==='lfao')return pageLfAo(l);
   if(l.tpl==='lfrp')return pageLfRp(l);
