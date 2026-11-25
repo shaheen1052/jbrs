@@ -1340,7 +1340,7 @@ function lfDocMoto3(){
   const body=d.v_wd?`${br} হতে তিনি ইতোপূর্বে মোটর সাইকেল ঋণ ${esc(lfDate(d.v_wd))} তারিখে উত্তোলন করেছিলেন। উক্ত ঋণ উত্তোলনের তারিখ হতে ৫ (পাঁচ) বছর অতিক্রান্ত হয়েছে।`:`তিনি ইতোপূর্বে ব্যাংক হতে মোটর সাইকেল ঋণ গ্রহণ করেননি।`;
   const on=(o.nameBn||o.name||'').split(/[,،]\s*/),o1=on.length>1?esc(on[0])+',':'',o2=esc(on.length>1?on.slice(1).join(', '):on[0])+'।';
   return`<div class="r3pg"><div style="display:flex;justify-content:space-between;align-items:flex-start"><img src="${LF_LH}" alt="" style="width:106mm;height:auto;margin-left:-6mm"><div style="text-align:right;font-size:15pt;line-height:1.4;padding-top:4mm">${o1}<br>${o2}</div></div>
-  <div style="display:flex;justify-content:space-between;margin:4mm 0 0;font-size:12.5pt"><span>সূত্রঃ ${d.pc_ref?esc(d.pc_ref):'........................'}</span><span>তারিখঃ ${d.pc_date?lfDate(d.pc_date):'........................'}</span></div>
+  <div style="display:flex;justify-content:space-between;margin:4mm 0 0;font-size:12.5pt"><span>সূত্রঃ ${d.fw_ref?esc(toBn(d.fw_ref)):'........................'}</span><span>তারিখঃ ${d.fw_date?lfDate(d.fw_date):d.pc_date?lfDate(d.pc_date):'........................'}</span></div>
   <div class="gtitle" style="margin-top:12mm;text-decoration:underline;font-size:18pt">প্রত্যয়নপত্র</div>
   <p style="line-height:2;margin-top:18px;font-size:14pt">এ মর্মে প্রত্যয়ন করা যাচ্ছে যে, জনাব ${L(d.a_name)}, পিতা/স্বামী: ${L(d.a_father)}, পদবী: ${L(d.x_desig)}${d.x_bankid?', ব্যাংক আইডি: '+esc(toBn(d.x_bankid)):''}, বর্তমান কর্মস্থল: ${L(d.x_posting)}। ${body}</p>
   <p style="line-height:2;font-size:14pt">আরও প্রত্যয়ন করা যাচ্ছে যে, উপরে বর্ণিত তথ্যাদি সত্য।</p>
@@ -1358,7 +1358,7 @@ Object.assign(LF_TYPES.stfmoto,{
    {h:'৩। দায়দেনার বিবরণ',rows:[2,2,2,3],f:[lfN('cpf_a','ক) সিপিএফ/জিপিএফ ঋণ (টাকা)'),lfN('cpf_i','মাসিক নির্ধারিত কিস্তি'),lfN('hb_a','খ) গৃহ নির্মাণ ঋণ (টাকা)'),lfN('hb_i','মাসিক নির্ধারিত কিস্তি'),lfN('cmp_a','গ) কম্পিউটার অগ্রিম (টাকা)'),lfN('cmp_i','মাসিক নির্ধারিত কিস্তি'),lfN('v_a','ঘ) পূর্বে ভোগকৃত যানবাহন অগ্রিম (টাকা)'),lfD('v_sd','মঞ্জুরীর তারিখ'),lfD('v_wd','উত্তোলনের তারিখ')]},
    {h:'স্বাক্ষী (২ জন)',rows:[3,3],f:[lfT('w1_name','১. নাম'),lfT('w1_desig','পদবী'),lfT('w1_place','বর্তমান কর্মস্থল'),lfT('w2_name','২. নাম'),lfT('w2_desig','পদবী'),lfT('w2_place','বর্তমান কর্মস্থল')]},
    {h:'সংশ্লিষ্ট ঊর্ধ্বতন কর্মকর্তা/নির্বাহীর সুপারিশ',f:[lfT('r_name','নাম'),lfT('r_desig','পদবী'),lfT('r_place','কর্মস্থল'),lfD('r_date','তারিখ')]},
-   {h:'প্রত্যয়নপত্র (৫ বছর অতিক্রান্ত - ঋণ বিতরণকারী/বর্তমান পরিচালিত শাখা)',f:[lfT('pc_branch','ঋণ বিতরণকারী শাখার নাম'),lfT('pc_ref','সূত্র (স্মারক নং)'),lfD('pc_date','তারিখ')]}
+   {h:'প্রত্যয়নপত্র (৫ বছর অতিক্রান্ত) - সূত্র ও তারিখ Forwarding Letter Reference/Date থেকে',f:[lfT('pc_branch','ঋণ বিতরণকারী শাখার নাম'),lfD('pc_date','তারিখ')]}
   ],
   print:[['app','Print application (3 pages, with photo box)',lfDocMoto1],['dec','Print declaration (ঘোষণা পত্র)',lfDocMoto2],['cert','Print certificate (প্রত্যয়নপত্র)',lfDocMoto3],['chk','Print checklist',lfDocChk]]
 });
