@@ -473,7 +473,7 @@ function lfDocMoto3(){
   <div style="display:flex;justify-content:space-between;margin:16px 0 10px"><span>স্মারক নং: ......................</span><span>তারিখ: ${d.pc_date?lfDate(d.pc_date):'......................'}</span></div>
   <p style="line-height:2;margin-top:18px">এ মর্মে প্রত্যয়ন করা যাচ্ছে যে, জনাব ${L(d.a_name)}, পিতা/স্বামী: ${L(d.a_father)}, পদবী: ${L(d.x_desig)}${d.x_bankid?', ব্যাংক আইডি: '+esc(toBn(d.x_bankid)):''}, বর্তমান কর্মস্থল: ${L(d.x_posting)}। ${body}</p>
   <p style="line-height:2">আরও প্রত্যয়ন করা যাচ্ছে যে, উপরে বর্ণিত তথ্যাদি সত্য।</p>
-  <div style="height:30mm"></div><div class="p-end"><div class="p-sign" style="justify-content:flex-end"><div>${chief}</div></div></div></div>`;
+  <div style="height:30mm"></div><div class="p-end"><div class="p-sign" style="justify-content:flex-end"><div style="flex:0 0 64mm">${d.r_name?`<b>${esc(d.r_name)}</b><br>${esc(d.r_desig||chief)}${d.r_place?'<br>'+esc(d.r_place):''}`:chief}</div></div></div></div>`;
 }
 Object.assign(LF_TYPES.stfmoto,{
   pdf:[[['app'],'Download Application (PDF)','MotorCycleLoan_Application'],[['dec'],'Download Declaration (PDF)','MotorCycleLoan_Declaration'],[['cert'],'Download Certificate (PDF)','MotorCycleLoan_Certificate']],
