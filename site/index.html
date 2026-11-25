@@ -1344,7 +1344,7 @@ function lfDocMoto3(){
   <div class="gtitle" style="margin-top:12mm;text-decoration:underline;font-size:18pt">প্রত্যয়নপত্র</div>
   <p style="line-height:2;margin-top:18px;font-size:14pt">এ মর্মে প্রত্যয়ন করা যাচ্ছে যে, জনাব ${L(d.a_name)}, পিতা/স্বামী: ${L(d.a_father)}, পদবী: ${L(d.x_desig)}${d.x_bankid?', ব্যাংক আইডি: '+esc(toBn(d.x_bankid)):''}, বর্তমান কর্মস্থল: ${L(d.x_posting)}। ${body}</p>
   <p style="line-height:2;font-size:14pt">আরও প্রত্যয়ন করা যাচ্ছে যে, উপরে বর্ণিত তথ্যাদি সত্য।</p>
-  <div style="height:30mm"></div><div style="display:flex;justify-content:flex-end"><div class="sg sg2" style="width:110mm;font-size:13pt"><div>স্বাক্ষর :</div>${lfMr('নাম',d.pc_name)}${lfMr('পদবী',d.pc_desig||chief)}${lfMr('কর্মস্থল',o.nameBn||o.name||'')}<div style="padding-left:41mm">(সীলমোহরসহ)</div></div></div>`;
+  <div style="height:30mm"></div><div style="display:flex;justify-content:flex-end"><div class="sg sg2" style="width:110mm;font-size:13pt"><div>স্বাক্ষর :</div>${lfMr('নাম',d.pc_name||'.........................................')}${lfMr('পদবী',d.pc_desig||'.........................................')}${lfMr('কর্মস্থল',o.nameBn||o.name||'')}<div style="padding-left:41mm">(সীলমোহরসহ)</div></div></div>`;
 }
 Object.assign(LF_TYPES.stfmoto,{
   pdf:[[['app'],'Download Application (PDF)','MotorCycleLoan_Application'],[['dec'],'Download Declaration (PDF)','MotorCycleLoan_Declaration'],[['cert'],'Download Certificate (PDF)','MotorCycleLoan_Certificate']],
