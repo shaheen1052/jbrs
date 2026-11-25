@@ -1334,14 +1334,14 @@ function lfDocMoto2(){
   return lfFit(lfPage(inner,'8mm 11mm 0 14mm'));
 }
 function lfDocMoto3(){
-  const d=S.lf.d,wd=d.v_wd?lfDate(d.v_wd):'';
-  const inner=`<div style="text-align:center;margin-top:6mm">জনতা ব্যাংক পিএলসি.<br>${lfBrn()}</div>
-  <div style="display:flex;justify-content:space-between;margin-top:10mm"><span>স্মারক নং ${lfFf('',50)}</span><span>তারিখ : ${lfFf(d.pc_date?lfDate(d.pc_date):'',34)}</span></div>
-  <div class="u" style="text-align:center;font-size:15pt;margin-top:12mm">প্রত্যয়নপত্র</div>
-  <p class="kz" style="margin-top:9mm;text-align:justify;line-height:9mm">এ মর্মে প্রত্যয়ন করা যাচ্ছে যে, জনাব ${lfFf(d.a_name,70)}, পিতা/স্বামী ${lfFf(d.a_father,50)}, পদবী ${lfFf(d.x_desig,40)}, ব্যাংক আইডি ${lfFf(d.x_bankid?toBn(d.x_bankid):'',30)}, বর্তমান কর্মস্থল ${lfFf(d.x_posting,60)} ${d.v_wd?`এর অনুকূলে ${lfFf(d.pc_branch||'',50)} শাখা হতে ইতোপূর্বে ভোগকৃত মোটর সাইকেল ঋণ ${lfFf(wd,28)} তারিখে উত্তোলন করা হয়েছিল। উক্ত ঋণ উত্তোলনের তারিখ হতে ৫ (পাঁচ) বছর অতিক্রান্ত হয়েছে।`:`এই শাখা হতে ইতোপূর্বে মোটর সাইকেল ঋণ গ্রহণ করেননি।`}</p>
-  <p class="kz" style="margin-top:6mm">আরও প্রত্যয়ন করা যাচ্ছে যে, উপরে বর্ণিত তথ্যাদি সত্য।</p>
-  <div style="margin:26mm 0 0 100mm;line-height:7mm"><div>স্বাক্ষর :</div>${lfLn('নাম :',d.pc_name)}${lfLn('পদবী :',d.pc_desig)}<div style="padding-left:6mm">(সীলমোহরসহ)</div></div>`;
-  return lfFit(lfPage(inner,'10mm 14mm 0 16mm'));
+  const f=S.lf,d=f.d,o=office(f.office)||{},chief=(f.office==='5038'||/এরিয়া|Area/i.test(o.nameBn||o.name||''))?'অফিস প্রধান':'ব্যবস্থাপক',br=d.pc_branch?esc(d.pc_branch)+' শাখা':'এই শাখা';
+  const L=(x,y)=>x?esc(y?y+x:x):'................';
+  const body=d.v_wd?`${br} হতে তিনি ইতোপূর্বে মোটর সাইকেল ঋণ ${esc(lfDate(d.v_wd))} তারিখে উত্তোলন করেছিলেন। উক্ত ঋণ উত্তোলনের তারিখ হতে ৫ (পাঁচ) বছর অতিক্রান্ত হয়েছে।`:`তিনি ইতোপূর্বে ব্যাংক হতে মোটর সাইকেল ঋণ গ্রহণ করেননি।`;
+  return`<div class="r3pg">${lfHead()}<div class="gtitle" style="margin-top:14px">প্রত্যয়নপত্র</div>
+  <div style="display:flex;justify-content:space-between;margin:16px 0 10px"><span>স্মারক নং: ......................</span><span>তারিখ: ${d.pc_date?lfDate(d.pc_date):'......................'}</span></div>
+  <p style="line-height:2;margin-top:18px">এ মর্মে প্রত্যয়ন করা যাচ্ছে যে, জনাব ${L(d.a_name)}, পিতা/স্বামী: ${L(d.a_father)}, পদবী: ${L(d.x_desig)}${d.x_bankid?', ব্যাংক আইডি: '+esc(toBn(d.x_bankid)):''}, বর্তমান কর্মস্থল: ${L(d.x_posting)}। ${body}</p>
+  <p style="line-height:2">আরও প্রত্যয়ন করা যাচ্ছে যে, উপরে বর্ণিত তথ্যাদি সত্য।</p>
+  <div style="height:30mm"></div><div class="p-end"><div class="p-sign" style="justify-content:flex-end"><div>${chief}</div></div></div></div>`;
 }
 Object.assign(LF_TYPES.stfmoto,{
   pdf:[[['app'],'Download Application (PDF)','MotorCycleLoan_Application'],[['dec'],'Download Declaration (PDF)','MotorCycleLoan_Declaration'],[['cert'],'Download Certificate (PDF)','MotorCycleLoan_Certificate']],
@@ -1355,7 +1355,7 @@ Object.assign(LF_TYPES.stfmoto,{
    {h:'৩। দায়দেনার বিবরণ',rows:[2,2,2,3],f:[lfN('cpf_a','ক) সিপিএফ/জিপিএফ ঋণ (টাকা)'),lfN('cpf_i','মাসিক নির্ধারিত কিস্তি'),lfN('hb_a','খ) গৃহ নির্মাণ ঋণ (টাকা)'),lfN('hb_i','মাসিক নির্ধারিত কিস্তি'),lfN('cmp_a','গ) কম্পিউটার অগ্রিম (টাকা)'),lfN('cmp_i','মাসিক নির্ধারিত কিস্তি'),lfN('v_a','ঘ) পূর্বে ভোগকৃত যানবাহন অগ্রিম (টাকা)'),lfD('v_sd','মঞ্জুরীর তারিখ'),lfD('v_wd','উত্তোলনের তারিখ')]},
    {h:'স্বাক্ষী (২ জন)',rows:[3,3],f:[lfT('w1_name','১. নাম'),lfT('w1_desig','পদবী'),lfT('w1_place','বর্তমান কর্মস্থল'),lfT('w2_name','২. নাম'),lfT('w2_desig','পদবী'),lfT('w2_place','বর্তমান কর্মস্থল')]},
    {h:'সংশ্লিষ্ট ঊর্ধ্বতন কর্মকর্তা/নির্বাহীর সুপারিশ',f:[lfT('r_name','নাম'),lfT('r_desig','পদবী'),lfT('r_place','কর্মস্থল'),lfD('r_date','তারিখ')]},
-   {h:'প্রত্যয়নপত্র (৫ বছর অতিক্রান্ত - ঋণ বিতরণকারী/বর্তমান পরিচালিত শাখা)',f:[lfT('pc_branch','ঋণ বিতরণকারী শাখার নাম'),lfT('pc_name','প্রত্যয়নকারীর নাম'),lfT('pc_desig','পদবী'),lfD('pc_date','তারিখ')]}
+   {h:'প্রত্যয়নপত্র (৫ বছর অতিক্রান্ত - ঋণ বিতরণকারী/বর্তমান পরিচালিত শাখা)',f:[lfT('pc_branch','ঋণ বিতরণকারী শাখার নাম'),lfD('pc_date','তারিখ')]}
   ],
   print:[['app','Print application (3 pages, with photo box)',lfDocMoto1],['dec','Print declaration (ঘোষণা পত্র)',lfDocMoto2],['cert','Print certificate (প্রত্যয়নপত্র)',lfDocMoto3],['chk','Print checklist',lfDocChk]]
 });
