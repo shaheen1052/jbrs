@@ -178,7 +178,8 @@ function lfRender(){
   <div class="card bn" style="margin-top:12px"><button onclick="A.lfCkTog()" id="ckbtn">Open Check List</button><div id="lfck"></div></div>
   <div class="bar" style="margin-top:12px">${ro?'':`<button class="pri" onclick="run(A.lfSave)">Save</button>`}${!ro&&t.sample?`<button onclick="A.lfSample()">Load test data (Word file)</button>`:''}
   ${!ro&&!f.isNew?`<button class="dan" onclick="if(confirm('Delete this application?'))run(A.lfDel)">Delete</button>`:''}<button onclick="A.lfBack()">Back to list</button></div>
-  <p class="muted small">Printing and downloads are under Report in the menu.</p></div>`;
+  <div class="bar" style="margin-top:8px">${(t.pdf||[[lfPrintList(t).map(x=>x[0]),'Download all documents (PDF)',(t.en||'Loan').replace(/[^A-Za-z]+/g,'')+'_All']]).map(x=>`<button onclick='A.lfPdf(${JSON.stringify(x[0])},${JSON.stringify(x[2])})'>${x[1]}</button>`).join('')}</div>
+  <p class="muted small">Printing is under Report in the menu.</p></div>`;
   const hs=$('#hdrsave');if(hs)hs.innerHTML=ro?'':`<button class="pri" onclick="run(A.lfSave)" style="height:28px;padding:2px 18px;font-size:13px">Save</button>`;
   f.ckOpen=false;
 }
@@ -451,7 +452,7 @@ function lfDocMoto1(){
   <div class="kh" style="margin-top:3mm"><span class="u">সংশ্লিষ্ট ঊর্ধ্বতন কর্মকর্তা/নির্বাহীর সুপারিশ ঃ</span></div>
   <p class="kp" style="line-height:6.2mm">এই মর্মে প্রত্যয়ন করা যাচ্ছে যে, আবেদনকারী আমার সম্মুখে আবেদন পত্রে স্বাক্ষর করেছেন। ঋণ প্রস্তাবে দাখিলকৃত কাগজপত্র ও সন্নিবেশিত তথ্যাবলী সত্য ও নির্ভুল। আরও প্রত্যয়ন করা যাচ্ছে যে, আমার জানামতে ঋণ প্রার্থীর বিরুদ্ধে সাময়িকভাবে বরখাস্তের আদেশ, আদালতে বা বিভাগীয় শৃংখলাজনিত কারনে দন্ড প্রাপ্ত নন অথবা দন্ড প্রাপ্ত হলেও দন্ডের মেয়াদ বলবৎ নাই, শৃংখলাজনিত কোন অভিযোগ বা মামলা অনিষ্পন্ন অবস্থায় নাই অথবা ব্যাংকের কোন পাওনা আদায়ের জন্য দায়ী রাখা হয়নি।</p>
   <p class="kp" style="margin-top:1mm">প্রার্থীত ঋণ নিয়মানুযায়ী মঞ্জুরীর জন্য সুপারিশ করা হ'ল।</p>
-  <div style="display:flex;justify-content:space-between;margin-top:5mm"><div style="padding-top:2mm">তারিখ ঃ ${lfFf(d.r_date?lfDate(d.r_date):'',30)}</div><div style="width:92mm;line-height:6.2mm"><div>স্বাক্ষর ঃ</div>${lfLn('নাম ঃ',d.r_name)}${lfLn('পদবী ঃ',[d.r_desig,d.r_place].filter(Boolean).join(', '))}<div style="padding-left:16mm">(সীলমোহরসহ)</div></div></div>
+  <div style="display:flex;justify-content:space-between;margin-top:5mm"><div style="padding-top:2mm">তারিখ ঃ ${lfFf(d.r_date?lfDate(d.r_date):'',30)}</div><div class="sg sg2" style="width:100mm"><div>স্বাক্ষর ঃ</div>${lfMr('নাম',d.r_name)}${lfMr('পদবী',d.r_desig)}${lfMr('কর্মস্থল',d.r_place)}<div style="padding-left:41mm">(সীলমোহরসহ)</div></div></div>
   <div style="margin-top:3mm"><span class="u">নিম্নোক্ত কাগজপত্রাদি সংযুক্ত করতে হবে:</span></div>
   <div style="line-height:5.7mm">${att.map((x,i)=>`<div>${toBn(i+1)}) ${x}</div>`).join('')}</div>`;
   return lfFit(lfPg(p1,'চলমান পাতা-২')+lfPg(p2,'চলমান পাতা-৩')+lfPg(p3,''));
