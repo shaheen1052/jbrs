@@ -155,13 +155,13 @@ const lfDmyToIso=v=>{const m=/^(\d{2})\/(\d{2})\/(\d{4})$/.exec(v||'');if(!m)ret
 A.lfDt=(el,fn)=>{const d=el.value.replace(/\D/g,'').slice(0,8);el.value=d.length>4?d.slice(0,2)+'/'+d.slice(2,4)+'/'+d.slice(4):d.length>2?d.slice(0,2)+'/'+d.slice(2):d;el.style.borderColor=el.value.length===10&&!lfDmyToIso(el.value)?'#b42318':'';if(fn)fn(el)};
 function lfField(f,val,ro,fn){fn=fn||'A.lfset';
   const v=esc(val??'');const dis=ro?' disabled':'';
-  const w=f.t==='area'?'fc ad':f.w==='full'?'fc w':'fc';
+  const w=f.t==='area'?'fc ad':f.w==='full'?'fc w':f.w==='w2'?'fc w2':'fc';
   let inp;
   if(f.t==='area')inp=`<textarea rows="2" data-k="${f.k}" oninput="${fn}(this)"${dis}>${v}</textarea>`;
   else if(f.t==='sel')inp=`<select data-k="${f.k}" onchange="${fn}(this)"${dis}><option value=""></option>${f.o.map(o=>`<option ${o===val?'selected':''}>${esc(o)}</option>`).join('')}</select>`;
   else if(f.t==='date')inp=`<input type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/yyyy" data-dt="1" data-k="${f.k}" value="${esc(lfIsoToDmy(val))}" oninput="A.lfDt(this,${fn})"${dis}>`;
   else inp=`<input type="text" ${f.t==='num'?'inputmode="decimal"':''} data-k="${f.k}" value="${v}" oninput="${fn}(this)"${dis}>`;
-  return `<div class="${w}"><label>${esc(f.l)}</label>${inp}${f.t==='num'&&/টাকা/.test(f.l)&&val?`<div class="muted small bn">${esc(lfTaka(val))}</div>`:''}</div>`;
+  return `<div class="${w}"><label>${esc(f.l)}</label>${inp}${f.t==='num'&&/টাকা/.test(f.l)?`<div class="muted small bn" style="min-height:17px">${val?esc(lfTaka(val)):''}</div>`:''}</div>`;
 }
 const lfDocs=t=>t.ownDocs?t.docs:[...LF_COMMON_DOCS,...t.docs];
 const lfPrintList=t=>t.print||[['app','Print application',lfDocApp],['chk','Print checklist',lfDocChk],['gua',"Print guarantor's undertaking",lfDocGua],['dpn','Print demand promissory note',lfDocDpn]];
@@ -173,7 +173,7 @@ function lfRender(){
   box.outerHTML=`<div id="lfbox" class="lfform">${ro?`<div class="note n-info">${f.flow&&f.flow.status==='declined'?'This application was declined by the Area Office and cannot be changed.':'View only: this application belongs to another office.'}</div>`:''}
   ${lfDecHtml(f.decs)}
   <div class="card bn" id="lfsa" style="margin-top:12px">${lfSaHtml(f.d,ro)}</div>
-  ${lfSections(f.type).map(s=>`<div class="card bn" style="margin-top:12px"><h3 style="margin-top:0">${s.h}</h3>${s.rows?(()=>{let i=0;return s.rows.map(n=>{const g=s.f.slice(i,i+n);i+=n;return`<div class="row" style="flex-wrap:nowrap;margin-bottom:6px">${g.map(x=>lfField(x,f.d[x.k],ro)).join('')}</div>`}).join('')})():`<div class="row" style="flex-wrap:wrap">${s.f.map(x=>lfField(x,f.d[x.k],ro)).join('')}</div>`}</div>`).join('')}
+  ${lfSections(f.type).map(s=>`<div class="card bn" style="margin-top:12px"><h3 style="margin-top:0">${s.h}</h3>${s.rows?(()=>{let i=0;return s.rows.map(n=>{const g=s.f.slice(i,i+n);i+=n;return`<div class="row" style="flex-wrap:nowrap;align-items:flex-start;margin-bottom:14px">${g.map(x=>lfField(x,f.d[x.k],ro)).join('')}</div>`}).join('')})():`<div class="row" style="flex-wrap:wrap">${s.f.map(x=>lfField(x,f.d[x.k],ro)).join('')}</div>`}</div>`).join('')}
   ${t.calc?`<div class="card bn" style="margin-top:12px"><h3 style="margin-top:0">স্বয়ংক্রিয় হিসাব ও নীতিমালা যাচাই ${t.calcH||'(আরসিডি সার্কুলার ১১৯/২৫, ১২২/২৬, ১২৬/২৬)'}</h3><div id="lfcalc">${t.calc(f.d)}</div></div>`:''}
   <div class="card bn" style="margin-top:12px"><button onclick="A.lfCkTog()" id="ckbtn">Open Check List</button><div id="lfck"></div></div>
   <div class="bar" style="margin-top:12px">${ro?'':`<button class="pri" onclick="run(A.lfSave)">Save</button>`}${!ro&&t.sample?`<button onclick="A.lfSample()">Load test data (Word file)</button>`:''}
@@ -481,11 +481,11 @@ Object.assign(LF_TYPES.stfmoto,{
   docs:['ঋণের আবেদনপত্র (৩ পাতা, আবেদনকারীর পাসপোর্ট সাইজের সত্যায়িত ছবিসহ)','ঘোষণা পত্র','চাকুরী স্থায়ীকরণ পত্রের সত্যায়িত ফটোকপি','প্রধান কার্যালয় কর্তৃক নির্ধারিত সর্বশেষ বেতন নির্ধারণী পত্র','জন্ম তারিখ নির্ধারণের ক্ষেত্রে এসএসসি/শিক্ষাগত যোগ্যতার সনদপত্র','বর্তমান স্থিতিসহ জিপিএফ/সিপিএফ এর বিবরণী','মোটর কার লোন/মোটর সাইকেল ঋণ/বাই-সাইকেল ঋণ/জিপিএফ/সিপিএফ/কম্পিউটার ঋণ/অন্যান্য ঋণ (যদি থাকে) এর বিবরণী','সর্বশেষ বেতন বিবরণী','BRTA কর্তৃক প্রদত্ত বৈধ ড্রাইভিং লাইসেন্সের সত্যায়িত ফটোকপি','তিনটি প্রতিষ্ঠানের দরপত্র/কোটেশন','পূর্বের মোটর সাইকেল ঋণ উত্তোলনের ৫ বছর অতিক্রান্ত হওয়ার প্রত্যয়নপত্র (ঋণ বিতরণকারী/বর্তমান পরিচালিত শাখা কর্তৃক, প্রযোজ্য হলে)','সংশ্লিষ্ট ঊর্ধ্বতন কর্মকর্তা/নির্বাহীর সুপারিশ'],
   sections:[
    {h:'১। সাধারণ তথ্য',f:[lfT('a_name','ক. নাম'),lfT('a_acct','বেতন হিসাব নম্বর'),lfT('a_father','খ. পিতা/স্বামীর নাম'),lfT('x_desig','গ. পদবী'),lfT('x_bankid','ব্যাংক আইডি'),lfT('x_fileno','ব্যক্তিগত নথি নং'),lfT('x_posting','ঘ. বর্তমান কর্মস্থল'),lfD('x_join','ঙ. চাকুরীতে যোগদানের তারিখ'),lfD('x_perm','চ. চাকুরী স্থায়ীকরণের তারিখ'),lfD('a_dob','ছ. জন্ম তারিখ'),lfD('x_ret','জ. পি.আর.এল/অবসর গ্রহণের তারিখ'),lfT('a_mobile','ঝ. মোবাইল নং'),lfT('x_scale','বেতন স্কেল'),lfN('x_basic','মূল বেতন'),lfN('x_gross','মোট বেতন (বেতন বিবরণীসহ)'),lfN('x_takehome','টেকহোম পে'),lfT('x_gpf','জিপিএফ/সিপিএফ নং (ঘোষণা পত্র)'),lfS('x_brta','BRTA বৈধ ড্রাইভিং লাইসেন্স',['','আছে','নেই']),lfT('x_dl','ড্রাইভিং লাইসেন্স নম্বর')]},
-   {h:'২। ক্রয়ের জন্য প্রস্তাবিত মোটর সাইকেল',rows:[4,3,3,3,3],f:[lfT('m_name','যন্ত্রের নাম'),lfT('m_model','মডেল নম্বর'),lfT('m_country','প্রস্তুতকারক দেশের নাম'),lfT('m_vendor','সরবরাহকারী প্রতিষ্ঠানের নাম'),
-    ...[1,2,3].flatMap(i=>[lfT('q'+i+'_n','দরপত্র '+toBn(i)+': প্রতিষ্ঠানের নাম'),lfT('q'+i+'_a','ঠিকানা'),lfN('q'+i+'_r','উদ্ধৃত দর (টাকা)')]),
+   {h:'২। ক্রয়ের জন্য প্রস্তাবিত মোটর সাইকেল',rows:[4,3,3,3,3],f:[lfT('m_name','যন্ত্রের নাম'),lfT('m_model','মডেল নম্বর'),lfT('m_country','প্রস্তুতকারক দেশের নাম'),{...lfT('m_vendor','সরবরাহকারী প্রতিষ্ঠানের নাম'),w:'w2'},
+    ...[1,2,3].flatMap(i=>[{...lfT('q'+i+'_n','দরপত্র '+toBn(i)+': প্রতিষ্ঠানের নাম'),w:'w2'},{...lfT('q'+i+'_a','ঠিকানা'),w:'w2'},lfN('q'+i+'_r','উদ্ধৃত দর (টাকা)')]),
     lfS('m_cond','মোটর সাইকেলের ধরন',['নতুন','রিকন্ডিশন']),lfN('m_low','দরপত্র অনুযায়ী সর্বনিম্ন মূল্য (টাকা)'),lfN('l_amt','আবেদনকৃত ঋণের পরিমাণ (টাকা)')]},
-   {h:'৩। দায়দেনার বিবরণ',f:[lfN('cpf_a','ক) সিপিএফ/জিপিএফ ঋণ (টাকা)'),lfN('cpf_i','মাসিক নির্ধারিত কিস্তি'),lfN('hb_a','খ) গৃহ নির্মাণ ঋণ (টাকা)'),lfN('hb_i','মাসিক নির্ধারিত কিস্তি'),lfN('cmp_a','গ) কম্পিউটার অগ্রিম (টাকা)'),lfN('cmp_i','মাসিক নির্ধারিত কিস্তি'),lfN('v_a','ঘ) পূর্বে ভোগকৃত যানবাহন অগ্রিম (টাকা)'),lfD('v_sd','মঞ্জুরীর তারিখ'),lfD('v_wd','উত্তোলনের তারিখ')]},
-   {h:'স্বাক্ষী (২ জন)',f:[lfT('w1_name','১. নাম'),lfT('w1_desig','পদবী'),lfT('w1_place','বর্তমান কর্মস্থল'),lfT('w2_name','২. নাম'),lfT('w2_desig','পদবী'),lfT('w2_place','বর্তমান কর্মস্থল')]},
+   {h:'৩। দায়দেনার বিবরণ',rows:[2,2,2,3],f:[lfN('cpf_a','ক) সিপিএফ/জিপিএফ ঋণ (টাকা)'),lfN('cpf_i','মাসিক নির্ধারিত কিস্তি'),lfN('hb_a','খ) গৃহ নির্মাণ ঋণ (টাকা)'),lfN('hb_i','মাসিক নির্ধারিত কিস্তি'),lfN('cmp_a','গ) কম্পিউটার অগ্রিম (টাকা)'),lfN('cmp_i','মাসিক নির্ধারিত কিস্তি'),lfN('v_a','ঘ) পূর্বে ভোগকৃত যানবাহন অগ্রিম (টাকা)'),lfD('v_sd','মঞ্জুরীর তারিখ'),lfD('v_wd','উত্তোলনের তারিখ')]},
+   {h:'স্বাক্ষী (২ জন)',rows:[3,3],f:[lfT('w1_name','১. নাম'),lfT('w1_desig','পদবী'),lfT('w1_place','বর্তমান কর্মস্থল'),lfT('w2_name','২. নাম'),lfT('w2_desig','পদবী'),lfT('w2_place','বর্তমান কর্মস্থল')]},
    {h:'সংশ্লিষ্ট ঊর্ধ্বতন কর্মকর্তা/নির্বাহীর সুপারিশ',f:[lfT('r_name','নাম'),lfT('r_desig','পদবী'),lfT('r_place','কর্মস্থল'),lfD('r_date','তারিখ')]},
    {h:'প্রত্যয়নপত্র (৫ বছর অতিক্রান্ত - ঋণ বিতরণকারী/বর্তমান পরিচালিত শাখা)',f:[lfT('pc_branch','ঋণ বিতরণকারী শাখার নাম'),lfT('pc_name','প্রত্যয়নকারীর নাম'),lfT('pc_desig','পদবী'),lfD('pc_date','তারিখ')]}
   ],
