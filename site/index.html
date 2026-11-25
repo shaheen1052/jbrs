@@ -1274,10 +1274,10 @@ const lfMotoSample={a_name:'খালিদ বিন আজাদ',a_father:'�
  m_name:'YAMAHA R15 V4',m_model:'R15 V4, SILVER',m_country:'ভারত',m_vendor:'আরএস মটরস',
  q1_n:'আরএস মটরস',q1_a:'এসবি ফজলুল হক রোড, সিরাজগঞ্জ',q1_r:'500000',q2_n:'আল-আরাফা মটরস',q2_a:'বেড়া হাসপাতাল রোড, বেড়া, পাবনা',q2_r:'530000',q3_n:'তামিম মটরস অ্যান্ড বাইক সেন্টার',q3_a:'শেরপুর, বগুড়া',q3_r:'535000',m_cond:'নতুন',m_low:'500000',l_amt:'500000',
  cmp_a:'57350.62',cmp_i:'1370',
- r_name:'মো: হুমায়ন কবির',r_desig:'সহকারী মহাব্যবস্থাপক',r_place:'সিরাজগঞ্জ কর্পোরেট শাখা, সিরাজগঞ্জ'};
+ r_name:'মোঃ হুমায়ন কবির',r_desig:'সহকারী মহাব্যবস্থাপক',r_place:'সিরাজগঞ্জ কর্পোরেট শাখা, সিরাজগঞ্জ'};
 A.lfSample=()=>{const f=S.lf;if(f.d.a_name&&!confirm('Replace the entered data with the test data from the Word file?'))return;Object.assign(f.d,lfMotoSample);f.dirty=true;lfRender()};
 const lfMr=(l,v,l2,v2,c3)=>`<div class="mr${l2!==undefined?(c3?' mr2 mr3':' mr2'):''}"><span>${l}</span><b>:</b><span class="mv">${esc(v||'')}</span>${l2!==undefined?`<span>${l2}</span><b>:</b><span class="mv">${esc(v2||'')}</span>`:''}</div>`;
-const lfPg=(inner,n)=>lfPage(`<div class="ka">${inner}</div><div class="u" style="position:absolute;left:0;right:0;bottom:-2mm;text-align:center">${n}</div>`,'7mm 11mm 0 14mm');
+const lfPg=(inner,n)=>lfPage(`<div class="ka">${inner}</div><div class="u" style="position:absolute;left:0;right:0;bottom:9mm;text-align:center">${n}</div>`,'7mm 11mm 0 14mm');
 const lfSig=d=>`<div class="sg" style="margin-left:92mm"><div style="margin-bottom:3mm">আবেদনকারীর স্বাক্ষর :</div>${lfMr('নাম',d.a_name)}${lfMr('পদবী',d.x_desig)}${lfMr('বর্তমান কর্মস্থল',d.x_posting)}</div>`;
 const lfWit=(d,k)=>`<div style="margin-top:2mm;line-height:6mm"><div>${toBn(k)}. স্বাক্ষর</div><div class="sg" style="padding-left:4mm;width:120mm">${[['নাম','_name'],['পদবী','_desig'],['বর্তমান কর্মস্থল','_place']].map(([l,s])=>lfMr(l,d['w'+k+s])).join('')}</div></div>`;
 function lfDocMoto1(){
@@ -1312,7 +1312,7 @@ function lfDocMoto1(){
   ${[['ক) সিপিএফ/জিপিএফ ঋণ',d.cpf_a,'ক) মাসিক নির্ধারিত কিস্তি',lfNoi(d.cpf_i)],['খ) গৃহ নির্মাণ ঋণ',d.hb_a,'খ) মাসিক নির্ধারিত কিস্তি',lfNoi(d.hb_i)],['গ) কম্পিউটার অগ্রিম',d.cmp_a,'গ) মাসিক নির্ধারিত কিস্তি',lfNoi(d.cmp_i)]].map(r=>`<tr><td style="width:44mm;padding:2mm 0">${r[0]}</td><td style="width:44mm">: ${lfNoi(r[1])}</td><td style="width:50mm">${r[2]}</td><td>: ${r[3]}</td></tr>`).join('')}
   <tr><td style="padding:2mm 0;vertical-align:top">ঘ) পূর্বে ভোগকৃত যানবাহন অগ্রিম</td><td style="vertical-align:top">: ${lfNoi(d.v_a)}</td><td style="vertical-align:top">ঘ) মঞ্জুরীর তারিখ<br>উত্তোলনের তারিখ</td><td style="vertical-align:top">: ${d.v_sd?lfDate(d.v_sd):"নাই"}<br>: ${d.v_wd?lfDate(d.v_wd):'নাই'}</td></tr></table>
   <p class="kp" style="margin-top:8mm">(ভোগকৃত মোটর সাইকেল ঋণ উত্তোলনের তারিখ হতে ৫ বছর অতিক্রান্ত হয়েছে কিনা এ মর্মে ঋণ বিতরণকারী শাখা/ঋণের বর্তমান পরিচালিত শাখার প্রত্যয়নপত্র সংযুক্ত করতে হবে।)</p>`;
-  const att=['চাকুরী স্থায়ীকরণ পত্রের সত্যায়িত ফটোকপি।','প্রধান কার্যালয় কর্তৃক নির্ধারিত সর্বশেষ বেতন নির্ধারণী পত্র।','জন্ম তারিখ নির্ধারণের ক্ষেত্রে এসএসসি/শিক্ষাগত যোগ্যতার সনদপত্র।','বর্তমান স্থিতিসহ জিপিএফ/সিপিএফ এর বিবরণী।','মোটর কার লোন/মোটর সাইকেল ঋণ/বাই-সাইকেল ঋণ/জিপিএফ/সিপিএফ/কম্পিউটার ঋণ/অন্যান্য ঋণ (যদি থাকে) এর বিবরণী।','সর্বশেষ বেতন বিবরণী।','BRTA কর্তৃক প্রদত্ত বৈধ ড্রাইভিং লাইসেন্স প্রদান করতে হবে।'];
+  const att=['চাকুরী স্থায়ীকরণ পত্রের সত্যায়িত ফটোকপি।','প্রধান কার্যালয় কর্তৃক নির্ধারিত সর্বশেষ বেতন নির্ধারণী পত্র।','জন্ম তারিখ নির্ধারণের ক্ষেত্রে এসএসসি/শিক্ষাগত যোগ্যতার সনদপত্র।','বর্তমান স্থিতিসহ জিপিএফ/সিপিএফ এর বিবরণী।','মোটর কার/মোটর সাইকেল/বাই-সাইকেল/জিপিএফ/সিপিএফ/কম্পিউটার/অন্যান্য ঋণ (যদি থাকে) এর বিবরণী।','সর্বশেষ বেতন বিবরণী।','BRTA কর্তৃক প্রদত্ত বৈধ ড্রাইভিং লাইসেন্স প্রদান করতে হবে।'];
   const p3=`<div class="u" style="text-align:center">পাতা-৩</div>
   <p class="kp" style="margin-top:5mm;line-height:6.4mm">আমি এই মর্মে অঙ্গীকার করছি যে, উপরোক্ত তথ্যাবলী সত্য। প্রস্তাবিত ঋণ মঞ্জুর করা হলে ব্যাংক কর্তৃক আরোপিত শর্ত ও নিয়মাবলী আমি যথাযথভাবে পালন করতে বাধ্য থাকব। এতদ্‌সঙ্গে বর্ণিত তথ্যাদি ভুল প্রমাণে উল্লেখিত ঋণ প্রস্তাব বা মঞ্জুরীকৃত ঋণসীমা বাতিল বলে গণ্য হলে এ বিষয়ে আমার অনুকূলে ঋণের দায় স্থিতি চাহিবামাত্র সমন্বয়ে অঙ্গীকারবদ্ধ হয়ে অত্র ঋণ আবেদন পত্র দাখিল করলাম।</p>
   <div style="margin-top:3mm">${lfSig(d)}</div>
@@ -1322,7 +1322,7 @@ function lfDocMoto1(){
   <p class="kp" style="margin-top:1mm">প্রার্থীত ঋণ নিয়মানুযায়ী মঞ্জুরীর জন্য সুপারিশ করা হ'ল।</p>
   <div style="display:flex;justify-content:space-between;margin-top:5mm"><div style="padding-top:2mm">তারিখ : ${lfFf(d.r_date?lfDate(d.r_date):'',30)}</div><div class="sg sg2" style="width:100mm"><div>স্বাক্ষর :</div>${lfMr('নাম',d.r_name)}${lfMr('পদবী',d.r_desig)}${lfMr('কর্মস্থল',d.r_place)}<div style="padding-left:41mm">(সীলমোহরসহ)</div></div></div>
   <div style="margin-top:3mm"><span class="u">নিম্নোক্ত কাগজপত্রাদি সংযুক্ত করতে হবে:</span></div>
-  <div style="line-height:5.7mm">${att.map((x,i)=>`<div>${toBn(i+1)}) ${x}</div>`).join('')}</div>`;
+  <div style="line-height:5.7mm">${att.map((x,i)=>`<div style="white-space:nowrap">${toBn(i+1)}) ${x}</div>`).join('')}</div>`;
   return lfFit(lfPg(p1,'চলমান পাতা-২')+lfPg(p2,'চলমান পাতা-৩')+lfPg(p3,''));
 }
 function lfDocMoto2(){
