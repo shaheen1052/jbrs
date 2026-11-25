@@ -1339,12 +1339,12 @@ function lfDocMoto3(){
   const L=(x,y)=>x?esc(y?y+x:x):'................';
   const body=d.v_wd?`${br} হতে তিনি ইতোপূর্বে মোটর সাইকেল ঋণ ${esc(lfDate(d.v_wd))} তারিখে উত্তোলন করেছিলেন। উক্ত ঋণ উত্তোলনের তারিখ হতে ৫ (পাঁচ) বছর অতিক্রান্ত হয়েছে।`:`তিনি ইতোপূর্বে ব্যাংক হতে মোটর সাইকেল ঋণ গ্রহণ করেননি।`;
   const on=(o.nameBn||o.name||'').split(/[,،]\s*/),o1=on.length>1?esc(on[0])+',':'',o2=esc(on.length>1?on.slice(1).join(', '):on[0])+'।';
-  return`<div class="r3pg"><div style="display:flex;justify-content:space-between;align-items:flex-start"><img src="${LF_LH}" alt="" style="width:106mm;height:auto;margin-left:-6mm"><div style="text-align:right;font-size:12pt;line-height:1.4;padding-top:5mm">${o1}<br>${o2}</div></div>
-  <div style="display:flex;justify-content:space-between;margin:4mm 0 0;font-size:10.5pt"><span>সূত্রঃ ${d.pc_ref?esc(d.pc_ref):'........................'}</span><span>তারিখঃ ${d.pc_date?lfDate(d.pc_date):'........................'}</span></div>
-  <div class="gtitle" style="margin-top:12mm;text-decoration:underline">প্রত্যয়নপত্র</div>
-  <p style="line-height:2;margin-top:18px">এ মর্মে প্রত্যয়ন করা যাচ্ছে যে, জনাব ${L(d.a_name)}, পিতা/স্বামী: ${L(d.a_father)}, পদবী: ${L(d.x_desig)}${d.x_bankid?', ব্যাংক আইডি: '+esc(toBn(d.x_bankid)):''}, বর্তমান কর্মস্থল: ${L(d.x_posting)}। ${body}</p>
-  <p style="line-height:2">আরও প্রত্যয়ন করা যাচ্ছে যে, উপরে বর্ণিত তথ্যাদি সত্য।</p>
-  <div style="height:30mm"></div><div style="display:flex;justify-content:flex-end"><div class="sg sg2" style="width:100mm"><div>স্বাক্ষর :</div>${lfMr('নাম',d.r_name)}${lfMr('পদবী',d.r_desig||chief)}${lfMr('কর্মস্থল',d.r_place)}<div style="padding-left:41mm">(সীলমোহরসহ)</div></div></div>`;
+  return`<div class="r3pg"><div style="display:flex;justify-content:space-between;align-items:flex-start"><img src="${LF_LH}" alt="" style="width:106mm;height:auto;margin-left:-6mm"><div style="text-align:right;font-size:15pt;line-height:1.4;padding-top:4mm">${o1}<br>${o2}</div></div>
+  <div style="display:flex;justify-content:space-between;margin:4mm 0 0;font-size:12.5pt"><span>সূত্রঃ ${d.pc_ref?esc(d.pc_ref):'........................'}</span><span>তারিখঃ ${d.pc_date?lfDate(d.pc_date):'........................'}</span></div>
+  <div class="gtitle" style="margin-top:12mm;text-decoration:underline;font-size:18pt">প্রত্যয়নপত্র</div>
+  <p style="line-height:2;margin-top:18px;font-size:14pt">এ মর্মে প্রত্যয়ন করা যাচ্ছে যে, জনাব ${L(d.a_name)}, পিতা/স্বামী: ${L(d.a_father)}, পদবী: ${L(d.x_desig)}${d.x_bankid?', ব্যাংক আইডি: '+esc(toBn(d.x_bankid)):''}, বর্তমান কর্মস্থল: ${L(d.x_posting)}। ${body}</p>
+  <p style="line-height:2;font-size:14pt">আরও প্রত্যয়ন করা যাচ্ছে যে, উপরে বর্ণিত তথ্যাদি সত্য।</p>
+  <div style="height:30mm"></div><div style="display:flex;justify-content:flex-end"><div class="sg sg2" style="width:110mm;font-size:13pt"><div>স্বাক্ষর :</div>${lfMr('নাম',d.r_name)}${lfMr('পদবী',d.r_desig||chief)}${lfMr('কর্মস্থল',d.r_place)}<div style="padding-left:41mm">(সীলমোহরসহ)</div></div></div>`;
 }
 Object.assign(LF_TYPES.stfmoto,{
   pdf:[[['app'],'Download Application (PDF)','MotorCycleLoan_Application'],[['dec'],'Download Declaration (PDF)','MotorCycleLoan_Declaration'],[['cert'],'Download Certificate (PDF)','MotorCycleLoan_Certificate']],
