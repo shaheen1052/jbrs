@@ -469,11 +469,13 @@ function lfDocMoto3(){
   const f=S.lf,d=f.d,o=office(f.office)||{},chief=(f.office==='5038'||/এরিয়া|Area/i.test(o.nameBn||o.name||''))?'অফিস প্রধান':'ব্যবস্থাপক',br=d.pc_branch?esc(d.pc_branch)+' শাখা':'এই শাখা';
   const L=(x,y)=>x?esc(y?y+x:x):'................';
   const body=d.v_wd?`${br} হতে তিনি ইতোপূর্বে মোটর সাইকেল ঋণ ${esc(lfDate(d.v_wd))} তারিখে উত্তোলন করেছিলেন। উক্ত ঋণ উত্তোলনের তারিখ হতে ৫ (পাঁচ) বছর অতিক্রান্ত হয়েছে।`:`তিনি ইতোপূর্বে ব্যাংক হতে মোটর সাইকেল ঋণ গ্রহণ করেননি।`;
-  return`<div class="r3pg">${lfHead()}<div class="gtitle" style="margin-top:14px">প্রত্যয়নপত্র</div>
-  <div style="display:flex;justify-content:space-between;margin:16px 0 10px"><span>স্মারক নং: ......................</span><span>তারিখ: ${d.pc_date?lfDate(d.pc_date):'......................'}</span></div>
+  const on=(o.nameBn||o.name||'').split(/[,،]\s*/),o1=on.length>1?esc(on[0])+',':'',o2=esc(on.length>1?on.slice(1).join(', '):on[0])+'।';
+  return`<div class="r3pg"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-top:4mm"><div style="display:flex;align-items:center;gap:4mm"><img src="${LOGO}" alt="" style="width:20mm;height:auto"><div><div style="font-size:25pt;font-weight:700;color:#1565a8;line-height:1.15">জনতা ব্যাংক পিএলসি.</div><div style="font-size:10.5pt;margin-top:1mm">উন্নয়নে আপনার বিশ্বস্ত অংশীদার</div></div></div><div style="text-align:right;font-size:13pt;line-height:1.5;padding-top:2mm">${o1}<br>${o2}</div></div>
+  <div style="display:flex;justify-content:space-between;margin:12mm 4mm 0"><span>সূত্র: ........................................</span><span>তারিখ: ${d.pc_date?lfDate(d.pc_date):'........................'}</span></div>
+  <div class="gtitle" style="margin-top:12mm;text-decoration:underline">প্রত্যয়নপত্র</div>
   <p style="line-height:2;margin-top:18px">এ মর্মে প্রত্যয়ন করা যাচ্ছে যে, জনাব ${L(d.a_name)}, পিতা/স্বামী: ${L(d.a_father)}, পদবী: ${L(d.x_desig)}${d.x_bankid?', ব্যাংক আইডি: '+esc(toBn(d.x_bankid)):''}, বর্তমান কর্মস্থল: ${L(d.x_posting)}। ${body}</p>
   <p style="line-height:2">আরও প্রত্যয়ন করা যাচ্ছে যে, উপরে বর্ণিত তথ্যাদি সত্য।</p>
-  <div style="height:30mm"></div><div class="p-end"><div class="p-sign" style="justify-content:flex-end"><div style="flex:0 0 64mm">${d.r_name?`<b>${esc(d.r_name)}</b><br>${esc(d.r_desig||chief)}${d.r_place?'<br>'+esc(d.r_place):''}`:chief}</div></div></div></div>`;
+  <div style="height:30mm"></div><div style="display:flex;justify-content:flex-end"><div class="sg sg2" style="width:100mm"><div>স্বাক্ষর :</div>${lfMr('নাম',d.r_name)}${lfMr('পদবী',d.r_desig||chief)}${lfMr('কর্মস্থল',d.r_place)}<div style="padding-left:41mm">(সীলমোহরসহ)</div></div></div>`;
 }
 Object.assign(LF_TYPES.stfmoto,{
   pdf:[[['app'],'Download Application (PDF)','MotorCycleLoan_Application'],[['dec'],'Download Declaration (PDF)','MotorCycleLoan_Declaration'],[['cert'],'Download Certificate (PDF)','MotorCycleLoan_Certificate']],
